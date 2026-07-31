@@ -83,9 +83,19 @@ codex plugin marketplace add /path/to/skills
 Validate before publishing:
 
 ```bash
-claude plugin validate . --strict              # the marketplace manifest
+claude plugin validate . --strict                     # the marketplace manifest
 claude plugin validate ./plugins/create-pr --strict   # a single plugin
 ```
+
+## Add a skill
+
+1. Put it in `plugins/<name>/skills/<name>/`.
+2. Add a row to the `PLUGINS` table in [`scripts/gen-manifests.py`](scripts/gen-manifests.py):
+   name, display name, one-line description, a category for each agent, keywords,
+   and which agent it was written for.
+3. Run `./scripts/gen-manifests.py`. It rewrites every plugin manifest and both
+   catalogues, so the two never drift apart. See `--help` for details.
+4. Validate, commit, push.
 
 ## License
 
