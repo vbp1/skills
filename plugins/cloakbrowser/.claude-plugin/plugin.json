@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "cloakbrowser",
   "displayName": "CloakBrowser (Claude Code)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Claude Code variant.",
   "author": {
     "name": "Vadim Ponomarev",

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "decision-playground",
   "displayName": "Decision Playground",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Turn a long list of choices into a self-contained interactive HTML page and read the answers back as structured data.",
   "author": {
     "name": "Vadim Ponomarev",

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "simple-tech-writing",
   "displayName": "Simple Technical Writing",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Rewrite technical text so a tired reader cannot misread it: ASD-STE100 structural rules plus a Russian rule set.",
   "author": {
     "name": "Vadim Ponomarev",

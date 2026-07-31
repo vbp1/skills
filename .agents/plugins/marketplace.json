@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -15,7 +15,7 @@
         "path": "./plugins/audio-restore"
       },
       "description": "Restore muffled or low-quality recordings: stem separation, EQ correction, high-frequency recovery.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -30,7 +30,7 @@
         "path": "./plugins/break-it"
       },
       "description": "Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -45,7 +45,7 @@
         "path": "./plugins/claude-review"
       },
       "description": "Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -60,7 +60,7 @@
         "path": "./plugins/cloakbrowser"
       },
       "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Claude Code variant.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -75,7 +75,7 @@
         "path": "./plugins/cloakbrowser-codex"
       },
       "description": "Inspect web pages in a local stealth Chromium: screenshots and visual UI checks. Codex CLI variant.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -90,7 +90,7 @@
         "path": "./plugins/codex-genimage"
       },
       "description": "Generate images through the Codex CLI built-in image tool, billed via existing Codex auth instead of a separate API key.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -105,7 +105,7 @@
         "path": "./plugins/create-pr"
       },
       "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Claude Code variant.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -120,7 +120,7 @@
         "path": "./plugins/create-pr-codex"
       },
       "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Codex CLI variant.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -135,7 +135,7 @@
         "path": "./plugins/decision-playground"
       },
       "description": "Turn a long list of choices into a self-contained interactive HTML page and read the answers back as structured data.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -150,7 +150,7 @@
         "path": "./plugins/feature-challenge-workflow"
       },
       "description": "Challenge a feature request before any code: confirm the real problem, check existing capability, weigh alternatives, pass decision gates.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -165,7 +165,7 @@
         "path": "./plugins/feature-plan-storyboard"
       },
       "description": "Plan a feature, verify every claim against the current code, then build an interactive user-story storyboard page.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -180,7 +180,7 @@
         "path": "./plugins/langfuse-debug"
       },
       "description": "Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -195,7 +195,7 @@
         "path": "./plugins/phased-task-delivery"
       },
       "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -210,7 +210,7 @@
         "path": "./plugins/remote-ssh-workspace"
       },
       "description": "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -225,7 +225,7 @@
         "path": "./plugins/rust-code-review"
       },
       "description": "Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, lock and transaction flows.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -240,7 +240,7 @@
         "path": "./plugins/simple-tech-writing"
       },
       "description": "Rewrite technical text so a tired reader cannot misread it: ASD-STE100 structural rules plus a Russian rule set.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -255,7 +255,7 @@
         "path": "./plugins/technical-premortem"
       },
       "description": "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -270,7 +270,7 @@
         "path": "./plugins/user-clear-communication"
       },
       "description": "Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
@@ -285,7 +285,7 @@
         "path": "./plugins/youtube-transcript"
       },
       "description": "Pull the transcript of a YouTube video, with or without timestamps.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

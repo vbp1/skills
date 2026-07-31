@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "remote-ssh-workspace",
   "displayName": "Remote SSH Workspace",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
   "author": {
     "name": "Vadim Ponomarev",

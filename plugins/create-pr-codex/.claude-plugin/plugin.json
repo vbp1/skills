@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "create-pr-codex",
   "displayName": "Create PR (Codex CLI)",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Codex CLI variant.",
   "author": {
     "name": "Vadim Ponomarev",

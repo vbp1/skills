@@ -99,6 +99,10 @@ claude plugin validate ./plugins/create-pr --strict   # a single plugin
    catalogues, so the two never drift apart. See `--help` for details.
 4. Validate, commit, push.
 
+Editing an existing skill needs the same run plus a `VERSION` bump in that script.
+Both agents cache a plugin under its pinned version and skip an update while the
+version string is unchanged, so an unbumped edit never reaches installed copies.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "langfuse-debug",
   "displayName": "Langfuse Debug",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns.",
   "author": {
     "name": "Vadim Ponomarev",

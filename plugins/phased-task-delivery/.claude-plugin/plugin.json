@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "phased-task-delivery",
   "displayName": "Phased Task Delivery",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
   "author": {
     "name": "Vadim Ponomarev",

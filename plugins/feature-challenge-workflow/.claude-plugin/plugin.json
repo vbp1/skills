@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "feature-challenge-workflow",
   "displayName": "Feature Challenge Workflow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Challenge a feature request before any code: confirm the real problem, check existing capability, weigh alternatives, pass decision gates.",
   "author": {
     "name": "Vadim Ponomarev",

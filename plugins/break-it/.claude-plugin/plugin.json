@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "break-it",
   "displayName": "Break It",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects.",
   "author": {
     "name": "Vadim Ponomarev",

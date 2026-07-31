@@ -32,7 +32,7 @@ ROOT = parser.parse_args().root
 AUTHOR = {"name": "Vadim Ponomarev", "url": "https://github.com/vbp1"}
 REPO = "https://github.com/vbp1/skills"
 LICENSE = "Apache-2.0"
-VERSION = "1.0.0"
+VERSION = "1.0.1"  # bump on every published change; agents keep a pinned version cached
 
 # name, displayName, description, claude category, codex category, keywords, agent
 PLUGINS = [

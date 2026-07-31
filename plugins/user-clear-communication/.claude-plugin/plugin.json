@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "user-clear-communication",
   "displayName": "User-Clear Communication",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler.",
   "author": {
     "name": "Vadim Ponomarev",
