@@ -385,16 +385,17 @@ If scope expands during implementation, return to `fit_gate` or
 This skill describes the workflow and bundles prototype hook scripts. Read
 [references/hook-setup.md](references/hook-setup.md) before enabling hooks.
 
-Recommended command to install and trust the hook enforcement:
+Recommended command to install and trust the hook enforcement (`<skill-dir>` is the
+directory that holds this SKILL.md):
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh
+<skill-dir>/scripts/enable-hooks.sh
 ```
 
 To remove the hook enforcement block:
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh disable
+<skill-dir>/scripts/enable-hooks.sh disable
 ```
 
 Recommended Codex hook roles:

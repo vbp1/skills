@@ -30,7 +30,7 @@ The scripts require `jq` and `flock`. `scripts/enable-hooks.sh` also requires
 Use the bundled installer for user-level configuration:
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh
+<skill-dir>/scripts/enable-hooks.sh
 ```
 
 The installer:
@@ -44,18 +44,19 @@ The installer:
 Use `--dry-run` to preview the resulting config:
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh --dry-run
+<skill-dir>/scripts/enable-hooks.sh --dry-run
 ```
 
 Use `--no-trust` to install hooks without trust entries:
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh --no-trust
+<skill-dir>/scripts/enable-hooks.sh --no-trust
 ```
 
 The manual equivalent is to add this to the effective Codex config layer where
 you want the hooks to run, for example `~/.codex/config.toml` or a
-project-level Codex config.
+project-level Codex config. Replace `<skill-dir>` with the absolute path of the
+directory that holds this skill.
 
 ```toml
 [features]
@@ -67,7 +68,7 @@ hooks = true
 
 [[hooks.UserPromptSubmit.hooks]]
 type = "command"
-command = "<SKILL_DIR>/scripts/user-prompt-submit.sh"
+command = "<skill-dir>/scripts/user-prompt-submit.sh"
 timeout = 5
 statusMessage = "routing feature challenge"
 
@@ -76,7 +77,7 @@ matcher = "apply_patch|Write|Edit|MultiEdit|Bash|mcp__.*(create|update|delete|wr
 
 [[hooks.PreToolUse.hooks]]
 type = "command"
-command = "<SKILL_DIR>/scripts/pre-tool-use.sh"
+command = "<skill-dir>/scripts/pre-tool-use.sh"
 timeout = 5
 statusMessage = "checking feature challenge"
 
@@ -84,7 +85,7 @@ statusMessage = "checking feature challenge"
 
 [[hooks.Stop.hooks]]
 type = "command"
-command = "<SKILL_DIR>/scripts/stop.sh"
+command = "<skill-dir>/scripts/stop.sh"
 timeout = 5
 statusMessage = "checking feature challenge completion"
 
@@ -93,7 +94,7 @@ matcher = "apply_patch|Write|Edit|MultiEdit|Bash|mcp__.*(create|update|delete|wr
 
 [[hooks.PostToolUse.hooks]]
 type = "command"
-command = "<SKILL_DIR>/scripts/post-tool-use.sh"
+command = "<skill-dir>/scripts/post-tool-use.sh"
 timeout = 5
 statusMessage = "checking feature challenge after tool use"
 ```
@@ -108,7 +109,7 @@ write `hooks.state` with the trusted hash.
 For the installer-managed user-level block:
 
 ```sh
-~/.codex/skills/feature-challenge-workflow/scripts/enable-hooks.sh disable
+<skill-dir>/scripts/enable-hooks.sh disable
 ```
 
 For manual configuration, remove or comment out the hook sections from the
@@ -183,7 +184,7 @@ The skill itself is currently disabled via:
 
 ```toml
 [[skills.config]]
-path = "<SKILL_DIR>/SKILL.md"
+path = "<skill-dir>/SKILL.md"
 enabled = false
 ```
 

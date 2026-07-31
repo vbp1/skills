@@ -243,32 +243,6 @@
       "license": "Apache-2.0"
     },
     {
-      "name": "telemost-scribe-api",
-      "source": "./plugins/telemost-scribe-api",
-      "description": "Query the local Telemost Scribe API: schedules, meetings, transcripts and answers with citations. Claude Code variant.",
-      "version": "1.0.0",
-      "category": "productivity",
-      "keywords": [
-        "meetings",
-        "transcripts",
-        "api"
-      ],
-      "license": "Apache-2.0"
-    },
-    {
-      "name": "telemost-scribe-api-codex",
-      "source": "./plugins/telemost-scribe-api-codex",
-      "description": "Query the local Telemost Scribe API: transcripts, summaries and answers with citations. Codex CLI variant.",
-      "version": "1.0.0",
-      "category": "productivity",
-      "keywords": [
-        "meetings",
-        "transcripts",
-        "api"
-      ],
-      "license": "Apache-2.0"
-    },
-    {
       "name": "user-clear-communication",
       "source": "./plugins/user-clear-communication",
       "description": "Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler.",

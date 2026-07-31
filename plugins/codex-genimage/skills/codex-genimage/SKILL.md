@@ -25,10 +25,11 @@ If the user just says "generate an image" without naming a provider, ask which o
 
 ## How to invoke
 
-Use the bundled wrapper. It handles `mkdir -p`, prompt construction, codex flags, and post-run verification:
+Use the bundled wrapper. It handles `mkdir -p`, prompt construction, codex flags,
+and post-run verification. `<skill-dir>` is the directory that holds this SKILL.md:
 
 ```bash
-bash ~/.claude/skills/codex-genimage/scripts/generate.sh \
+bash <skill-dir>/scripts/generate.sh \
   --prompt "<text prompt>" \
   --output "/abs/path/to/file.png" \
   [--ref /abs/path/to/ref1.png] [--ref /abs/path/to/ref2.png]
@@ -91,7 +92,7 @@ Tips for the user-facing part of the prompt:
 User: "Сгенерируй через codex иконку приложения с шестерёнкой и сохрани в ~/icons/gear.png"
 
 ```bash
-bash ~/.claude/skills/codex-genimage/scripts/generate.sh \
+bash <skill-dir>/scripts/generate.sh \
   --prompt "Flat minimalist app icon: a single gear/cog wheel, monochrome dark gray on transparent background, square 1024x1024, suitable as an application icon." \
   --output "$HOME/icons/gear.png"
 ```
@@ -109,7 +110,7 @@ Propose `./images/postgres_tuning_cover.png` (if in a project) or `/tmp/postgres
 User: "Возьми ~/photo.jpg и сделай через codex акварельную версию в /tmp/watercolor.png"
 
 ```bash
-bash ~/.claude/skills/codex-genimage/scripts/generate.sh \
+bash <skill-dir>/scripts/generate.sh \
   --prompt "Recreate the attached photograph as a watercolor painting. Preserve composition and subject identity but render with soft watercolor textures, visible paper grain, and gentle bleeding edges. Maintain the original aspect ratio." \
   --output "/tmp/watercolor.png" \
   --ref "~/photo.jpg"

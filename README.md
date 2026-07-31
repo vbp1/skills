@@ -26,7 +26,7 @@ Inside an interactive session use `/plugin marketplace add vbp1/skills` instead.
 
 Skills marked **Claude** were written against Claude Code, **Codex** against Codex
 CLI. The `SKILL.md` format is shared, so either one loads in either agent, but the
-wording and tooling assumptions follow the agent it was written for. Three skills
+wording and tooling assumptions follow the agent it was written for. Two skills
 exist as two separate variants because the two versions diverged.
 
 | Plugin | Written for | What it does |
@@ -48,15 +48,17 @@ exist as two separate variants because the two versions diverged.
 | `rust-code-review` | Codex | Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, locks. |
 | `simple-tech-writing` | Claude | Rewrite technical text so a tired reader cannot misread it: ASD-STE100 rules plus a Russian rule set. |
 | `technical-premortem` | Claude | Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict. |
-| `telemost-scribe-api` | Claude | Query the local Telemost Scribe API: schedules, meetings, transcripts, answers with citations. |
-| `telemost-scribe-api-codex` | Codex | Same API, Codex variant. |
 | `user-clear-communication` | Codex | Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler. |
 | `youtube-transcript` | Claude | Pull the transcript of a YouTube video, with or without timestamps. |
 
 Some skills need external tooling that is not bundled here: `cloakbrowser` expects
-the CloakBrowser CLI on the machine, `telemost-scribe-api` expects a local Telemost
-Scribe service, `langfuse-debug` expects Langfuse credentials, `codex-genimage`
-expects an authenticated Codex CLI. Each `SKILL.md` states its prerequisites.
+the CloakBrowser CLI on the machine, `langfuse-debug` expects Langfuse credentials,
+`codex-genimage` expects an authenticated Codex CLI. Each `SKILL.md` states its
+prerequisites.
+
+Commands inside a `SKILL.md` refer to bundled scripts as `<skill-dir>/scripts/…`.
+`<skill-dir>` is the directory that holds that `SKILL.md`, wherever the agent
+installed it.
 
 ## Layout
 
