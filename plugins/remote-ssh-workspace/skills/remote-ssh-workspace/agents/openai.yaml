@@ -1,0 +1,4 @@
+interface:
+  display_name: "Remote SSH Workspace"
+  short_description: "Reliable remote SSH workspaces"
+  default_prompt: "Use $remote-ssh-workspace before working on a remote host over SSH."

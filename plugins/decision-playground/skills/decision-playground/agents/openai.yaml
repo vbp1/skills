@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decision Playground"
+  short_description: "Interactive HTML decision pages"
+  default_prompt: "Use $decision-playground to turn this set of choices into an interactive HTML decision page."

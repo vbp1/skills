@@ -1,0 +1,31 @@
+{
+  "skill_name": "codex-genimage",
+  "evals": [
+    {
+      "id": 0,
+      "name": "explicit-path-text2img",
+      "prompt": "Сгенерируй через codex картинку: красное спелое яблоко с каплями воды на чистом белом фоне, реалистичный стиль. Сохрани в /tmp/codex-evals/explicit-path-text2img/apple.png. Покажи мне результат.",
+      "expected_output": "PNG file at /tmp/codex-evals/explicit-path-text2img/apple.png, valid PNG, non-trivial size (>50KB), depicting a red apple on white background.",
+      "files": [],
+      "assertions": [
+        {"text": "Image file exists at /tmp/codex-evals/explicit-path-text2img/apple.png"},
+        {"text": "File is a valid PNG (file utility reports 'PNG image data')"},
+        {"text": "File size is greater than 50KB (non-trivial image)"},
+        {"text": "The agent used the codex-genimage skill (called codex CLI / generate.sh) rather than another image generator"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "path-proposed-icon",
+      "prompt": "Нарисуй через codex плоскую минималистичную иконку для приложения погоды — облако с солнцем за ним. Куда сохранять — выбери разумный путь сам.",
+      "expected_output": "PNG file at a sensible auto-proposed path (e.g. /tmp/<name>.png), valid PNG, depicting a sun-and-cloud weather icon. Agent should propose the path before saving (or at least state where it will save).",
+      "files": [],
+      "assertions": [
+        {"text": "A new PNG image file was created somewhere on disk"},
+        {"text": "The image file is a valid PNG (file utility reports 'PNG image data')"},
+        {"text": "The agent used the codex CLI (codex exec or generate.sh wrapper) to generate the image"},
+        {"text": "The agent stated explicitly where it would save the image before generating, or proposed a sensible path (e.g. under /tmp or ./images)"}
+      ]
+    }
+  ]
+}

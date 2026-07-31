@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Implementation Brief Builder</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f5f7fb;
+        --surface: #ffffff;
+        --surface-2: #eef3f8;
+        --text: #17202a;
+        --muted: #647184;
+        --border: rgba(23, 32, 42, 0.14);
+        --accent: #1d4ed8;
+        --accent-soft: rgba(29, 78, 216, 0.1);
+        --good: #047857;
+        --good-soft: rgba(4, 120, 87, 0.1);
+        --warn: #b45309;
+        --warn-soft: rgba(180, 83, 9, 0.12);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --surface: #141b23;
+          --surface-2: #1d2732;
+          --text: #edf2f7;
+          --muted: #9aa8b7;
+          --border: rgba(237, 242, 247, 0.12);
+          --accent: #60a5fa;
+          --accent-soft: rgba(96, 165, 250, 0.14);
+          --good: #34d399;
+          --good-soft: rgba(52, 211, 153, 0.12);
+          --warn: #fbbf24;
+          --warn-soft: rgba(251, 191, 36, 0.12);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top left,
+            var(--accent-soft),
+            transparent 34rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: min(1220px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 24px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .section + .section {
+        margin-top: 16px;
+      }
+
+      .choices {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      label.choice,
+      label.item {
+        display: grid;
+        gap: 8px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--surface-2);
+        cursor: pointer;
+      }
+
+      label.choice:has(input:checked),
+      label.item:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .items {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .milestone {
+        display: grid;
+        grid-template-columns: 34px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+      }
+
+      .dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .milestone-card,
+      .summary-item {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--surface-2);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .badge.ok {
+        color: var(--good);
+        background: var(--good-soft);
+      }
+
+      .badge.warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 90px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        resize: vertical;
+      }
+
+      .summary-list {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .fallback {
+        display: none;
+      }
+
+      @media (max-width: 980px) {
+        .layout,
+        .choices,
+        .items {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Implementation Brief Builder</h1>
+        <p id="goal" class="muted">
+          Build a concise implementation brief before Codex writes a plan or
+          code.
+        </p>
+      </header>
+
+      <div class="layout">
+        <section class="panel">
+          <section class="section">
+            <h2>Delivery Mode</h2>
+            <div id="modes" class="choices"></div>
+          </section>
+
+          <section class="section">
+            <h2>Milestones</h2>
+            <p class="muted">
+              Select the milestones that belong in this slice.
+            </p>
+            <div id="milestone-choices" class="items"></div>
+          </section>
+
+          <section class="section">
+            <h2>Quality Gate</h2>
+            <div id="quality-gates" class="choices"></div>
+          </section>
+
+          <section class="section">
+            <h2>Timeline Preview</h2>
+            <div id="timeline" class="timeline"></div>
+          </section>
+        </section>
+
+        <aside class="panel">
+          <h2>Generated Brief</h2>
+          <div id="summary" class="summary-list"></div>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Constraints, compatibility, out-of-scope items, or checks to preserve."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Implementation Brief Builder",
+        goal: "Build a concise implementation brief before Codex writes a plan or code.",
+        nextAction: "create the implementation plan from this brief",
+        modes: [
+          {
+            id: "thin-slice",
+            label: "Thin slice",
+            summary: "One testable end-to-end path first.",
+            impact: "Fastest path to verified behavior.",
+            recommended: true,
+          },
+          {
+            id: "full-feature",
+            label: "Full feature",
+            summary: "All core behavior in one pass.",
+            impact: "More complete, but higher integration risk.",
+            recommended: false,
+          },
+          {
+            id: "research-first",
+            label: "Research first",
+            summary: "Investigate before implementation.",
+            impact: "Best when external APIs or code paths are uncertain.",
+            recommended: false,
+          },
+        ],
+        milestones: [
+          {
+            id: "model",
+            label: "Model state",
+            summary: "Define data shape and ownership.",
+            default: true,
+          },
+          {
+            id: "api",
+            label: "Wire API",
+            summary: "Connect commands, endpoints, or adapters.",
+            default: true,
+          },
+          {
+            id: "ui",
+            label: "Update UI",
+            summary: "Render states and user actions.",
+            default: true,
+          },
+          {
+            id: "tests",
+            label: "Add tests",
+            summary: "Cover behavior and edge cases.",
+            default: true,
+          },
+          {
+            id: "docs",
+            label: "Update docs",
+            summary: "Record durable decisions and usage.",
+            default: false,
+          },
+        ],
+        qualityGates: [
+          {
+            id: "lint-tests",
+            label: "Lint and tests",
+            summary: "Run project checks for changed code.",
+            impact: "Balanced default.",
+            recommended: true,
+          },
+          {
+            id: "visual",
+            label: "Visual verification",
+            summary: "Add browser check for changed UI.",
+            impact: "Required for user-visible UI changes.",
+            recommended: false,
+          },
+          {
+            id: "docs-only",
+            label: "Docs-only check",
+            summary: "Use only artifact validation.",
+            impact: "Only appropriate for text-only changes.",
+            recommended: false,
+          },
+        ],
+      };
+
+      const state = {
+        mode:
+          data.modes.find((item) => item.recommended)?.id || data.modes[0].id,
+        milestones: Object.fromEntries(
+          data.milestones.map((item) => [item.id, item.default]),
+        ),
+        qualityGate:
+          data.qualityGates.find((item) => item.recommended)?.id ||
+          data.qualityGates[0].id,
+        notes: "",
+      };
+
+      function selectedMode() {
+        return data.modes.find((item) => item.id === state.mode);
+      }
+
+      function selectedQualityGate() {
+        return data.qualityGates.find((item) => item.id === state.qualityGate);
+      }
+
+      function selectedMilestones() {
+        return data.milestones.filter((item) => state.milestones[item.id]);
+      }
+
+      function renderRadioGroup(rootId, name, items, currentValue) {
+        document.getElementById(rootId).innerHTML = items
+          .map(
+            (item) => `
+              <label class="choice">
+                <input type="radio" name="${name}" value="${item.id}" ${currentValue === item.id ? "checked" : ""}>
+                <strong>${item.label} ${item.recommended ? '<span class="badge ok">Recommended</span>' : ""}</strong>
+                <span class="muted">${item.summary}</span>
+                <span>${item.impact}</span>
+              </label>
+            `,
+          )
+          .join("");
+      }
+
+      function renderMilestoneChoices() {
+        document.getElementById("milestone-choices").innerHTML = data.milestones
+          .map(
+            (item) => `
+              <label class="item">
+                <input type="checkbox" name="milestone" value="${item.id}" ${state.milestones[item.id] ? "checked" : ""}>
+                <strong>${item.label}</strong>
+                <span class="muted">${item.summary}</span>
+              </label>
+            `,
+          )
+          .join("");
+      }
+
+      function renderTimeline() {
+        const items = selectedMilestones();
+        document.getElementById("timeline").innerHTML = items.length
+          ? items
+              .map(
+                (item, index) => `
+                  <div class="milestone">
+                    <div class="dot">${index + 1}</div>
+                    <div class="milestone-card">
+                      <strong>${item.label}</strong>
+                      <p class="muted">${item.summary}</p>
+                    </div>
+                  </div>
+                `,
+              )
+              .join("")
+          : '<p class="muted">No milestones selected.</p>';
+      }
+
+      function buildExport() {
+        const mode = selectedMode();
+        const gate = selectedQualityGate();
+        const milestones = selectedMilestones();
+        const decisions = [
+          {
+            id: "delivery-mode",
+            label: "Delivery mode",
+            value: mode.id,
+            summary: mode.summary,
+            rationale: mode.recommended
+              ? "Recommended default accepted."
+              : "Selected by user.",
+            impact: mode.impact,
+            confidence: "high",
+          },
+          {
+            id: "milestones",
+            label: "Milestones",
+            value: milestones.map((item) => item.id).join(", "),
+            summary: milestones.map((item) => item.label).join(", ") || "None",
+            rationale: "Selected by user.",
+            impact:
+              "Defines what Codex should include in the implementation plan.",
+            confidence: milestones.length ? "high" : "unknown",
+          },
+          {
+            id: "quality-gate",
+            label: "Quality gate",
+            value: gate.id,
+            summary: gate.summary,
+            rationale: gate.recommended
+              ? "Recommended default accepted."
+              : "Selected by user.",
+            impact: gate.impact,
+            confidence: "high",
+          },
+        ];
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: milestones.length ? "complete" : "blocked",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: milestones.length
+            ? []
+            : ["Select at least one milestone."],
+          agentPrompt: buildPrompt(mode, gate, milestones),
+        };
+      }
+
+      function buildPrompt(mode, gate, milestones) {
+        return `Use this implementation brief as the source of truth.
+
+Goal: ${data.goal}
+
+Delivery mode: ${mode.label} - ${mode.impact}
+Milestones:
+${milestones.map((item, index) => `${index + 1}. ${item.label}: ${item.summary}`).join("\n") || "None selected"}
+Quality gate: ${gate.label} - ${gate.impact}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Do not expand scope beyond the selected milestones without asking.`;
+      }
+
+      function buildSummary(exportData) {
+        const mode = selectedMode();
+        const gate = selectedQualityGate();
+        const milestones = selectedMilestones();
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: ${exportData.status}
+
+## Selected Decisions
+
+- Delivery mode: ${mode.label} - ${mode.impact}
+- Milestones: ${milestones.map((item) => item.label).join(", ") || "None"}
+- Quality gate: ${gate.label} - ${gate.impact}
+
+## Notes
+
+${exportData.notes || "None"}
+
+## Open Questions
+
+${exportData.openQuestions.length ? exportData.openQuestions.map((item) => `- ${item}`).join("\n") : "None"}
+`;
+      }
+
+      function renderSummary() {
+        const mode = selectedMode();
+        const gate = selectedQualityGate();
+        const milestones = selectedMilestones();
+        document.getElementById("summary").innerHTML = `
+          <div class="summary-item">
+            <strong>${mode.label}</strong>
+            <p class="muted">${mode.impact}</p>
+          </div>
+          <div class="summary-item">
+            <strong>Milestones</strong>
+            <p>${milestones.map((item) => item.label).join(", ") || "None selected"}</p>
+          </div>
+          <div class="summary-item">
+            <strong>${gate.label}</strong>
+            <p class="muted">${gate.impact}</p>
+          </div>
+        `;
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      function render() {
+        renderRadioGroup("modes", "mode", data.modes, state.mode);
+        renderMilestoneChoices();
+        renderRadioGroup(
+          "quality-gates",
+          "qualityGate",
+          data.qualityGates,
+          state.qualityGate,
+        );
+        renderTimeline();
+        renderSummary();
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target.name === "mode") state.mode = event.target.value;
+        if (event.target.name === "qualityGate")
+          state.qualityGate = event.target.value;
+        if (event.target.name === "milestone") {
+          state.milestones[event.target.value] = event.target.checked;
+        }
+        render();
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      render();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Triage Board</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f4f7f5;
+        --surface: #ffffff;
+        --surface-2: #edf3ef;
+        --text: #17201a;
+        --muted: #607066;
+        --border: rgba(23, 32, 26, 0.14);
+        --accent: #047857;
+        --accent-soft: rgba(4, 120, 87, 0.1);
+        --later: #b45309;
+        --later-soft: rgba(180, 83, 9, 0.12);
+        --drop: #be123c;
+        --drop-soft: rgba(190, 18, 60, 0.1);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1411;
+          --surface: #161d19;
+          --surface-2: #202821;
+          --text: #edf7ef;
+          --muted: #9aab9f;
+          --border: rgba(237, 247, 239, 0.12);
+          --accent: #34d399;
+          --accent-soft: rgba(52, 211, 153, 0.12);
+          --later: #fbbf24;
+          --later-soft: rgba(251, 191, 36, 0.12);
+          --drop: #fb7185;
+          --drop-soft: rgba(251, 113, 133, 0.13);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top right,
+            var(--accent-soft),
+            transparent 32rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: min(1260px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+      h2,
+      h3 {
+        margin: 0;
+      }
+      p {
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 20px;
+        margin-top: 24px;
+        align-items: start;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .panel,
+      .column {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+      }
+      .column header {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .column[data-status="must"] {
+        box-shadow: inset 0 3px 0 var(--accent);
+      }
+      .column[data-status="later"] {
+        box-shadow: inset 0 3px 0 var(--later);
+      }
+      .column[data-status="drop"] {
+        box-shadow: inset 0 3px 0 var(--drop);
+      }
+      .items {
+        display: grid;
+        gap: 10px;
+        min-height: 120px;
+      }
+      .item {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+      .item h3 {
+        font-size: 15px;
+        margin-bottom: 4px;
+      }
+      .item-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .badge {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 3px 8px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .summary-item {
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+        margin-top: 10px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      button,
+      select {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+      textarea {
+        width: 100%;
+        min-height: 92px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        resize: vertical;
+      }
+      .fallback {
+        display: none;
+      }
+      @media (max-width: 1040px) {
+        .layout,
+        .board {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Scope Triage Board</h1>
+        <p id="goal" class="muted">
+          Sort work into must-have, later, and drop before planning
+          implementation.
+        </p>
+      </header>
+
+      <div class="layout">
+        <section id="board" class="board" aria-label="Triage board"></section>
+        <aside class="panel">
+          <h2>Board Summary</h2>
+          <div id="summary"></div>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Why items moved, deadline, risk, or user constraints."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Scope Triage Board",
+        goal: "Sort work into must-have, later, and drop before planning implementation.",
+        nextAction: "create a scoped implementation plan",
+        columns: [
+          {
+            id: "must",
+            label: "Must have",
+            impact: "Include in the next implementation slice.",
+          },
+          {
+            id: "later",
+            label: "Later",
+            impact: "Track as follow-up, but do not block this slice.",
+          },
+          {
+            id: "drop",
+            label: "Drop",
+            impact: "Exclude unless new evidence changes the decision.",
+          },
+        ],
+        items: [
+          {
+            id: "happy-path",
+            label: "Happy path",
+            summary: "Core end-to-end user path",
+            status: "must",
+            risk: "low",
+          },
+          {
+            id: "edge-cases",
+            label: "Rare edge cases",
+            summary: "Unusual inputs and uncommon failures",
+            status: "later",
+            risk: "medium",
+          },
+          {
+            id: "admin-tools",
+            label: "Admin controls",
+            summary: "Manual override and maintenance controls",
+            status: "later",
+            risk: "medium",
+          },
+          {
+            id: "theme-polish",
+            label: "Theme polish",
+            summary: "Decorative refinements and extra variants",
+            status: "drop",
+            risk: "low",
+          },
+        ],
+      };
+
+      const state = {
+        statuses: Object.fromEntries(
+          data.items.map((item) => [item.id, item.status]),
+        ),
+        notes: "",
+      };
+
+      function itemsFor(status) {
+        return data.items.filter((item) => state.statuses[item.id] === status);
+      }
+
+      function renderBoard() {
+        document.getElementById("board").innerHTML = data.columns
+          .map(
+            (column) => `
+    <section class="column" data-status="${column.id}">
+      <header>
+        <div>
+          <h2>${column.label}</h2>
+          <p class="muted">${column.impact}</p>
+        </div>
+        <span class="badge">${itemsFor(column.id).length}</span>
+      </header>
+      <div class="items">
+        ${
+          itemsFor(column.id)
+            .map((item) => renderItem(item))
+            .join("") || '<p class="muted">No items.</p>'
+        }
+      </div>
+    </section>
+  `,
+          )
+          .join("");
+      }
+
+      function renderItem(item) {
+        return `
+    <article class="item">
+      <h3>${item.label}</h3>
+      <p>${item.summary}</p>
+      <span class="badge">Risk: ${item.risk}</span>
+      <div class="item-controls">
+        <label>
+          <span class="muted">Move to</span>
+          <select data-move="${item.id}">
+            ${data.columns.map((column) => `<option value="${column.id}" ${state.statuses[item.id] === column.id ? "selected" : ""}>${column.label}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+    </article>
+  `;
+      }
+
+      function buildExport() {
+        const decisions = data.columns.map((column) => ({
+          id: `scope-${column.id}`,
+          label: column.label,
+          value: itemsFor(column.id)
+            .map((item) => item.id)
+            .join(", "),
+          summary:
+            itemsFor(column.id)
+              .map((item) => item.label)
+              .join(", ") || "None",
+          rationale: "Sorted by user on the triage board.",
+          impact: column.impact,
+          confidence: "high",
+        }));
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: [],
+          agentPrompt: buildPrompt(),
+        };
+      }
+
+      function buildPrompt() {
+        return `Use this triage result as the source of truth.
+
+Goal: ${data.goal}
+
+Must have:
+${
+  itemsFor("must")
+    .map((item) => `- ${item.label}: ${item.summary}`)
+    .join("\n") || "- None"
+}
+
+Later:
+${
+  itemsFor("later")
+    .map((item) => `- ${item.label}: ${item.summary}`)
+    .join("\n") || "- None"
+}
+
+Drop:
+${
+  itemsFor("drop")
+    .map((item) => `- ${item.label}: ${item.summary}`)
+    .join("\n") || "- None"
+}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Do not include Later or Drop items unless they are needed to complete a Must-have path.`;
+      }
+
+      function buildSummary(exportData) {
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: complete
+
+## Scope
+
+${exportData.decisions.map((d) => `- ${d.label}: ${d.summary}`).join("\n")}
+
+## Notes
+
+${exportData.notes || "None"}
+`;
+      }
+
+      function renderSummary() {
+        const exportData = buildExport();
+        document.getElementById("summary").innerHTML = exportData.decisions
+          .map(
+            (decision) => `
+    <div class="summary-item">
+      <strong>${decision.label}</strong>
+      <p>${decision.summary}</p>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target.matches("[data-move]")) {
+          state.statuses[event.target.dataset.move] = event.target.value;
+          renderBoard();
+          renderSummary();
+        }
+      });
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      renderBoard();
+      renderSummary();
+    </script>
+  </body>
+</html>

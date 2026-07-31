@@ -1,0 +1,32 @@
+{
+  "text": "# sqlpipe v2.0 Release Notes\n\n## Breaking change: `name` field split\n\nThe `/v2/users` endpoint no longer returns a single `name` field. It now returns two fields: `first_name` and `last_name`.\n\nBefore you upgrade, update any client code that reads `name`. This code will fail after the upgrade, because the field no longer exists.\n\nMigration steps:\n1. Search your codebase for the `name` field from `/v2/users`.\n2. Replace each reference with `first_name` and `last_name`.\n3. Test your integration against the v2.0 API.\n\n## New flag: `--incremental`\n\nUse the `--incremental` flag to sync only new and changed rows. This flag skips a full table scan and reduces sync time for large tables.\n\n## Faster Parquet writes\n\nParquet writes are 40% faster than in v1.0. This improvement applies to all Parquet output, with no config changes required.",
+  "input_tokens": 2,
+  "output_tokens": 3837,
+  "cost_usd": 0.0704578,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "release-notes",
+  "type": "descriptive",
+  "run": 2,
+  "lint": {
+    "type": "descriptive",
+    "words": 118,
+    "sentences": 13,
+    "mean_sentence_words": 8.8,
+    "longest_sentence_words": 14,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

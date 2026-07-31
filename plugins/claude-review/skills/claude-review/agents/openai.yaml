@@ -1,0 +1,7 @@
+interface:
+  display_name: "Claude Review"
+  short_description: "Ask Claude Code to review Codex work"
+  default_prompt: "Use $claude-review to have Claude Code review my plan and implementation."
+
+policy:
+  allow_implicit_invocation: true

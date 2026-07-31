@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "feature-plan-storyboard",
+  "displayName": "Feature Plan Storyboard",
+  "version": "1.0.0",
+  "description": "Plan a feature, verify every claim against the current code, then build an interactive user-story storyboard page.",
+  "author": {
+    "name": "Vadim Ponomarev",
+    "url": "https://github.com/vbp1"
+  },
+  "homepage": "https://github.com/vbp1/skills",
+  "repository": "https://github.com/vbp1/skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "planning",
+    "storyboard",
+    "html",
+    "review"
+  ]
+}

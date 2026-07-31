@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telemost Scribe API"
+  short_description: "Use the local Telemost Scribe agent search API."
+  default_prompt: "Use the Telemost Scribe API to search meeting history and return cited answers."

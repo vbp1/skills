@@ -1,0 +1,4 @@
+interface:
+  display_name: "Break It"
+  short_description: "Falsify changed code with focused tests"
+  default_prompt: "Use $break-it to try to falsify the changed code with focused adversarial tests."

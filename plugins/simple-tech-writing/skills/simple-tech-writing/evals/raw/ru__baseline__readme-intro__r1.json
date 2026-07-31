@@ -1,0 +1,31 @@
+{
+  "text": "tsdb-agent — лёгкий агент для сбора метрик, работающих на серверах, и записи их в хранилище временных рядов (time-series database).\n\nАгент периодически опрашивает системные и прикладные метрики хоста — загрузку CPU, использование памяти, дисковый I/O, сетевой трафик, а также пользовательские метрики приложений — и отправляет их в подключённое TSDB-хранилище (например, Prometheus, InfluxDB или VictoriaMetrics). Он рассчитан на минимальное потребление ресурсов и стабильную работу в фоновом режиме на большом количестве серверов, поддерживает гибкую настройку интервалов сбора, набора метрик и параметров подключения к хранилищу. tsdb-agent устойчив к временной недоступности хранилища — метрики буферизуются локально и досылаются после восстановления соединения, что предотвращает потерю данных при сетевых сбоях.",
+  "input_tokens": 2918,
+  "output_tokens": 321,
+  "cost_usd": 0.029972400000000003,
+  "lang": "ru",
+  "arm": "baseline",
+  "scenario": "readme-intro",
+  "type": "descriptive",
+  "run": 1,
+  "lint": {
+    "type": "descriptive",
+    "words": 103,
+    "sentences": 4,
+    "mean_sentence_words": 25.8,
+    "longest_sentence_words": 34,
+    "violations": {
+      "sentence_over_limit": 2,
+      "nominalization": 0,
+      "passive_sya": 2,
+      "gerund": 0,
+      "participle": 1,
+      "hedge": 0,
+      "slop_word": 1,
+      "trailing_condition": 0,
+      "synonym_rotation": 1
+    },
+    "violations_total": 7,
+    "violations_per_100w": 6.8
+  }
+}

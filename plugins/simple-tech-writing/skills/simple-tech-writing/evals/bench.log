@@ -1,0 +1,85 @@
+ok ru baseline getting-started r1 viol/100w=2.6
+ok ru baseline readme-intro r1 viol/100w=6.8
+ok ru baseline readme-intro r2 viol/100w=5.13
+ok ru baseline getting-started r2 viol/100w=4.12
+ok ru baseline error-message r1 viol/100w=0.0
+ok ru baseline error-message r2 viol/100w=3.33
+ok ru baseline troubleshooting r1 viol/100w=6.5
+ok ru baseline troubleshooting r2 viol/100w=2.42
+ok ru baseline incident-report r1 viol/100w=3.09
+ok ru baseline incident-report r2 viol/100w=1.05
+ok ru baseline release-notes r2 viol/100w=0.77
+ok ru baseline release-notes r1 viol/100w=6.45
+ok ru baseline runbook-terse r2 viol/100w=0.0
+ok ru baseline runbook-terse r1 viol/100w=0.0
+ok ru baseline architecture r1 viol/100w=3.64
+ok ru baseline architecture r2 viol/100w=2.88
+ok ru skill readme-intro r2 viol/100w=0.0
+ok ru skill troubleshooting r1 viol/100w=1.89
+ok ru skill readme-intro r1 viol/100w=0.0
+ok ru skill error-message r1 viol/100w=0.0
+ok ru skill getting-started r2 viol/100w=0.72
+ok ru skill troubleshooting r2 viol/100w=0.9
+ok ru skill getting-started r1 viol/100w=0.83
+ok ru skill error-message r2 viol/100w=0.0
+ok ru skill release-notes r1 viol/100w=1.72
+skip
+ok ru skill release-notes r2 viol/100w=2.15
+ok ru skill runbook-terse r2 viol/100w=0.0
+ok ru skill incident-report r1 viol/100w=2.13
+ok ru skill architecture r1 viol/100w=0.0
+ok ru skill architecture r2 viol/100w=0.0
+ok ru skill incident-report r2 viol/100w=0.0
+| lang | arm | n | viol/100w | mean sent | words | out tok |
+|---|---|---|---|---|---|---|
+| ru | baseline | 16 | 3.05 | 15.22 | 88.56 | 280 |
+| ru | skill | 16 | 0.65 | 6.86 | 82.69 | 2067 |
+
+| промах (ru) | без скилла | со скиллом |
+|---|---|---|
+| sentence_over_limit | 11 | 0 |
+| synonym_rotation | 10 | 6 |
+| passive_sya | 8 | 4 |
+| gerund | 8 | 0 |
+| participle | 6 | 1 |
+| trailing_condition | 4 | 0 |
+| hedge | 3 | 0 |
+| slop_word | 2 | 0 |
+| nominalization | 0 | 0 |
+
+spend: $1.5 over 32 generations
+ok en skill getting-started r1 viol/100w=0.92
+ok en skill readme-intro r1 viol/100w=0.0
+ok en skill readme-intro r2 viol/100w=0.0
+ok en skill getting-started r2 viol/100w=0.0
+ok en skill error-message r1 viol/100w=0.0
+ok en skill troubleshooting r1 viol/100w=0.77
+ok en skill error-message r2 viol/100w=0.0
+ok en skill incident-report r1 viol/100w=0.95
+ok en skill troubleshooting r2 viol/100w=0.0
+ok en skill release-notes r1 viol/100w=0.0
+ok en skill runbook-terse r1 viol/100w=0.0
+ok en skill runbook-terse r2 viol/100w=0.0
+ok en skill incident-report r2 viol/100w=0.0
+ok en skill architecture r1 viol/100w=0.81
+ok en skill release-notes r2 viol/100w=0.0
+ok en skill architecture r2 viol/100w=0.0
+| lang | arm | n | viol/100w | mean sent | words | out tok |
+|---|---|---|---|---|---|---|
+| en | skill | 16 | 0.22 | 9.43 | 89.31 | 1868 |
+| ru | baseline | 16 | 3.05 | 15.22 | 88.56 | 280 |
+| ru | skill | 16 | 0.65 | 6.86 | 82.69 | 2067 |
+
+| промах (ru) | без скилла | со скиллом |
+|---|---|---|
+| sentence_over_limit | 11 | 0 |
+| synonym_rotation | 10 | 6 |
+| passive_sya | 8 | 4 |
+| gerund | 8 | 0 |
+| participle | 6 | 1 |
+| trailing_condition | 4 | 0 |
+| hedge | 3 | 0 |
+| slop_word | 2 | 0 |
+| nominalization | 0 | 0 |
+
+spend: $2.54 over 48 generations

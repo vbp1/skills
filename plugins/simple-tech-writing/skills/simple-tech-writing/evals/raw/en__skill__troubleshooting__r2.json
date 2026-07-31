@@ -1,0 +1,32 @@
+{
+  "text": "## Troubleshooting\n\n### Connection timeout to Postgres\n\nIf sqlpipe cannot reach the database within `connect_timeout`, it prints `Error: connection timeout`. This error means that the network or a firewall blocks the connection. Check these items:\n\n1. Check that the Postgres host and port in `sqlpipe.yaml` are correct.\n2. Check that the database accepts connections from your IP address.\n3. Check that no firewall rule blocks port `5432`.\n4. If the network is slow, increase `connect_timeout` in `sqlpipe.yaml`.\n\n### S3 permission error\n\nIf the IAM role lacks the required permissions, sqlpipe prints `Error: access denied` for the S3 bucket. sqlpipe needs both read and write permissions for the bucket. Fix the error this way:\n\n1. Open the IAM policy for the role.\n2. Add the `s3:GetObject` and `s3:PutObject` permissions for the bucket.\n3. Check that the bucket name in `sqlpipe.yaml` matches the actual bucket.\n4. Run the command again.",
+  "input_tokens": 2,
+  "output_tokens": 4147,
+  "cost_usd": 0.07507029999999999,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "troubleshooting",
+  "type": "procedural",
+  "run": 2,
+  "lint": {
+    "type": "procedural",
+    "words": 137,
+    "sentences": 14,
+    "mean_sentence_words": 9.2,
+    "longest_sentence_words": 15,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "text": "Версия 3.0 меняет формат конфигурации. Она делит поле `hostname` на два поля: `host` и `datacenter`. Это изменение ломает совместимость со старыми конфигурациями. Обновите файл конфигурации перед обновлением агента.\n\n版本 3.0 добавляет флаг `--dry-run`. Этот флаг показывает планируемые действия агента без их выполнения.\n\nСжатие метрик стало быстрее на 40%.\n\nПРЕДУПРЕЖДЕНИЕ: После обновления агент не запустится со старым полем `hostname`. Обновите конфигурацию перед перезапуском службы.\n\n1. Откройте файл конфигурации агента.\n2. Замените поле `hostname` на два поля: `host` и `datacenter`.\n3. Проверьте конфигурацию флагом `--dry-run`.\n4. Перезапустите службу `tsdb-agent`.",
+  "input_tokens": 2,
+  "output_tokens": 315,
+  "cost_usd": 0.0176722,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "release-notes",
+  "type": "descriptive",
+  "run": 2,
+  "lint": {
+    "type": "descriptive",
+    "words": 93,
+    "sentences": 15,
+    "mean_sentence_words": 5.9,
+    "longest_sentence_words": 10,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 1,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 1
+    },
+    "violations_total": 2,
+    "violations_per_100w": 2.15
+  }
+}

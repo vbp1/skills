@@ -1,0 +1,327 @@
+{
+  "name": "vbp1-skills",
+  "interface": {
+    "displayName": "vbp1 skills"
+  },
+  "metadata": {
+    "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "audio-restore",
+      "source": {
+        "source": "local",
+        "path": "./plugins/audio-restore"
+      },
+      "description": "Restore muffled or low-quality recordings: stem separation, EQ correction, high-frequency recovery.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "break-it",
+      "source": {
+        "source": "local",
+        "path": "./plugins/break-it"
+      },
+      "description": "Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "claude-review",
+      "source": {
+        "source": "local",
+        "path": "./plugins/claude-review"
+      },
+      "description": "Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "cloakbrowser",
+      "source": {
+        "source": "local",
+        "path": "./plugins/cloakbrowser"
+      },
+      "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Claude Code variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "cloakbrowser-codex",
+      "source": {
+        "source": "local",
+        "path": "./plugins/cloakbrowser-codex"
+      },
+      "description": "Inspect web pages in a local stealth Chromium: screenshots and visual UI checks. Codex CLI variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "codex-genimage",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-genimage"
+      },
+      "description": "Generate images through the Codex CLI built-in image tool, billed via existing Codex auth instead of a separate API key.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "create-pr",
+      "source": {
+        "source": "local",
+        "path": "./plugins/create-pr"
+      },
+      "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Claude Code variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "create-pr-codex",
+      "source": {
+        "source": "local",
+        "path": "./plugins/create-pr-codex"
+      },
+      "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Codex CLI variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "decision-playground",
+      "source": {
+        "source": "local",
+        "path": "./plugins/decision-playground"
+      },
+      "description": "Turn a long list of choices into a self-contained interactive HTML page and read the answers back as structured data.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "feature-challenge-workflow",
+      "source": {
+        "source": "local",
+        "path": "./plugins/feature-challenge-workflow"
+      },
+      "description": "Challenge a feature request before any code: confirm the real problem, check existing capability, weigh alternatives, pass decision gates.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "feature-plan-storyboard",
+      "source": {
+        "source": "local",
+        "path": "./plugins/feature-plan-storyboard"
+      },
+      "description": "Plan a feature, verify every claim against the current code, then build an interactive user-story storyboard page.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "langfuse-debug",
+      "source": {
+        "source": "local",
+        "path": "./plugins/langfuse-debug"
+      },
+      "description": "Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Ops",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "phased-task-delivery",
+      "source": {
+        "source": "local",
+        "path": "./plugins/phased-task-delivery"
+      },
+      "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "remote-ssh-workspace",
+      "source": {
+        "source": "local",
+        "path": "./plugins/remote-ssh-workspace"
+      },
+      "description": "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Ops",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "rust-code-review",
+      "source": {
+        "source": "local",
+        "path": "./plugins/rust-code-review"
+      },
+      "description": "Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, lock and transaction flows.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Coding",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "simple-tech-writing",
+      "source": {
+        "source": "local",
+        "path": "./plugins/simple-tech-writing"
+      },
+      "description": "Rewrite technical text so a tired reader cannot misread it: ASD-STE100 structural rules plus a Russian rule set.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "technical-premortem",
+      "source": {
+        "source": "local",
+        "path": "./plugins/technical-premortem"
+      },
+      "description": "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "telemost-scribe-api",
+      "source": {
+        "source": "local",
+        "path": "./plugins/telemost-scribe-api"
+      },
+      "description": "Query the local Telemost Scribe API: schedules, meetings, transcripts and answers with citations. Claude Code variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "telemost-scribe-api-codex",
+      "source": {
+        "source": "local",
+        "path": "./plugins/telemost-scribe-api-codex"
+      },
+      "description": "Query the local Telemost Scribe API: transcripts, summaries and answers with citations. Codex CLI variant.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "user-clear-communication",
+      "source": {
+        "source": "local",
+        "path": "./plugins/user-clear-communication"
+      },
+      "description": "Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "youtube-transcript",
+      "source": {
+        "source": "local",
+        "path": "./plugins/youtube-transcript"
+      },
+      "description": "Pull the transcript of a YouTube video, with or without timestamps.",
+      "version": "1.0.0",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    }
+  ]
+}

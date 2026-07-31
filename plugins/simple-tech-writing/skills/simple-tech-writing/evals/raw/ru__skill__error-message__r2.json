@@ -1,0 +1,31 @@
+{
+  "text": "Хранилище отклонило запись с кодом 403: неверный токен доступа.\nПроверьте токен в файле `config.yaml`.\nЕсли токен истёк, получите новый токен и перезапустите `tsdb-agent`.",
+  "input_tokens": 2,
+  "output_tokens": 871,
+  "cost_usd": 0.0259529,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "error-message",
+  "type": "procedural",
+  "run": 2,
+  "lint": {
+    "type": "procedural",
+    "words": 25,
+    "sentences": 4,
+    "mean_sentence_words": 6.2,
+    "longest_sentence_words": 10,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

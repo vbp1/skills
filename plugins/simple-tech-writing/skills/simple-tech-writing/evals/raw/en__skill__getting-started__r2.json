@@ -1,0 +1,32 @@
+{
+  "text": "## Getting Started\n\nsqlpipe moves data between databases with one command. It runs on Linux and macOS. Follow these steps to install and run it.\n\n1. Install sqlpipe with this command:\n   `curl -sSL https://get.sqlpipe.dev | sh`\n2. Create a config file named `sqlpipe.yaml` in your project folder. Add your source and target connections to this file.\n3. Run sqlpipe with this command:\n   `sqlpipe run --config sqlpipe.yaml`\n\nsqlpipe reads `sqlpipe.yaml` and starts the pipeline defined in this file. The terminal shows the row count for each table during the run.\n\nIf `sqlpipe.yaml` has an error, sqlpipe stops and prints the error message. Fix the error in `sqlpipe.yaml`. Then run the command again.\n\nFor the full list of config keys, see the reference guide.",
+  "input_tokens": 6763,
+  "output_tokens": 2419,
+  "cost_usd": 0.0877144,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "getting-started",
+  "type": "procedural",
+  "run": 2,
+  "lint": {
+    "type": "procedural",
+    "words": 113,
+    "sentences": 13,
+    "mean_sentence_words": 8.5,
+    "longest_sentence_words": 12,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

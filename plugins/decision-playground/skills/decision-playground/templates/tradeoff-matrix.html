@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tradeoff Matrix</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f5f7fb;
+        --surface: #ffffff;
+        --surface-2: #eef3f8;
+        --text: #17202a;
+        --muted: #637083;
+        --border: rgba(23, 32, 42, 0.14);
+        --accent: #1d4ed8;
+        --accent-soft: rgba(29, 78, 216, 0.1);
+        --good: #047857;
+        --good-soft: rgba(4, 120, 87, 0.1);
+        --warn: #b45309;
+        --warn-soft: rgba(180, 83, 9, 0.12);
+        --bad: #be123c;
+        --bad-soft: rgba(190, 18, 60, 0.1);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --surface: #141b23;
+          --surface-2: #1d2732;
+          --text: #edf2f7;
+          --muted: #9aa8b7;
+          --border: rgba(237, 242, 247, 0.12);
+          --accent: #60a5fa;
+          --accent-soft: rgba(96, 165, 250, 0.14);
+          --good: #34d399;
+          --good-soft: rgba(52, 211, 153, 0.12);
+          --warn: #fbbf24;
+          --warn-soft: rgba(251, 191, 36, 0.12);
+          --bad: #fb7185;
+          --bad-soft: rgba(251, 113, 133, 0.13);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          linear-gradient(135deg, var(--accent-soft), transparent 30rem),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: min(1220px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+      p {
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 20px;
+        align-items: start;
+        margin-top: 24px;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 18px;
+      }
+      .decision + .decision {
+        margin-top: 16px;
+      }
+      .decision-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .matrix {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .option {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: var(--surface-2);
+        cursor: pointer;
+      }
+      .option:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+      .option input {
+        justify-self: start;
+      }
+      .score {
+        display: grid;
+        gap: 6px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 82px 1fr;
+        gap: 8px;
+        align-items: center;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .bar {
+        height: 7px;
+        border-radius: 999px;
+        background: var(--border);
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+        width: calc(var(--value) * 20%);
+        background: var(--accent);
+      }
+      .badge {
+        display: inline-flex;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        padding: 3px 8px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .badge.good {
+        color: var(--good);
+        background: var(--good-soft);
+      }
+      .badge.warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .badge.bad {
+        color: var(--bad);
+        background: var(--bad-soft);
+      }
+      .summary-item {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+        margin-top: 10px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+      textarea {
+        width: 100%;
+        min-height: 86px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+      }
+      .fallback {
+        display: none;
+      }
+      @media (max-width: 960px) {
+        .grid,
+        .matrix {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Architecture Tradeoffs</h1>
+        <p id="goal" class="muted">
+          Choose the implementation direction before Codex writes code.
+        </p>
+      </header>
+
+      <div class="grid">
+        <section id="decisions" class="panel"></section>
+        <aside class="panel">
+          <h2>Selected Direction</h2>
+          <div id="summary"></div>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Constraints, risks, or combinations to preserve."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Architecture Tradeoffs",
+        goal: "Choose the implementation direction before Codex writes code.",
+        nextAction: "write the implementation plan",
+        decisions: [
+          {
+            id: "state-storage",
+            label: "Where should long-lived state live?",
+            recommended: "project-files",
+            options: [
+              {
+                value: "project-files",
+                label: "Project files",
+                summary: "Persist decisions in repository artifacts",
+                impact: "Best for durable work and reviewable changes.",
+                cost: 2,
+                risk: 2,
+                reversibility: 4,
+                userImpact: 4,
+              },
+              {
+                value: "chat-only",
+                label: "Chat only",
+                summary: "Keep state in conversation",
+                impact: "Fastest, but easy to lose across sessions.",
+                cost: 1,
+                risk: 4,
+                reversibility: 2,
+                userImpact: 2,
+              },
+              {
+                value: "external-tool",
+                label: "External tool",
+                summary: "Store state in a tracker or service",
+                impact:
+                  "Good for team workflows, but adds integration overhead.",
+                cost: 4,
+                risk: 3,
+                reversibility: 3,
+                userImpact: 5,
+              },
+            ],
+          },
+          {
+            id: "dependency-policy",
+            label: "Should a new dependency be allowed?",
+            recommended: "avoid",
+            options: [
+              {
+                value: "avoid",
+                label: "Avoid for now",
+                summary: "Use local code or existing dependencies",
+                impact: "Lower maintenance cost for small UI pages.",
+                cost: 1,
+                risk: 2,
+                reversibility: 5,
+                userImpact: 3,
+              },
+              {
+                value: "allow-mature",
+                label: "Allow mature dependency",
+                summary: "Use a proven library if it clearly wins",
+                impact: "Useful when behavior is hard to implement correctly.",
+                cost: 3,
+                risk: 2,
+                reversibility: 3,
+                userImpact: 4,
+              },
+              {
+                value: "allow-fast",
+                label: "Optimize for speed",
+                summary: "Add the best-fit dependency quickly",
+                impact: "Fast prototype, higher long-term review burden.",
+                cost: 2,
+                risk: 4,
+                reversibility: 2,
+                userImpact: 4,
+              },
+            ],
+          },
+        ],
+      };
+
+      const state = {
+        selected: Object.fromEntries(
+          data.decisions.map((decision) => [decision.id, decision.recommended]),
+        ),
+        notes: "",
+      };
+
+      function currentOption(decision) {
+        return decision.options.find(
+          (option) => option.value === state.selected[decision.id],
+        );
+      }
+
+      function renderDecisions() {
+        document.getElementById("decisions").innerHTML = data.decisions
+          .map(
+            (decision) => `
+    <article class="decision">
+      <div class="decision-head">
+        <h2>${decision.label}</h2>
+        <span class="badge good">Recommended: ${decision.options.find((o) => o.value === decision.recommended).label}</span>
+      </div>
+      <div class="matrix">
+        ${decision.options
+          .map(
+            (option) => `
+          <label class="option">
+            <input type="radio" name="${decision.id}" value="${option.value}" ${state.selected[decision.id] === option.value ? "checked" : ""}>
+            <strong>${option.label}</strong>
+            <span class="muted">${option.summary}</span>
+            <p>${option.impact}</p>
+            <div class="score">
+              ${scoreRow("Cost", option.cost, true)}
+              ${scoreRow("Risk", option.risk, true)}
+              ${scoreRow("Reversible", option.reversibility, false)}
+              ${scoreRow("User effect", option.userImpact, false)}
+            </div>
+          </label>
+        `,
+          )
+          .join("")}
+      </div>
+    </article>
+  `,
+          )
+          .join("");
+      }
+
+      function scoreRow(label, value, inverse) {
+        const cls = inverse
+          ? value <= 2
+            ? "good"
+            : value >= 4
+              ? "bad"
+              : "warn"
+          : value >= 4
+            ? "good"
+            : value <= 2
+              ? "bad"
+              : "warn";
+        return `<div class="row"><span>${label}</span><span class="bar"><span class="${cls}" style="--value:${value}"></span></span></div>`;
+      }
+
+      function buildExport() {
+        const decisions = data.decisions.map((decision) => {
+          const selected = currentOption(decision);
+          return {
+            id: decision.id,
+            label: decision.label,
+            value: selected.value,
+            summary: selected.summary,
+            rationale:
+              selected.value === decision.recommended
+                ? "Recommended default accepted."
+                : "Selected by user.",
+            impact: selected.impact,
+            confidence: "high",
+          };
+        });
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: [],
+          agentPrompt: buildPrompt(decisions),
+        };
+      }
+
+      function buildPrompt(decisions) {
+        return `Use these tradeoff decisions as the source of truth.
+
+Goal: ${data.goal}
+
+Decisions:
+${decisions.map((d) => `- ${d.label}: ${d.summary}. ${d.impact}`).join("\n")}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Do not re-ask resolved decisions unless implementation evidence contradicts them.`;
+      }
+
+      function buildSummary(exportData) {
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: complete
+
+## Selected Decisions
+
+${exportData.decisions.map((d) => `- ${d.label}: ${d.summary} — ${d.impact}`).join("\n")}
+
+## Notes
+
+${exportData.notes || "None"}
+`;
+      }
+
+      function renderSummary() {
+        const exportData = buildExport();
+        document.getElementById("summary").innerHTML = exportData.decisions
+          .map(
+            (decision) => `
+    <div class="summary-item">
+      <strong>${decision.label}</strong>
+      <p>${decision.summary}</p>
+      <p class="muted">${decision.impact}</p>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target.matches('input[type="radio"]')) {
+          state.selected[event.target.name] = event.target.value;
+          renderSummary();
+        }
+      });
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      renderDecisions();
+      renderSummary();
+    </script>
+  </body>
+</html>

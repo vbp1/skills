@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clear Communication"
+  short_description: "Write clear user-facing status"
+  default_prompt: "Use $user-clear-communication to rewrite this status so the user can understand the outcome and next step."

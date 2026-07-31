@@ -1,0 +1,32 @@
+{
+  "text": "sqlpipe is a command-line tool that syncs Postgres tables to S3 as Parquet files. It connects to a Postgres database, reads the specified tables, and writes each table as a Parquet file to an S3 bucket. sqlpipe supports full syncs and incremental syncs. In an incremental sync, sqlpipe reads only the rows that changed since the last sync and appends them to the S3 output.\n\nsqlpipe builds a data lake from a Postgres database. It also feeds analytics tools that read Parquet files, and it archives table snapshots on a schedule. sqlpipe has no server component. You run it as a single binary. It needs Postgres credentials and S3 credentials to work.",
+  "input_tokens": 6725,
+  "output_tokens": 1718,
+  "cost_usd": 0.07694039999999999,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "readme-intro",
+  "type": "descriptive",
+  "run": 1,
+  "lint": {
+    "type": "descriptive",
+    "words": 112,
+    "sentences": 9,
+    "mean_sentence_words": 12.4,
+    "longest_sentence_words": 22,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

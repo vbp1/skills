@@ -1,0 +1,32 @@
+{
+  "text": "sqlpipe v2.0\n\nBreaking change: The `name` field of `/v2/users` no longer exists. The endpoint now returns two fields: `first_name` and `last_name`. Before you upgrade, update your client code to use these two fields.\n\nNew feature: The `--incremental` flag runs a pipe over new records only. Use this flag to skip records that the last run already processed. This flag cuts run time for large tables.\n\nPerformance: Parquet writes are 40% faster in this version. The new writer batches rows before it flushes them to disk. Large exports finish in less time and use less memory.\n\nUpgrade steps:\n1. Replace `name` with `first_name` and `last_name` in your client code.\n2. Test your integration against `/v2/users`.\n3. Deploy sqlpipe v2.0.",
+  "input_tokens": 6740,
+  "output_tokens": 2507,
+  "cost_usd": 0.08891439999999999,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "release-notes",
+  "type": "descriptive",
+  "run": 1,
+  "lint": {
+    "type": "descriptive",
+    "words": 120,
+    "sentences": 16,
+    "mean_sentence_words": 7.2,
+    "longest_sentence_words": 12,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

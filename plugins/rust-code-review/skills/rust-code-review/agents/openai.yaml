@@ -1,0 +1,4 @@
+interface:
+  display_name: "Rust Code Review"
+  short_description: "Rust review for LLM failure modes"
+  default_prompt: "Use $rust-code-review to review this Rust diff for subtle correctness, async, unsafe, and API hazards."

@@ -1,0 +1,31 @@
+{
+  "text": "Отчёт об аварии: потеря метрик\n\nВлияние: с 09:14 до 09:41 по московскому времени сервис не записал 18% метрик.\n\nПричина: выкладка в 09:10 отключила повтор запросов при ошибках записи. До этой выкладки сервис повторял запрос при ошибке и записывал метрику со второй или третьей попытки. После выкладки любая ошибка сразу приводила к потере метрики. Сервис не повторял запрос.\n\nИсправление: в 09:38 команда откатила выкладку и вернула повтор запросов. С 09:41 сервис снова записывает все метрики без потерь.",
+  "input_tokens": 6757,
+  "output_tokens": 5943,
+  "cost_usd": 0.1405614,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "incident-report",
+  "type": "descriptive",
+  "run": 2,
+  "lint": {
+    "type": "descriptive",
+    "words": 76,
+    "sentences": 9,
+    "mean_sentence_words": 8.2,
+    "longest_sentence_words": 16,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

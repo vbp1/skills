@@ -1,0 +1,31 @@
+{
+  "text": "Версия 3.0 меняет формат конфигурации. Поле `hostname` разделено на два отдельных поля: `host` и `datacenter`. Это изменение ломает совместимость с прежними конфигурациями.\n\n1. Откройте файл конфигурации.\n2. Замените поле `hostname` на два поля: `host` и `datacenter`.\n3. Укажите в `host` только имя узла, без домена дата-центра.\n4. Запустите `tsdb-agent --dry-run`, чтобы проверить новую конфигурацию без реального запуска.\n5. Если проверка прошла успешно, запустите `tsdb-agent` обычным способом.\n\nФлаг `--dry-run` — новая возможность. Он проверяет конфигурацию и показывает, какие действия выполнит агент, но не выполняет их.\n\nСжатие метрик стало быстрее на 40%. Агент использует меньше ресурсов CPU при той же нагрузке.\n\nПРЕДУПРЕЖДЕНИЕ: Обновите конфигурацию перед запуском версии 3.0. Без полей `host` и `datacenter` агент не запустится.",
+  "input_tokens": 6768,
+  "output_tokens": 388,
+  "cost_usd": 0.0573334,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "release-notes",
+  "type": "descriptive",
+  "run": 1,
+  "lint": {
+    "type": "descriptive",
+    "words": 116,
+    "sentences": 16,
+    "mean_sentence_words": 6.9,
+    "longest_sentence_words": 13,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 2
+    },
+    "violations_total": 2,
+    "violations_per_100w": 1.72
+  }
+}

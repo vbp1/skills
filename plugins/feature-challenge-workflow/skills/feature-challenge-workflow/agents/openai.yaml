@@ -1,0 +1,8 @@
+interface:
+  display_name: "Feature Challenge"
+  short_description: "Challenge features before coding"
+  default_prompt: "Use $feature-challenge-workflow to challenge this feature request before implementation."
+
+policy:
+  allow_implicit_invocation: true
+

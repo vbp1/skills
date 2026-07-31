@@ -1,0 +1,31 @@
+{
+  "text": "TSDB-агент собирает метрики с серверов и пишет их в хранилище временных рядов. Он опрашивает серверы через интервал, который задаёт файл `config.yaml`. Если сервер не отвечает, агент повторяет запрос три раза. После сбора агент записывает метрики в базу пачками. Пачка снижает нагрузку на базу при высокой частоте опроса.\n\nАгент работает в двух режимах: pull и push. В режиме pull агент сам запрашивает метрики с серверов. В режиме push серверы отправляют метрики агенту через HTTP. Выберите режим в поле `mode` файла `config.yaml`.\n\nАгент идемпотентен: повторная запись одной и той же метрики не создаёт дубликат в хранилище. Это свойство позволяет безопасно повторять запись после сбоя сети.",
+  "input_tokens": 6732,
+  "output_tokens": 287,
+  "cost_usd": 0.0555524,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "readme-intro",
+  "type": "descriptive",
+  "run": 2,
+  "lint": {
+    "type": "descriptive",
+    "words": 105,
+    "sentences": 13,
+    "mean_sentence_words": 8.1,
+    "longest_sentence_words": 12,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}

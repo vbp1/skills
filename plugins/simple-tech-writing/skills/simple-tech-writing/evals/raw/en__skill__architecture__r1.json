@@ -1,0 +1,32 @@
+{
+  "text": "sqlpipe moves data from Postgres to S3 in three stages, connected by streaming buffers instead of temporary files.\n\nA reader process queries Postgres and streams rows in batches. It never loads the full result set into memory.\n\nA converter reads these batches and builds Parquet row groups. Each row group holds one batch, so conversion runs at a steady, predictable memory cost.\n\nAn uploader writes each row group to S3 as part of a multipart upload. If a part fails, the uploader retries it without restarting the whole upload.\n\nThe three stages run concurrently. The reader, converter, and uploader each process a different batch at the same time, so pipeline throughput depends on the slowest stage, not on the sum of all stages.",
+  "input_tokens": 6738,
+  "output_tokens": 231,
+  "cost_usd": 0.0547274,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "architecture",
+  "type": "descriptive",
+  "run": 1,
+  "lint": {
+    "type": "descriptive",
+    "words": 123,
+    "sentences": 9,
+    "mean_sentence_words": 13.7,
+    "longest_sentence_words": 29,
+    "violations": {
+      "sentence_over_limit": 1,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 1,
+    "violations_per_100w": 0.81
+  }
+}

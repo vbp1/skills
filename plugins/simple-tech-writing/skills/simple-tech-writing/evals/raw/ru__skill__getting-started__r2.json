@@ -1,0 +1,31 @@
+{
+  "text": "# Начало работы\n\ntsdb-agent — агент сбора метрик для TSDB. Он собирает метрики с локального хоста и отправляет их на сервер TSDB.\n\n## Установка\n\nУстановите tsdb-agent командой:\n\n```\ncurl -sSL https://get.tsdb.dev | sh\n```\n\nКоманда работает на Linux и macOS. Для установки нужен доступ к интернету.\n\n## Настройка\n\nНастройте агент перед первым запуском. Файл `agent.yaml` содержит все параметры агента.\n\n1. Создайте файл `agent.yaml` в рабочей директории.\n2. Задайте адрес сервера TSDB в поле `endpoint`.\n3. Задайте токен доступа в поле `token`. Токен можно получить в консоли TSDB.\n4. Задайте интервал отправки метрик в поле `interval`. Значение по умолчанию — 10 секунд.\n\nЕсли у вас уже есть готовый `agent.yaml`, скопируйте его в рабочую директорию.\n\n## Первый запуск\n\nЗапустите агент командой:\n\n```\ntsdb-agent run --config agent.yaml\n```\n\nАгент подключится к серверу и начнёт отправку метрик. Проверьте вывод команды. Он показывает статус подключения.\n\nЕсли файл `agent.yaml` содержит ошибку, агент выведет сообщение об ошибке и остановится. Исправьте ошибку и запустите агент снова.",
+  "input_tokens": 2,
+  "output_tokens": 5585,
+  "cost_usd": 0.09669249999999999,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "getting-started",
+  "type": "procedural",
+  "run": 2,
+  "lint": {
+    "type": "procedural",
+    "words": 139,
+    "sentences": 20,
+    "mean_sentence_words": 6.8,
+    "longest_sentence_words": 13,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 1
+    },
+    "violations_total": 1,
+    "violations_per_100w": 0.72
+  }
+}

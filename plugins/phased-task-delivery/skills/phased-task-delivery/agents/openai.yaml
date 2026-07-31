@@ -1,0 +1,4 @@
+interface:
+  display_name: "Phased Task Delivery"
+  short_description: "Plan-first phased delivery with review gates"
+  default_prompt: "Use $phased-task-delivery to plan, review, implement, and validate this task in explicit phases."

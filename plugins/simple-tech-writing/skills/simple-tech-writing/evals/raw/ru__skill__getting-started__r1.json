@@ -1,0 +1,31 @@
+{
+  "text": "# Начало работы\n\nАгент `tsdb-agent` собирает метрики базы данных и отправляет их на сервер TSDB. Для начала работы установите агент, настройте файл `agent.yaml` и запустите агент.\n\n1. Установите агент этой командой:\n   `curl -sSL https://get.tsdb.dev | sh`\n2. Создайте файл `agent.yaml` рядом с бинарным файлом агента. Укажите в файле:\n   - адрес сервера TSDB;\n   - токен доступа;\n   - список метрик для сбора.\n3. Запустите агент этой командой:\n   `tsdb-agent run --config agent.yaml`\n\nЕсли агент запустился без ошибок, он выведет в терминале строку `agent started`. Если агент не находит файл `agent.yaml`, он завершит работу с ошибкой `config not found`.\n\nАгент пишет журнал работы в файл `/var/log/tsdb-agent.log`. Проверяйте этот файл при ошибках запуска.\n\nПеред запуском в продакшене проверьте все значения в файле `agent.yaml`. При изменении файла перезапустите агент. Так агент применит новые настройки.",
+  "input_tokens": 6769,
+  "output_tokens": 6525,
+  "cost_usd": 0.14939940000000002,
+  "lang": "ru",
+  "arm": "skill",
+  "scenario": "getting-started",
+  "type": "procedural",
+  "run": 1,
+  "lint": {
+    "type": "procedural",
+    "words": 120,
+    "sentences": 14,
+    "mean_sentence_words": 8.1,
+    "longest_sentence_words": 14,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 1
+    },
+    "violations_total": 1,
+    "violations_per_100w": 0.83
+  }
+}

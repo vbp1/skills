@@ -1,0 +1,31 @@
+{
+  "text": "# Начало работы с tsdb-agent\n\n## Установка\n\nУстановите `tsdb-agent` одной командой:\n\n```bash\ncurl -sSL https://get.tsdb.dev | sh\n```\n\nСкрипт скачает последнюю стабильную версию и добавит бинарник в `PATH`. Проверить установку можно командой `tsdb-agent --version`.\n\n## Настройка\n\nСоздайте файл конфигурации `agent.yaml` в рабочей директории агента. В нём описываются источники метрик, интервал сбора данных, адрес TSDB-сервера и учётные данные для подключения. Минимальный пример:\n\n```yaml\nserver: tsdb.example.com:4317\ninterval: 10s\nlabels:\n  env: production\n```\n\nНастройте параметры под вашу инфраструктуру — при необходимости добавьте разделы для тегов, фильтров и правил ретенции.\n\n## Первый запуск\n\nЗапустите агента, указав путь к конфигурации:\n\n```bash\ntsdb-agent run --config agent.yaml\n```\n\nАгент начнёт собирать и отправлять метрики согласно настройкам. Логи выводятся в stdout — проверьте их на наличие ошибок подключения. При успешном старте появится сообщение о готовности к сбору данных.",
+  "input_tokens": 2,
+  "output_tokens": 424,
+  "cost_usd": 0.014932299999999999,
+  "lang": "ru",
+  "arm": "baseline",
+  "scenario": "getting-started",
+  "type": "procedural",
+  "run": 2,
+  "lint": {
+    "type": "procedural",
+    "words": 97,
+    "sentences": 11,
+    "mean_sentence_words": 8.8,
+    "longest_sentence_words": 16,
+    "violations": {
+      "sentence_over_limit": 0,
+      "nominalization": 0,
+      "passive_sya": 1,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 1,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 2
+    },
+    "violations_total": 4,
+    "violations_per_100w": 4.12
+  }
+}

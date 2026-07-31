@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Component Variants</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f3ef;
+        --surface: #fffdf9;
+        --surface-2: #eee7de;
+        --text: #231f1a;
+        --muted: #74695e;
+        --border: rgba(35, 31, 26, 0.14);
+        --accent: #9f1239;
+        --accent-soft: rgba(159, 18, 57, 0.1);
+        --good: #0f766e;
+        --good-soft: rgba(15, 118, 110, 0.1);
+        --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #11100e;
+          --surface: #1a1815;
+          --surface-2: #25211d;
+          --text: #f4eee5;
+          --muted: #b5aa9c;
+          --border: rgba(244, 238, 229, 0.13);
+          --accent: #fb7185;
+          --accent-soft: rgba(251, 113, 133, 0.13);
+          --good: #2dd4bf;
+          --good-soft: rgba(45, 212, 191, 0.12);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at 50% 0,
+            var(--accent-soft),
+            transparent 32rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: min(1260px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 24px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      label.control {
+        display: grid;
+        gap: 4px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      select {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+      }
+
+      .variants {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .variant {
+        display: grid;
+        gap: 10px;
+        text-align: left;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .variant[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .sample {
+        border: 1px solid var(--border);
+        border-radius: var(--sample-radius, 8px);
+        padding: var(--sample-padding, 14px);
+        background: var(--surface);
+      }
+
+      .sample.elevated {
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+      }
+
+      .sample.inset {
+        background: var(--surface-2);
+        box-shadow: inset 0 0 0 1px var(--border);
+      }
+
+      .sample.accent {
+        border-left: 4px solid var(--accent);
+      }
+
+      .sample.horizontal {
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background: var(--good-soft);
+      }
+
+      .line {
+        height: 10px;
+        margin-top: 8px;
+        border-radius: 999px;
+        background: var(--border);
+      }
+
+      .line.short {
+        width: 60%;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .badge.ok {
+        color: var(--good);
+        background: var(--good-soft);
+      }
+
+      code,
+      pre {
+        font-family: var(--mono);
+      }
+
+      pre {
+        margin: 12px 0 0;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 90px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .summary-item {
+        margin-top: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      .fallback {
+        display: none;
+      }
+
+      @media (max-width: 1040px) {
+        .layout,
+        .variants {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Component Variant Matrix</h1>
+        <p id="goal" class="muted">
+          Choose the component treatment before Codex changes the UI.
+        </p>
+      </header>
+
+      <div class="layout">
+        <section class="panel">
+          <div class="controls">
+            <label class="control">
+              Density
+              <select id="density">
+                <option value="compact">Compact</option>
+                <option value="normal" selected>Normal</option>
+                <option value="roomy">Roomy</option>
+              </select>
+            </label>
+            <label class="control">
+              State
+              <select id="state">
+                <option value="default" selected>Default</option>
+                <option value="hover">Hover</option>
+                <option value="selected">Selected</option>
+              </select>
+            </label>
+            <label class="control">
+              Emphasis
+              <select id="emphasis">
+                <option value="quiet" selected>Quiet</option>
+                <option value="primary">Primary</option>
+              </select>
+            </label>
+          </div>
+          <div
+            id="variants"
+            class="variants"
+            aria-label="Component variants"
+          ></div>
+        </section>
+
+        <aside class="panel">
+          <h2>Selected Variant</h2>
+          <div id="summary"></div>
+          <pre id="snippet"></pre>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Combine variants, preserve a local design-system rule, or mention a state to avoid."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Component Variant Matrix",
+        goal: "Choose the component treatment before Codex changes the UI.",
+        nextAction: "implement the selected component variant",
+        variants: [
+          {
+            id: "outlined",
+            label: "Outlined",
+            summary: "Default card with a clear boundary and low visual noise.",
+            impact: "Best for repeated content in dense product interfaces.",
+            recommended: true,
+            className: "",
+          },
+          {
+            id: "elevated",
+            label: "Elevated",
+            summary: "Raised surface with a stronger shadow.",
+            impact: "Best for draggable items, active panels, or transient UI.",
+            recommended: false,
+            className: "elevated",
+          },
+          {
+            id: "accent",
+            label: "Accent stripe",
+            summary: "Outlined card with a strong left marker.",
+            impact: "Best for priority, warnings, and pinned content.",
+            recommended: false,
+            className: "accent",
+          },
+          {
+            id: "inset",
+            label: "Inset",
+            summary: "Recessed card that feels secondary.",
+            impact: "Best for nested content inside a larger panel.",
+            recommended: false,
+            className: "inset",
+          },
+          {
+            id: "horizontal",
+            label: "Horizontal",
+            summary: "Compact row with a leading visual marker.",
+            impact: "Best for sidebars, lists, and scan-heavy workflows.",
+            recommended: false,
+            className: "horizontal",
+          },
+        ],
+      };
+
+      const state = {
+        selected:
+          data.variants.find((item) => item.recommended)?.id ||
+          data.variants[0].id,
+        density: "normal",
+        state: "default",
+        emphasis: "quiet",
+        notes: "",
+      };
+
+      function selectedVariant() {
+        return data.variants.find((item) => item.id === state.selected);
+      }
+
+      function densityStyle() {
+        const map = {
+          compact: { padding: "10px", radius: "6px" },
+          normal: { padding: "14px", radius: "8px" },
+          roomy: { padding: "20px", radius: "8px" },
+        };
+        return map[state.density];
+      }
+
+      function renderSample(variant) {
+        const style = densityStyle();
+        return `
+          <div class="sample ${variant.className}" style="--sample-padding:${style.padding}; --sample-radius:${style.radius}">
+            ${variant.id === "horizontal" ? '<div class="icon"></div><div>' : ""}
+            <strong>${state.emphasis === "primary" ? "Primary item" : "Component item"}</strong>
+            <div class="line"></div>
+            <div class="line short"></div>
+            ${variant.id === "horizontal" ? "</div>" : ""}
+          </div>
+        `;
+      }
+
+      function renderVariants() {
+        document.getElementById("variants").innerHTML = data.variants
+          .map(
+            (variant) => `
+              <button class="variant" type="button" data-variant="${variant.id}" aria-pressed="${state.selected === variant.id}">
+                <div>
+                  <h3>${variant.label}</h3>
+                  ${variant.recommended ? '<span class="badge ok">Recommended</span>' : ""}
+                </div>
+                ${renderSample(variant)}
+                <p>${variant.summary}</p>
+                <p class="muted">${variant.impact}</p>
+              </button>
+            `,
+          )
+          .join("");
+      }
+
+      function buildSnippet() {
+        const variant = selectedVariant();
+        return `<Card variant="${variant.id}" density="${state.density}" state="${state.state}" emphasis="${state.emphasis}">
+  <Card.Title>Component item</Card.Title>
+  <Card.Description>Support copy goes here.</Card.Description>
+</Card>`;
+      }
+
+      function buildExport() {
+        const variant = selectedVariant();
+        const decisions = [
+          {
+            id: "component-variant",
+            label: "Component variant",
+            value: variant.id,
+            summary: `${variant.label}, ${state.density} density, ${state.state} state, ${state.emphasis} emphasis`,
+            rationale: variant.recommended
+              ? "Recommended default accepted."
+              : "Selected by user.",
+            impact: variant.impact,
+            confidence: "high",
+          },
+        ];
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: [],
+          agentPrompt: buildPrompt(variant),
+        };
+      }
+
+      function buildPrompt(variant) {
+        return `Use this component variant as the source of truth.
+
+Goal: ${data.goal}
+
+Selected variant: ${variant.label}
+Density: ${state.density}
+State: ${state.state}
+Emphasis: ${state.emphasis}
+Impact: ${variant.impact}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Match the existing design system naming where it differs from this template.`;
+      }
+
+      function buildSummary(exportData) {
+        const variant = selectedVariant();
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: complete
+
+## Selected Decisions
+
+- Component variant: ${variant.label}, ${state.density} density, ${state.state} state, ${state.emphasis} emphasis - ${variant.impact}
+
+## Notes
+
+${exportData.notes || "None"}
+`;
+      }
+
+      function renderSummary() {
+        const variant = selectedVariant();
+        document.getElementById("summary").innerHTML = `
+          <div class="summary-item">
+            <strong>${variant.label}</strong>
+            <p>${variant.summary}</p>
+            <p class="muted">${variant.impact}</p>
+          </div>
+        `;
+        document.getElementById("snippet").textContent = buildSnippet();
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      function render() {
+        renderVariants();
+        renderSummary();
+      }
+
+      document.addEventListener("click", (event) => {
+        const variant = event.target.closest("[data-variant]");
+        if (variant) {
+          state.selected = variant.dataset.variant;
+          render();
+        }
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+
+      document.addEventListener("change", (event) => {
+        if (event.target.id === "density") state.density = event.target.value;
+        if (event.target.id === "state") state.state = event.target.value;
+        if (event.target.id === "emphasis") state.emphasis = event.target.value;
+        render();
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      render();
+    </script>
+  </body>
+</html>

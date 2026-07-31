@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<!--
+  USER-STORIES STORYBOARD — canonical template.
+  Replace the marked spots, keep the engine. See references/storyboard.md.
+    1. <title> and header H1/tag        → the feature name.
+    2. :root / [data-theme=light] tokens → the PRODUCT's palette & fonts.
+    3. ACTORS                            → ONE ENTRY PER ROLE the feature involves
+                                           (1 for a single-user feature, 2 for a
+                                           pair, 3+ for multi-role). Colors are
+                                           auto-assigned from PALETTE by order.
+    4. SCENARIOS + ORDER                 → your user stories (from the plan). Each
+                                           step's `actors` map has one entry per
+                                           role key declared in ACTORS.
+    5. Sandbox tab                       → OPTIONAL example of an input-mode concept;
+                                           adapt to the feature, or delete the tab +
+                                           panel + JS block if there's no such concept.
+  NOTE ON FIT: this engine renders each actor's view as a message feed — ideal for
+  INTERACTION / COMMUNICATION features (people exchanging messages/events). If your
+  feature is a different shape (a form wizard, a dashboard, a settings flow), keep
+  the overall layout but make each actor window show that actor's SCREEN/STATE
+  instead of a chat feed — adapt clientHTML accordingly.
+  Self-contained: inline everything, no external requests (must work from file://).
+-->
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{FEATURE NAME}} · как это работает для пользователей</title>
+<style>
+  /* ----- THEME TOKENS: replace with the product's palette ----- */
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c222b; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --faint:#6e7681;
+    --sys:#7d8590; --alt:#d2a8ff; --warn:#f85149; --pending:#d29922; --accent:#58a6ff;
+    --online:#3fb950;
+    --radius:10px;
+  }
+  html[data-theme="light"]{
+    --bg:#ffffff; --panel:#f6f8fa; --panel2:#eef1f4; --border:#d0d7de;
+    --text:#1f2328; --muted:#636c76; --faint:#8c959f;
+    --sys:#6e7781; --alt:#8250df; --warn:#cf222e; --pending:#9a6700; --accent:#0969da;
+    --online:#1a7f37;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.5; display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  }
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  header{padding:14px 20px; border-bottom:1px solid var(--border); background:var(--panel);
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; flex:0 0 auto}
+  header h1{font-size:16px; margin:0; font-weight:650}
+  header .tag{margin-left:auto; color:var(--faint); font-size:12px; font-family:ui-monospace,monospace}
+  .themebtn{border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:8px;
+    padding:5px 10px;cursor:pointer;font-size:14px}
+  .tabs{display:flex;gap:4px}
+  .tabs button{border:1px solid var(--border);background:var(--panel2);color:var(--muted);border-radius:8px;
+    padding:5px 12px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
+  .tabs button:hover{border-color:var(--accent);color:var(--text)}
+  .tabs button.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--text)}
+  body[data-mode="scenarios"] .only-sandbox{display:none}
+  body[data-mode="sandbox"] .only-scenarios{display:none}
+
+  main{flex:1 1 auto; display:grid; grid-template-columns:300px 1fr; min-height:0}
+  .side{border-right:1px solid var(--border); background:var(--panel); overflow-y:auto; padding:16px}
+  .side h2{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:22px 0 10px; font-weight:600}
+  .side h2:first-child{margin-top:0}
+  .scn{display:flex; flex-direction:column; gap:8px}
+  .scn button{text-align:left; padding:10px 12px; border:1px solid var(--border); background:var(--panel2);
+    color:var(--text); border-radius:var(--radius); cursor:pointer; transition:.12s; line-height:1.35}
+  .scn button:hover{border-color:var(--accent)}
+  .scn button.active{border-color:var(--accent); background:color-mix(in srgb,var(--accent) 12%,transparent); box-shadow:0 0 0 1px var(--accent) inset}
+  .scn button .t{font-weight:600; display:block}
+  .scn button .d{font-size:12px; color:var(--muted); margin-top:2px}
+  .stepper{display:flex; align-items:center; gap:10px}
+  .stepper button{width:38px;height:34px;border:1px solid var(--border);background:var(--panel2);color:var(--text);
+    border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+  .stepper button:hover:not(:disabled){border-color:var(--accent)}
+  .stepper button:disabled{opacity:.35;cursor:default}
+  .stepper .count{font-family:ui-monospace,monospace;color:var(--muted);min-width:42px;text-align:center}
+  .dots{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+  .dots span{width:9px;height:9px;border-radius:50%;background:var(--faint);cursor:pointer;transition:.12s}
+  .dots span.on{background:var(--accent);transform:scale(1.15)}
+  .opt{display:flex;align-items:center;gap:10px;padding:8px 0;cursor:pointer;user-select:none}
+  .opt input{display:none}
+  .opt .box{width:34px;height:20px;border-radius:11px;background:var(--border);position:relative;transition:.15s;flex:0 0 auto}
+  .opt .box::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s}
+  .opt input:checked + .box{background:var(--accent)}
+  .opt input:checked + .box::after{transform:translateX(14px)}
+  .opt .lbl{font-size:13px}
+  .opt .lbl small{display:block;color:var(--muted);font-size:11px}
+
+  .view{display:flex;flex-direction:column;min-height:0;overflow:hidden;position:relative}
+  .stage{flex:0 1 auto;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+  .chats{display:grid;gap:16px} /* columns set at render time = number of actors */
+  .client{border:1px solid var(--border);border-radius:12px;background:var(--panel);display:flex;flex-direction:column;
+    min-height:300px;overflow:hidden;transition:.2s}
+  .client.offline{opacity:.55;filter:grayscale(.4)}
+  .client .top{padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel2);display:flex;align-items:center;gap:8px}
+  .who{font-weight:650;display:flex;align-items:center;gap:7px}
+  .who .av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0d1117;background:var(--ac,var(--accent))}
+  .top .pres{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+  .pdot{display:inline-flex;align-items:center;gap:4px}
+  .pdot i{width:7px;height:7px;border-radius:50%;background:var(--online);display:inline-block}
+  .offbadge{margin-left:auto;font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:20px;padding:1px 8px}
+  .feed{flex:1 1 auto;padding:14px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+  .msg{max-width:88%;padding:8px 11px;border-radius:12px;font-size:13px;position:relative;animation:pop .18s ease}
+  @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .msg .nm{font-size:11px;font-weight:600;margin-bottom:2px;opacity:.85}
+  /* user message: colored by its AUTHOR via inline --mc */
+  .msg.user{align-self:flex-end;background:color-mix(in srgb,var(--mc,var(--accent)) 16%,transparent);border:1px solid color-mix(in srgb,var(--mc,var(--accent)) 38%,transparent)}
+  .msg.user .nm{color:var(--mc,var(--accent))}
+  .msg.sys{align-self:flex-start;background:var(--panel2);border:1px solid var(--border)}
+  .msg.sys .nm{color:var(--sys)}
+  .msg.alt{align-self:center;max-width:94%;background:color-mix(in srgb,var(--alt) 12%,transparent);border:1px dashed color-mix(in srgb,var(--alt) 55%,transparent)}
+  .msg.alt .nm{color:var(--alt);display:flex;gap:6px;align-items:center}
+  .msg.alt .badge{font-size:9px;text-transform:uppercase;letter-spacing:.05em;background:var(--alt);color:#0d1117;border-radius:20px;padding:0 6px;font-weight:700}
+  .msg.pending{align-self:flex-end;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--faint) 10%,transparent),color-mix(in srgb,var(--faint) 10%,transparent) 8px,transparent 8px,transparent 16px);border:1px dashed var(--faint);color:var(--muted)}
+  .msg .qb{font-size:10px;color:var(--pending);border:1px solid var(--pending);border-radius:20px;padding:0 6px;margin-left:6px}
+  .cursor::after{content:"▍";color:var(--sys);animation:blink 1s steps(2) infinite;margin-left:1px}
+  @keyframes blink{50%{opacity:0}}
+  .interrupt{align-self:center;font-size:12px;color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent);border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);border-radius:20px;padding:4px 12px}
+  .foot{padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;min-height:34px}
+  .modepill{font-size:10px;border-radius:20px;padding:1px 8px;border:1px solid var(--border);color:var(--muted)}
+  .stopbtn{margin-left:auto;font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:2px 9px;background:transparent}
+  .caption{border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;background:var(--panel);padding:12px 16px;font-size:14px;line-height:1.55}
+  .caption b{color:var(--text)}
+
+  .server{border:1px solid var(--border);border-radius:10px;background:var(--panel)}
+  .server .sh{padding:8px 14px;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:flex;align-items:center;gap:8px}
+  .server .sh .dotpulse{width:7px;height:7px;border-radius:50%;background:var(--online)}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+  .cell{background:var(--panel);padding:10px 14px;min-height:64px}
+  .cell .k{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:5px}
+  .cell .v{font-size:13px;font-family:ui-monospace,monospace}
+  .cell.hot{background:color-mix(in srgb,var(--accent) 8%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 40%,transparent)}
+  .chip{display:inline-block;font-size:11px;font-family:ui-monospace,monospace;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:1px 7px;margin:2px 3px 0 0}
+  .empty{color:var(--faint)}
+  .ev{font-family:ui-monospace,monospace;color:var(--accent);font-size:12px}
+  .srvnote{padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+  /* collapsible bottom panel: collapsed by default; expands only into free space below the block */
+  .promptpanel{flex:0 0 auto;margin-top:auto;border-top:1px solid var(--border);background:var(--panel)}
+  .promptpanel.open{flex:1 1 0;margin-top:0;display:flex;flex-direction:column;min-height:0}
+  .pp-bar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:9px 16px}
+  .pp-toggle{flex:1;text-align:left;background:none;border:0;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:9px;padding:4px 0}
+  .pp-toggle:hover{color:var(--accent)}
+  .pp-toggle .chev{display:inline-block;transition:transform .2s;color:var(--muted);font-size:11px}
+  .promptpanel.open .pp-toggle .chev{transform:rotate(90deg)}
+  .pp-toggle .hint{color:var(--faint);font-weight:400;font-size:12px}
+  .pp-body{display:none}
+  .promptpanel.open .pp-body{flex:1 1 0;min-height:0;display:block;background:var(--panel);border-bottom:1px solid var(--border);padding:18px 20px;overflow-y:auto}
+  .pp-body .ptxt{font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap}
+  .copy{flex:0 0 auto;border:1px solid var(--accent);color:var(--accent);background:transparent;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600;transition:.12s}
+  .copy:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  .copy.ok{border-color:var(--online);color:var(--online)}
+
+  /* sandbox (optional) */
+  .sandbox{grid-column:1 / -1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .sbwrap{flex:1 1 auto;display:grid;grid-template-columns:1fr 320px;min-height:0}
+  .sbmain{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--border)}
+  .sbfeed{flex:1 1 auto;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px}
+  .sbfeed .hintrow{align-self:center;color:var(--faint);font-size:12px;margin:auto 0;text-align:center;max-width:420px;line-height:1.6}
+  .composer{flex:0 0 auto;border-top:1px solid var(--border);background:var(--panel);padding:12px 16px}
+  .willgo{font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;min-height:18px}
+  .willgo.a{color:var(--accent)} .willgo.b{color:var(--alt)}
+  .willgo .os{font-size:10px;text-transform:uppercase;letter-spacing:.05em;background:var(--accent);color:#0d1117;border-radius:20px;padding:0 6px;font-weight:700}
+  .inputrow{display:flex;align-items:stretch;gap:10px}
+  .modetgl{flex:0 0 auto;display:flex;border:1px solid var(--border);border-radius:9px;overflow:hidden}
+  .modetgl button{border:0;background:var(--panel2);color:var(--muted);padding:0 12px;cursor:pointer;font-size:12px;font-weight:600;transition:.12s}
+  .modetgl button.on.a{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+  .modetgl button.on.b{background:color-mix(in srgb,var(--alt) 18%,transparent);color:var(--alt)}
+  #sbinput{flex:1 1 auto;background:var(--panel2);border:1px solid var(--border);border-radius:9px;color:var(--text);padding:9px 12px;font-size:13px;font-family:inherit;outline:none}
+  #sbinput:focus{border-color:var(--accent)}
+  .sendbtn{flex:0 0 auto;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border-radius:9px;padding:0 16px;cursor:pointer;font-weight:600}
+  .cheat{margin-top:9px;font-size:11px;color:var(--faint);line-height:1.7}
+  .cheat code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:0 5px;color:var(--text);font-family:ui-monospace,monospace}
+  .sbside{padding:18px;overflow-y:auto;background:var(--panel)}
+  .sbside h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+  .way{border:1px solid var(--border);border-radius:9px;padding:11px 12px;margin-bottom:10px;background:var(--panel2)}
+  .way .wt{font-weight:650;font-size:13px;margin-bottom:4px}
+  .way .wd{font-size:12px;color:var(--muted);line-height:1.45}
+  .way code{background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:0 5px;color:var(--text);font-family:ui-monospace,monospace;font-size:11px}
+
+  ::-webkit-scrollbar{width:10px;height:10px} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px} ::-webkit-scrollbar-track{background:transparent}
+  @media(max-width:1100px){.chats{grid-template-columns:1fr !important}.grid{grid-template-columns:1fr}}
+  @media(max-width:1000px){.sbwrap{grid-template-columns:1fr}.sbside{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>{{FEATURE NAME}}</h1>
+  <div class="tabs">
+    <button id="tab-scn" class="on">Сценарии</button>
+    <button id="tab-sb">Песочница ввода</button> <!-- delete this tab if no input-mode concept -->
+  </div>
+  <button class="themebtn" id="themebtn" title="Тема">☀</button>
+  <span class="tag">{{PLAN REF}}</span>
+</header>
+
+<main>
+  <aside class="side only-scenarios">
+    <h2>Сценарий</h2>
+    <div class="scn" id="scn"></div>
+    <h2>Шаг сценария</h2>
+    <div class="stepper">
+      <button id="prev" title="Назад">‹</button>
+      <span class="count" id="count">1 / 1</span>
+      <button id="next" title="Дальше">›</button>
+    </div>
+    <div class="dots" id="dots"></div>
+    <h2>Настройки</h2>
+    <label class="opt">
+      <input type="checkbox" id="hood" checked><span class="box"></span>
+      <span class="lbl">Показывать, что под капотом<small>панель состояния под видимым шагом</small></span>
+    </label>
+  </aside>
+
+  <section class="view only-scenarios">
+    <div class="stage">
+      <div class="chats" id="chats"></div> <!-- actor windows generated at render time -->
+      <div class="caption" id="caption"></div>
+      <div class="server" id="server"></div>
+    </div>
+    <div class="promptpanel" id="promptpanel">
+      <div class="pp-body"><div class="ptxt mono" id="ptxt"></div></div>
+      <div class="pp-bar" id="pp-bar">
+        <button class="pp-toggle" id="pp-toggle"><span class="chev">▸</span> Описание сценария <span class="hint">— текст для копирования</span></button>
+        <button class="copy" id="copy">Скопировать</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SANDBOX: OPTIONAL example of an input-mode concept (here: pick recipient A/B).
+       Adapt to the feature's real input affordance, or delete this whole section + its JS block. -->
+  <section class="sandbox only-sandbox">
+    <div class="sbwrap">
+      <div class="sbmain">
+        <div class="sbfeed" id="sbfeed"></div>
+        <div class="composer" id="composer">
+          <div class="willgo" id="willgo"></div>
+          <div class="inputrow">
+            <div class="modetgl">
+              <button id="m-a" class="a">Режим A</button>
+              <button id="m-b" class="b">Режим B</button>
+            </div>
+            <input id="sbinput" type="text" autocomplete="off" placeholder="Сообщение…">
+            <button class="sendbtn" id="sbsend">Отправить ↵</button>
+          </div>
+          <div class="cheat"><code>/a</code> · <code>/b</code> в начале — сменить режим · <code>@a …</code> в режиме B — разово в A · тумблер держит режим</div>
+        </div>
+      </div>
+      <aside class="sbside">
+        <h3>Способы выбрать получателя (пример)</h3>
+        <div class="way"><div class="wt">Тумблер</div><div class="wd">Липкий режим: индикатор и переключатель. Держится, пока не сменишь.</div></div>
+        <div class="way"><div class="wt"><code>/a</code> · <code>/b</code></div><div class="wd">То же с клавиатуры: команда в начале строки меняет режим и исчезает из текста.</div></div>
+        <div class="way"><div class="wt"><code>@a …</code></div><div class="wd">Разовое исключение из режима B: одно сообщение в A, режим не меняется.</div></div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===== ACTORS: one entry per role in your feature (1..N). Keys are short ids
+   used in step data; colors are auto-assigned from PALETTE by declaration order. ===== */
+const ACTORS = { a:{name:'Пользователь A'}, b:{name:'Пользователь B'} };
+const PALETTE = ['#58a6ff','#3fb950','#d2a8ff','#f0883e','#db61a2','#e3b341'];
+const actorKeys = Object.keys(ACTORS);
+const actorColor = k => PALETTE[Math.max(0,actorKeys.indexOf(k)) % PALETTE.length];
+
+/* ===== message constructors (add/rename to fit your feature's kinds) =====
+   The defaults below cover a generic interaction; T/P/SI are examples drawn from a
+   chat-like feature (peer line / queued / interrupted) — keep, rename, or drop them. */
+const U  = (who, text, oneShot=false) => ({type:'user', who, text, oneShot}); // a person's own message/action
+const A  = (text, streaming=false)   => ({type:'sys', text, streaming});       // system/agent line
+const T  = (who, text)               => ({type:'alt', who, text});             // example: peer-to-peer / alt-channel line
+const P  = (who, text, pos)          => ({type:'pending', who, text, pos});    // example: queued/pending placeholder
+const SI = (who)                     => ({type:'interrupt', who});             // example: interruption notice
+
+/* ===== SCENARIOS: replace with your user stories (from the plan) =====
+   Each step has: cap, actors{<key>:{...}}, srv{...}.
+   actors{} has one entry per ACTORS key present in this step. Window flags:
+     online, presence[], mode, typing, stop(true|cond), closed, stale.
+   srv: free-form cells + note + hot[] (cell keys to highlight as "what changed"). */
+const SCENARIOS = {
+  'example-shared': {
+    title:'Двое видят одно',
+    desc:'Совместный просмотр',
+    story:'Как участник, я хочу видеть то же, что и коллега, в реальном времени.',
+    under:'Одно предложение из плана: как это устроено под капотом (транспорт/доступ).',
+    steps:[
+      {cap:'<b>A</b> начинает действие. <b>B</b> ещё не подключился.',
+        actors:{
+          a:{msgs:[U('a','Запускаю задачу'), A('Выполняю…', true)], online:true, presence:[]},
+          b:{msgs:[], online:false, closed:true}
+        },
+        srv:{state:'идёт у A', viewers:'A', ev:'started', note:'Пока действие видит только A.', hot:['state']}},
+      {cap:'<b>B</b> открывает то же и сразу видит живой результат — без перезагрузки.',
+        actors:{
+          a:{msgs:[U('a','Запускаю задачу'), A('Выполняю: шаг 1…', true)], online:true, presence:['B']},
+          b:{msgs:[U('a','Запускаю задачу'), A('Выполняю: шаг 1…', true)], online:true, presence:['A']}
+        },
+        srv:{state:'идёт у A', viewers:'A, B', ev:'viewer joined (B)', note:'B подключился к тому же потоку.', hot:['viewers','ev']}},
+      {cap:'Результат готов — оба видят его одновременно.',
+        actors:{
+          a:{msgs:[U('a','Запускаю задачу'), A('Готово: результат X.')], online:true, presence:['B']},
+          b:{msgs:[U('a','Запускаю задачу'), A('Готово: результат X.')], online:true, presence:['A']}
+        },
+        srv:{state:'свободно', viewers:'A, B', ev:'finished', note:'Доставлено обоим.', hot:['state']}}
+    ]
+  },
+  'example-mode': {
+    title:'Выбор получателя',
+    desc:'Режимы ввода (если есть)',
+    story:'Как участник, я хочу выбирать, кому адресовано сообщение.',
+    under:'Одно предложение из плана про маршрутизацию по режиму.',
+    steps:[
+      {cap:'<b>A</b> в режиме B пишет коллеге, а одной репликой <code>@a</code> — в A разово.',
+        actors:{
+          a:{msgs:[T('a','Это сообщение коллеге'), U('a','а это — разово в A', true), A('Принял…', true)], mode:'b', online:true, presence:['B']},
+          b:{msgs:[T('a','Это сообщение коллеге'), U('a','а это — разово в A', true), A('Принял…', true)], online:true, presence:['A']}
+        },
+        srv:{state:'разовая адресация', ev:'routed once → A', note:'Режим остался B; одно сообщение ушло в A.', hot:['ev']}}
+    ]
+  }
+};
+const ORDER = ['example-shared','example-mode']; // scenarios in display order
+
+/* ===== engine (keep as-is; extend renderers if you add message kinds, or replace
+   the feed rendering if actor windows should show a screen instead of a chat) ===== */
+const DEFAULTS = {scenario:ORDER[0], step:0, hood:true};
+const state = {...DEFAULTS};
+
+const scnEl = document.getElementById('scn');
+ORDER.forEach(key=>{
+  const s = SCENARIOS[key];
+  const b = document.createElement('button');
+  b.dataset.k = key;
+  b.innerHTML = `<span class="t">${s.title}</span><span class="d">${s.desc}</span>`;
+  b.onclick = ()=>{ state.scenario=key; state.step=0; renderAll(); };
+  scnEl.appendChild(b);
+});
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function nameOf(key){ return ACTORS[key]?.name || key; }
+function avatar(key){ return `<span class="av">${esc(String(key).trim()[0]||'?').toUpperCase()}</span>`; }
+function clientHTML(key, v){
+  const name = nameOf(key);
+  if(v.closed){
+    return `<div class="top"><span class="who">${avatar(key)}${esc(name)}</span><span class="tag">не подключён</span></div>
+      <div class="feed" style="align-items:center;justify-content:center;color:var(--faint)">— ещё не открыто —</div><div class="foot"></div>`;
+  }
+  const pres = (v.presence||[]).map(p=>`<span class="pdot"><i></i>${esc(p)}</span>`).join('');
+  const top = `<div class="top"><span class="who">${avatar(key)}${esc(name)}</span>
+    ${v.online ? `<span class="pres">${pres?('онлайн: '+pres):'<span class="empty">только вы</span>'}</span>` : `<span class="offbadge">нет связи</span>`}</div>`;
+  let feed = (v.msgs||[]).map(m=>{
+    if(m.type==='user'){const os=m.oneShot?' <span class="qb">разово</span>':'';return `<div class="msg user" style="--mc:${actorColor(m.who)}"><div class="nm">${esc(nameOf(m.who))}${os}</div>${esc(m.text)}</div>`;}
+    if(m.type==='sys'){return `<div class="msg sys"><div class="nm">система</div><span class="${m.streaming?'cursor':''}">${esc(m.text)}</span></div>`;}
+    if(m.type==='alt'){return `<div class="msg alt"><div class="nm">${esc(nameOf(m.who))} <span class="badge">коллеге</span></div>${esc(m.text)}</div>`;}
+    if(m.type==='pending'){return `<div class="msg pending"><div class="nm">${esc(nameOf(m.who))}<span class="qb">в очереди · #${m.pos}</span></div>${esc(m.text)}</div>`;}
+    if(m.type==='interrupt'){return `<div class="interrupt">⏹ ${esc(nameOf(m.who))} прервал(а)</div>`;}
+    return '';
+  }).join('');
+  if(v.stale) feed += `<div class="interrupt" style="color:var(--faint);border-color:var(--faint)">⏳ окно застыло — нет связи</div>`;
+  let left=''; if(v.mode) left=`<span class="modepill">режим: ${esc(String(v.mode).toUpperCase())}</span>`;
+  const stop = v.stop===true ? `<button class="stopbtn">⏹ Стоп</button>` : ''; // extend with conditional roles if needed
+  return top + `<div class="feed">${feed||'<span class="empty">—</span>'}</div><div class="foot">${left}${stop}</div>`;
+}
+function serverHTML(srv){
+  const hot=(k)=>(srv.hot||[]).includes(k)?' hot':'';
+  const cells = Object.keys(srv).filter(k=>!['note','hot'].includes(k)).map(k=>{
+    const val = srv[k];
+    const v = Array.isArray(val) ? (val.length?val.map(x=>`<span class="chip">${esc(x)}</span>`).join(''):'<span class="empty">пусто</span>')
+            : (k==='ev' ? `<span class="ev">${esc(val)}</span>` : esc(val));
+    return `<div class="cell${hot(k)}"><div class="k">${esc(k)}</div><div class="v">${v}</div></div>`;
+  }).join('');
+  return `<div class="sh"><span class="dotpulse"></span>что под капотом</div><div class="grid">${cells}</div>
+    ${srv.note?`<div class="srvnote">${esc(srv.note)}</div>`:''}`;
+}
+function renderAll(){
+  const s = SCENARIOS[state.scenario];
+  state.step = Math.max(0, Math.min(state.step, s.steps.length-1));
+  const st = s.steps[state.step];
+  document.querySelectorAll('.scn button').forEach(b=>b.classList.toggle('active', b.dataset.k===state.scenario));
+
+  // render one window per actor present in this step (fall back to all ACTORS)
+  const keys = Object.keys(st.actors || {});
+  const showKeys = keys.length ? keys : actorKeys;
+  const chatsEl = document.getElementById('chats');
+  chatsEl.style.gridTemplateColumns = `repeat(${showKeys.length}, minmax(0,1fr))`;
+  chatsEl.innerHTML = showKeys.map(k=>`<div class="client" id="cl-${k}"></div>`).join('');
+  showKeys.forEach(k=>{
+    const v = (st.actors && st.actors[k]) || {online:false, closed:true};
+    const el = document.getElementById('cl-'+k);
+    el.className = 'client' + (v.online===false ? ' offline' : '');
+    el.style.setProperty('--ac', actorColor(k));
+    el.innerHTML = clientHTML(k, v);
+  });
+
+  document.getElementById('caption').innerHTML = st.cap;
+  const srvEl = document.getElementById('server');
+  srvEl.style.display = state.hood ? '' : 'none';
+  if(state.hood) srvEl.innerHTML = serverHTML(st.srv);
+
+  document.getElementById('count').textContent = `${state.step+1} / ${s.steps.length}`;
+  document.getElementById('prev').disabled = state.step===0;
+  document.getElementById('next').disabled = state.step===s.steps.length-1;
+  const dots = document.getElementById('dots');
+  dots.innerHTML = s.steps.map((_,i)=>`<span class="${i===state.step?'on':''}" data-i="${i}"></span>`).join('');
+  dots.querySelectorAll('span').forEach(d=> d.onclick=()=>{state.step=+d.dataset.i; renderAll();});
+  updatePrompt();
+}
+function stripTags(s){return s.replace(/<[^>]+>/g,'');}
+function updatePrompt(){
+  const s = SCENARIOS[state.scenario];
+  const lines = [`Сценарий «${s.title}».`, '', 'User story: '+s.story, '', 'Шаги:'];
+  s.steps.forEach((st,i)=> lines.push(`  ${i+1}. ${stripTags(st.cap)}`));
+  lines.push('', 'Под капотом: '+s.under);
+  document.getElementById('ptxt').textContent = lines.join('\n');
+}
+document.getElementById('prev').onclick=()=>{ if(state.step>0){state.step--; renderAll();} };
+document.getElementById('next').onclick=()=>{ const n=SCENARIOS[state.scenario].steps.length; if(state.step<n-1){state.step++; renderAll();} };
+document.getElementById('hood').onchange=e=>{ state.hood=e.target.checked; renderAll(); };
+document.addEventListener('keydown', e=>{ if(document.body.dataset.mode!=='scenarios') return;
+  if(e.key==='ArrowRight') document.getElementById('next').click();
+  if(e.key==='ArrowLeft') document.getElementById('prev').click(); });
+document.getElementById('copy').onclick=()=>{ navigator.clipboard.writeText(document.getElementById('ptxt').textContent).then(()=>{
+  const b=document.getElementById('copy'); b.textContent='Скопировано!'; b.classList.add('ok'); setTimeout(()=>{b.textContent='Скопировать'; b.classList.remove('ok');},1400); }); };
+
+/* collapsible bottom panel */
+const ppPanel=document.getElementById('promptpanel'), ppBar=document.getElementById('pp-bar');
+ppBar.addEventListener('click', e=>{ if(e.target.closest('#copy')) return; ppPanel.classList.toggle('open'); });
+
+/* theme toggle */
+const themeBtn=document.getElementById('themebtn');
+themeBtn.onclick=()=>{ const next=document.documentElement.dataset.theme==='light'?'dark':'light';
+  document.documentElement.dataset.theme=next; themeBtn.textContent= next==='light'?'🌙':'☀'; };
+
+/* tabs */
+function setMode(m){ document.body.dataset.mode=m;
+  document.getElementById('tab-scn').classList.toggle('on', m==='scenarios');
+  document.getElementById('tab-sb').classList.toggle('on', m==='sandbox');
+  if(m==='sandbox') setTimeout(()=>sbInput.focus(),0); }
+document.getElementById('tab-scn').onclick=()=>setMode('scenarios');
+document.getElementById('tab-sb').onclick=()=>setMode('sandbox');
+
+/* ===== SANDBOX logic (delete with its markup if unused) ===== */
+const sb={mode:'a', feed:[]}; const sbInput=document.getElementById('sbinput');
+function sbToggle(){ document.getElementById('m-a').classList.toggle('on', sb.mode==='a');
+  document.getElementById('m-b').classList.toggle('on', sb.mode==='b'); }
+function sbWill(){ const v=sbInput.value.trim(); const el=document.getElementById('willgo'); let c,t;
+  if(sb.mode==='b' && /^@a\b/i.test(v)){ c='a'; t='<span>↵</span> разово в <b>A</b> <span class="os">разово</span> · режим остаётся B'; }
+  else if(sb.mode==='a'){ c='a'; t='<span>↵</span> уйдёт в <b>A</b>'; }
+  else { c='b'; t='<span>↵</span> уйдёт в <b>B</b>'; }
+  el.className='willgo '+c; el.innerHTML=t; }
+function sbRenderFeed(){ const f=document.getElementById('sbfeed');
+  if(!sb.feed.length){ f.innerHTML='<div class="hintrow">Напишите сообщение, попробуйте <b>/b</b> для смены режима и <b>@a</b> для разовой отправки в A.</div>'; return; }
+  f.innerHTML=sb.feed.map(m=>{ if(m.aud==='b') return `<div class="msg alt"><div class="nm">Вы <span class="badge">B</span></div>${esc(m.text)}</div>`;
+    const os=m.oneShot?' <span class="qb">разово</span>':''; return `<div class="msg user" style="--mc:var(--accent)"><div class="nm">Вы → A${os}</div>${esc(m.text)}</div>`; }).join('');
+  f.scrollTop=f.scrollHeight; }
+function sbRender(){ sbToggle(); sbWill(); sbRenderFeed(); }
+function sbStripSlash(){ const m=sbInput.value.match(/^\/(a|b)(\s)/i); if(m){ sb.mode=m[1].toLowerCase(); sbInput.value=sbInput.value.slice(m[0].length); sbRender(); } }
+function sbSend(){ let text=sbInput.value; const sm=text.match(/^\/(a|b)(\s+|$)/i); if(sm){ sb.mode=sm[1].toLowerCase(); text=text.slice(sm[0].length); }
+  text=text.trim(); if(!text){ sbInput.value=''; sbRender(); return; }
+  let aud=sb.mode, oneShot=false; if(sb.mode==='b'){ const am=text.match(/^@a\s+/i); if(am){ aud='a'; oneShot=true; text=text.slice(am[0].length); } }
+  if(!text){ sbInput.value=''; sbRender(); return; } sb.feed.push({aud, oneShot, text}); sbInput.value=''; sbRender(); }
+sbInput.addEventListener('input', ()=>{ sbStripSlash(); sbWill(); });
+sbInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sbSend(); } });
+document.getElementById('sbsend').onclick=sbSend;
+document.getElementById('m-a').onclick=()=>{ sb.mode='a'; sbInput.focus(); sbRender(); };
+document.getElementById('m-b').onclick=()=>{ sb.mode='b'; sbInput.focus(); sbRender(); };
+
+setMode('scenarios');
+sbRender();
+renderAll();
+</script>
+</body>
+</html>

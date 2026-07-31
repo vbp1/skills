@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Code Approaches</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f5f2eb;
+        --surface: #fffdf8;
+        --surface-2: #ece5db;
+        --text: #24201a;
+        --muted: #6f6659;
+        --border: rgba(36, 32, 26, 0.14);
+        --accent: #0f766e;
+        --accent-soft: rgba(15, 118, 110, 0.1);
+        --warn: #b45309;
+        --warn-soft: rgba(180, 83, 9, 0.12);
+        --bad: #be123c;
+        --bad-soft: rgba(190, 18, 60, 0.1);
+        --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #11100d;
+          --surface: #1a1814;
+          --surface-2: #252119;
+          --text: #f4eee3;
+          --muted: #b7ab9a;
+          --border: rgba(244, 238, 227, 0.13);
+          --accent: #2dd4bf;
+          --accent-soft: rgba(45, 212, 191, 0.12);
+          --warn: #fbbf24;
+          --warn-soft: rgba(251, 191, 36, 0.12);
+          --bad: #fb7185;
+          --bad-soft: rgba(251, 113, 133, 0.13);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top right,
+            var(--accent-soft),
+            transparent 34rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: min(1260px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 360px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 24px;
+      }
+
+      .approaches {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .panel,
+      .approach {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .approach {
+        display: grid;
+        gap: 12px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .approach[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+
+      .approach-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .num {
+        color: var(--accent);
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .badge.ok {
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .badge.warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+
+      .code {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      pre {
+        margin: 0;
+        padding: 12px;
+        font: 12px/1.45 var(--mono);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .scores {
+        display: grid;
+        gap: 7px;
+      }
+
+      .score {
+        display: grid;
+        grid-template-columns: 84px 1fr;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .bar {
+        height: 7px;
+        border-radius: 999px;
+        background: var(--border);
+        overflow: hidden;
+      }
+
+      .bar span {
+        display: block;
+        width: calc(var(--value) * 20%);
+        height: 100%;
+        background: var(--accent);
+      }
+
+      .summary-item {
+        margin-top: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 90px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .fallback {
+        display: none;
+      }
+
+      @media (max-width: 1060px) {
+        .layout,
+        .approaches {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Three Code Approaches</h1>
+        <p id="goal" class="muted">
+          Compare implementation paths and choose the one Codex should use.
+        </p>
+      </header>
+
+      <div class="layout">
+        <section
+          id="approaches"
+          class="approaches"
+          aria-label="Code approaches"
+        ></section>
+
+        <aside class="panel">
+          <h2>Selected Approach</h2>
+          <div id="summary"></div>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Constraints, library rules, compatibility, or codebase details."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Three Code Approaches",
+        goal: "Compare implementation paths and choose the one Codex should use.",
+        nextAction: "implement the selected approach",
+        approaches: [
+          {
+            id: "local-small",
+            label: "Small local implementation",
+            summary: "Write the smallest code that solves the current case.",
+            impact:
+              "Fast, reviewable, and dependency-free when behavior is simple.",
+            recommended: true,
+            effort: 2,
+            risk: 2,
+            reuse: 2,
+            reversibility: 5,
+            code: "function normalize(input) {\n  return input.trim().toLowerCase();\n}",
+          },
+          {
+            id: "shared-helper",
+            label: "Shared helper or hook",
+            summary: "Extract a reusable local abstraction.",
+            impact: "Best when the same behavior appears in multiple places.",
+            recommended: false,
+            effort: 3,
+            risk: 2,
+            reuse: 5,
+            reversibility: 4,
+            code: "export function useStableValue(value, delayMs) {\n  // Shared behavior lives behind one tested API.\n}",
+          },
+          {
+            id: "external-library",
+            label: "Mature external dependency",
+            summary: "Use a proven package instead of local code.",
+            impact:
+              "Useful when correctness is subtle, but adds maintenance and license review.",
+            recommended: false,
+            effort: 3,
+            risk: 4,
+            reuse: 4,
+            reversibility: 2,
+            code: "import { feature } from 'well-maintained-package';\n\nfeature.configure(options);",
+          },
+        ],
+      };
+
+      const state = {
+        selected:
+          data.approaches.find((item) => item.recommended)?.id ||
+          data.approaches[0].id,
+        notes: "",
+      };
+
+      function selectedApproach() {
+        return data.approaches.find((item) => item.id === state.selected);
+      }
+
+      function score(label, value, inverse = false) {
+        const tone = inverse
+          ? value <= 2
+            ? "ok"
+            : value >= 4
+              ? "warn"
+              : ""
+          : value >= 4
+            ? "ok"
+            : value <= 2
+              ? "warn"
+              : "";
+        return `<div class="score"><span>${label}</span><span class="bar"><span class="${tone}" style="--value:${value}"></span></span></div>`;
+      }
+
+      function renderApproaches() {
+        document.getElementById("approaches").innerHTML = data.approaches
+          .map(
+            (item, index) => `
+              <button class="approach" type="button" data-approach="${item.id}" aria-pressed="${state.selected === item.id}">
+                <div class="approach-head">
+                  <div>
+                    <span class="num">0${index + 1}</span>
+                    <h2>${item.label}</h2>
+                  </div>
+                  ${item.recommended ? '<span class="badge ok">Recommended</span>' : ""}
+                </div>
+                <p>${item.summary}</p>
+                <p class="muted">${item.impact}</p>
+                <div class="code"><pre>${item.code}</pre></div>
+                <div class="scores">
+                  ${score("Effort", item.effort, true)}
+                  ${score("Risk", item.risk, true)}
+                  ${score("Reuse", item.reuse)}
+                  ${score("Reversible", item.reversibility)}
+                </div>
+              </button>
+            `,
+          )
+          .join("");
+      }
+
+      function buildExport() {
+        const selected = selectedApproach();
+        const decisions = [
+          {
+            id: "code-approach",
+            label: "Code approach",
+            value: selected.id,
+            summary: selected.summary,
+            rationale: selected.recommended
+              ? "Recommended default accepted."
+              : "Selected by user.",
+            impact: selected.impact,
+            confidence: "high",
+          },
+        ];
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: [],
+          agentPrompt: buildPrompt(selected),
+        };
+      }
+
+      function buildPrompt(selected) {
+        return `Use this code approach as the source of truth.
+
+Goal: ${data.goal}
+
+Selected approach: ${selected.label}
+Meaning: ${selected.summary}
+Impact: ${selected.impact}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Do not switch to a different approach unless codebase evidence makes this choice unsafe.`;
+      }
+
+      function buildSummary(exportData) {
+        const selected = selectedApproach();
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: complete
+
+## Selected Decisions
+
+- Code approach: ${selected.label} - ${selected.impact}
+
+## Notes
+
+${exportData.notes || "None"}
+`;
+      }
+
+      function renderSummary() {
+        const selected = selectedApproach();
+        document.getElementById("summary").innerHTML = `
+          <div class="summary-item">
+            <strong>${selected.label}</strong>
+            <p>${selected.summary}</p>
+            <p class="muted">${selected.impact}</p>
+          </div>
+        `;
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      document.addEventListener("click", (event) => {
+        const approach = event.target.closest("[data-approach]");
+        if (approach) {
+          state.selected = approach.dataset.approach;
+          renderApproaches();
+          renderSummary();
+        }
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      renderApproaches();
+      renderSummary();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "text": "Getting Started\n\nSqlpipe is a command-line tool for data pipelines.\n\nFollow these steps to run your first pipeline:\n\n1. Install sqlpipe:\n   `curl -sSL https://get.sqlpipe.dev | sh`\n2. Create a configuration file named `sqlpipe.yaml`. Add your source, your destination, and your pipeline steps to this file.\n3. Run sqlpipe with this config:\n   `sqlpipe run --config sqlpipe.yaml`\n\nSqlpipe reads `sqlpipe.yaml` and runs the pipeline steps in order. If `sqlpipe.yaml` has an error, sqlpipe prints the line number and stops.\n\nIf you change the config file, run sqlpipe again to apply the change. Sqlpipe does not watch the file for changes automatically.\n\nFor the full list of config options, see the reference at `sqlpipe.yaml.example` in the install directory.",
+  "input_tokens": 6763,
+  "output_tokens": 1558,
+  "cost_usd": 0.07480939999999998,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "getting-started",
+  "type": "procedural",
+  "run": 1,
+  "lint": {
+    "type": "procedural",
+    "words": 109,
+    "sentences": 11,
+    "mean_sentence_words": 9.6,
+    "longest_sentence_words": 16,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 1
+    },
+    "violations_total": 1,
+    "violations_per_100w": 0.92
+  }
+}

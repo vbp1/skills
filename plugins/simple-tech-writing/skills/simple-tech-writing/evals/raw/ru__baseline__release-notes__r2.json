@@ -1,0 +1,31 @@
+{
+  "text": "Release notes for `tsdb-agent` 3.0\n\n**Breaking change:** the `hostname` configuration field has been split into two separate fields, `host` and `datacenter`. Configurations using the old `hostname` field will no longer work and must be updated before upgrading — set `host` to the machine's identifier and `datacenter` to its location. There is no automatic migration, so review your config files and any provisioning scripts (Ansible, Terraform, etc.) that generate them.\n\n**New:** a `--dry-run` flag lets you validate configuration and preview collector behavior without sending data, useful for testing changes safely before rollout.\n\n**Improved:** the metrics compression pipeline is now roughly 40% faster, reducing CPU overhead and improving throughput on high-cardinality workloads.\n\nWe recommend testing this release in a staging environment before deploying to production due to the configuration format change.",
+  "input_tokens": 2954,
+  "output_tokens": 289,
+  "cost_usd": 0.029743400000000003,
+  "lang": "ru",
+  "arm": "baseline",
+  "scenario": "release-notes",
+  "type": "descriptive",
+  "run": 2,
+  "lint": {
+    "type": "descriptive",
+    "words": 130,
+    "sentences": 6,
+    "mean_sentence_words": 21.7,
+    "longest_sentence_words": 28,
+    "violations": {
+      "sentence_over_limit": 1,
+      "nominalization": 0,
+      "passive_sya": 0,
+      "gerund": 0,
+      "participle": 0,
+      "hedge": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 1,
+    "violations_per_100w": 0.77
+  }
+}

@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flow Prototype</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f3f6f6;
+        --surface: #ffffff;
+        --surface-2: #e8eeee;
+        --text: #172326;
+        --muted: #657477;
+        --border: rgba(23, 35, 38, 0.14);
+        --accent: #0e7490;
+        --accent-soft: rgba(14, 116, 144, 0.1);
+        --good: #047857;
+        --good-soft: rgba(4, 120, 87, 0.1);
+        --warn: #b45309;
+        --warn-soft: rgba(180, 83, 9, 0.12);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e1416;
+          --surface: #151d20;
+          --surface-2: #1f2a2e;
+          --text: #edf7f9;
+          --muted: #9dafb4;
+          --border: rgba(237, 247, 249, 0.12);
+          --accent: #22d3ee;
+          --accent-soft: rgba(34, 211, 238, 0.12);
+          --good: #34d399;
+          --good-soft: rgba(52, 211, 153, 0.12);
+          --warn: #fbbf24;
+          --warn-soft: rgba(251, 191, 36, 0.12);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top left,
+            var(--accent-soft),
+            transparent 34rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          14px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      main {
+        width: min(1220px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(30px, 4vw, 48px);
+        line-height: 1.05;
+      }
+
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr) 340px;
+        gap: 18px;
+        align-items: start;
+        margin-top: 24px;
+      }
+
+      .panel,
+      .screen {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .step-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .step {
+        width: 100%;
+        text-align: left;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .step[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .screen {
+        min-height: 560px;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        gap: 18px;
+      }
+
+      .mock-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .mock-body {
+        display: grid;
+        align-content: start;
+        gap: 14px;
+      }
+
+      .mock-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        background: var(--surface-2);
+      }
+
+      .choice-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .flow-action {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .flow-action.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .flow-action.warn {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .badge.ok {
+        color: var(--good);
+        background: var(--good-soft);
+      }
+
+      .summary-item {
+        margin-top: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 90px;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+        resize: vertical;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 11px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .fallback {
+        display: none;
+      }
+
+      @media (max-width: 1000px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .screen {
+          min-height: 420px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1 id="title">Clickable Flow Prototype</h1>
+        <p id="goal" class="muted">
+          Walk through the interaction and choose the flow Codex should
+          implement.
+        </p>
+      </header>
+
+      <div class="layout">
+        <aside class="panel">
+          <h2>Steps</h2>
+          <div id="steps" class="step-list"></div>
+        </aside>
+
+        <section class="screen" aria-label="Prototype screen">
+          <div class="mock-bar">
+            <strong id="screen-title"></strong>
+            <span id="screen-badge" class="badge ok"></span>
+          </div>
+          <div id="screen-body" class="mock-body"></div>
+          <div id="screen-actions" class="choice-row"></div>
+        </section>
+
+        <aside class="panel">
+          <h2>Flow Decision</h2>
+          <div id="summary"></div>
+          <label>
+            <span class="muted">Notes</span>
+            <textarea
+              id="notes"
+              placeholder="Friction, missing state, copy preference, or flow changes."
+            ></textarea>
+          </label>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea id="fallback" class="fallback"></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Clickable Flow Prototype",
+        goal: "Walk through the interaction and choose the flow Codex should implement.",
+        nextAction: "implement the selected interaction flow",
+        flows: {
+          guided: {
+            id: "guided",
+            label: "Guided step-by-step flow",
+            summary: "Lead the user through one decision at a time.",
+            impact:
+              "Best when mistakes are costly or the workflow is unfamiliar.",
+          },
+          direct: {
+            id: "direct",
+            label: "Direct single-screen flow",
+            summary: "Put all controls on one screen.",
+            impact: "Best for experienced users and repeated operations.",
+          },
+        },
+        screens: [
+          {
+            id: "start",
+            label: "Start",
+            badge: "Entry",
+            body: [
+              "Show the main intent, current context, and one primary action.",
+              "Secondary actions stay visible but visually quiet.",
+            ],
+            actions: [
+              {
+                label: "Start guided flow",
+                target: "configure",
+                flow: "guided",
+                primary: true,
+              },
+              {
+                label: "Use direct editor",
+                target: "review",
+                flow: "direct",
+                primary: false,
+              },
+            ],
+          },
+          {
+            id: "configure",
+            label: "Configure",
+            badge: "Guided",
+            body: [
+              "Ask for the required inputs only.",
+              "Show defaults and consequences near each choice.",
+            ],
+            actions: [
+              {
+                label: "Continue",
+                target: "review",
+                flow: "guided",
+                primary: true,
+              },
+              {
+                label: "Back",
+                target: "start",
+                flow: "guided",
+                primary: false,
+              },
+            ],
+          },
+          {
+            id: "review",
+            label: "Review",
+            badge: "Decision",
+            body: [
+              "Summarize the selected path before commit.",
+              "Let the user confirm, edit, or export the resulting instruction.",
+            ],
+            actions: [
+              {
+                label: "Confirm flow",
+                target: "done",
+                flow: null,
+                primary: true,
+              },
+              { label: "Revise", target: "start", flow: null, primary: false },
+            ],
+          },
+          {
+            id: "done",
+            label: "Done",
+            badge: "Export",
+            body: [
+              "The flow choice is ready to send back to Codex.",
+              "Copy the summary, prompt, or JSON from the right panel.",
+            ],
+            actions: [
+              { label: "Restart", target: "start", flow: null, primary: false },
+            ],
+          },
+        ],
+      };
+
+      const state = {
+        screen: "start",
+        selectedFlow: "guided",
+        visited: ["start"],
+        notes: "",
+      };
+
+      function currentScreen() {
+        return data.screens.find((screen) => screen.id === state.screen);
+      }
+
+      function selectedFlow() {
+        return data.flows[state.selectedFlow];
+      }
+
+      function goTo(target, flow) {
+        state.screen = target;
+        if (flow) state.selectedFlow = flow;
+        if (!state.visited.includes(target)) state.visited.push(target);
+        render();
+      }
+
+      function renderSteps() {
+        document.getElementById("steps").innerHTML = data.screens
+          .map(
+            (screen) => `
+              <button class="step" type="button" data-step="${screen.id}" aria-pressed="${state.screen === screen.id}">
+                <strong>${screen.label}</strong>
+                <p class="muted">${state.visited.includes(screen.id) ? "Visited" : "Not visited"}</p>
+              </button>
+            `,
+          )
+          .join("");
+      }
+
+      function renderScreen() {
+        const screen = currentScreen();
+        document.getElementById("screen-title").textContent = screen.label;
+        document.getElementById("screen-badge").textContent = screen.badge;
+        document.getElementById("screen-body").innerHTML = screen.body
+          .map((line) => `<div class="mock-card">${line}</div>`)
+          .join("");
+        document.getElementById("screen-actions").innerHTML = screen.actions
+          .map(
+            (action) => `
+              <button class="flow-action ${action.primary ? "primary" : ""}" type="button" data-target="${action.target}" data-flow="${action.flow || ""}">
+                ${action.label}
+              </button>
+            `,
+          )
+          .join("");
+      }
+
+      function buildExport() {
+        const flow = selectedFlow();
+        const decisions = [
+          {
+            id: "interaction-flow",
+            label: "Interaction flow",
+            value: flow.id,
+            summary: flow.summary,
+            rationale: "Selected by walking through the prototype.",
+            impact: flow.impact,
+            confidence: "high",
+          },
+        ];
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: [],
+          agentPrompt: buildPrompt(flow),
+        };
+      }
+
+      function buildPrompt(flow) {
+        return `Use this interaction flow as the source of truth.
+
+Goal: ${data.goal}
+
+Selected flow: ${flow.label}
+Meaning: ${flow.summary}
+Impact: ${flow.impact}
+Visited screens: ${state.visited.join(" -> ")}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}. Preserve the selected flow unless usability evidence contradicts it.`;
+      }
+
+      function buildSummary(exportData) {
+        const flow = selectedFlow();
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: complete
+
+## Selected Decisions
+
+- Interaction flow: ${flow.label} - ${flow.impact}
+
+## Notes
+
+${exportData.notes || "None"}
+`;
+      }
+
+      function renderSummary() {
+        const flow = selectedFlow();
+        document.getElementById("summary").innerHTML = `
+          <div class="summary-item">
+            <strong>${flow.label}</strong>
+            <p>${flow.summary}</p>
+            <p class="muted">${flow.impact}</p>
+          </div>
+        `;
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      function render() {
+        renderSteps();
+        renderScreen();
+        renderSummary();
+      }
+
+      document.addEventListener("click", (event) => {
+        const action = event.target.closest("[data-target]");
+        if (action) goTo(action.dataset.target, action.dataset.flow);
+        const step = event.target.closest("[data-step]");
+        if (step) goTo(step.dataset.step, null);
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+
+      document.getElementById("title").textContent = data.title;
+      document.getElementById("goal").textContent = data.goal;
+      render();
+    </script>
+  </body>
+</html>

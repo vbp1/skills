@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Decision Questionnaire</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #f6f3ef;
+        --surface: #fffdf9;
+        --surface-2: #ede7df;
+        --text: #1f2933;
+        --muted: #697586;
+        --border: rgba(31, 41, 51, 0.14);
+        --accent: #0f766e;
+        --accent-soft: rgba(15, 118, 110, 0.1);
+        --warn: #b45309;
+        --warn-soft: rgba(180, 83, 9, 0.12);
+        --bad: #be123c;
+        --bad-soft: rgba(190, 18, 60, 0.1);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #101418;
+          --surface: #171d22;
+          --surface-2: #202830;
+          --text: #edf2f7;
+          --muted: #9aa8b7;
+          --border: rgba(237, 242, 247, 0.12);
+          --accent: #2dd4bf;
+          --accent-soft: rgba(45, 212, 191, 0.13);
+          --warn: #f59e0b;
+          --warn-soft: rgba(245, 158, 11, 0.12);
+          --bad: #fb7185;
+          --bad-soft: rgba(251, 113, 133, 0.13);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at top left,
+            var(--accent-soft),
+            transparent 34rem
+          ),
+          var(--bg);
+        color: var(--text);
+        font:
+          15px/1.5 ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+      main {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 32px 0;
+      }
+      header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 24px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: clamp(28px, 4vw, 46px);
+        line-height: 1.05;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+      p {
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .panel {
+        background: color-mix(in srgb, var(--surface), transparent 2%);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 18px;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.06);
+      }
+      .section + .section {
+        margin-top: 18px;
+      }
+      .question {
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+      .question + .question {
+        margin-top: 12px;
+      }
+      .question-title {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+      .required {
+        color: var(--bad);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .options {
+        display: grid;
+        gap: 8px;
+      }
+      label.option {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        background: var(--surface-2);
+      }
+      label.option:has(input:checked) {
+        border-color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .option strong {
+        display: block;
+      }
+      .option span {
+        display: block;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 8px;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .option .badge {
+        display: inline-flex;
+      }
+      .badge.ok {
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+      .badge.warn {
+        color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .badge.bad {
+        color: var(--bad);
+        background: var(--bad-soft);
+      }
+      textarea {
+        width: 100%;
+        min-height: 96px;
+        resize: vertical;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        background: var(--surface-2);
+        font: inherit;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      button {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        color: var(--text);
+        background: var(--surface);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+      .summary-list {
+        display: grid;
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .summary-item {
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+      }
+      .summary-item strong {
+        display: block;
+      }
+      .missing {
+        margin-top: 12px;
+        color: var(--bad);
+        font-weight: 700;
+      }
+      .fallback {
+        display: none;
+        margin-top: 12px;
+      }
+      @media (max-width: 880px) {
+        header,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <h1 id="page-title">Project Intake Decisions</h1>
+          <p id="page-goal" class="muted">
+            Choose the scope and constraints needed before Codex writes the
+            plan.
+          </p>
+        </div>
+        <div class="badge ok">Recommended defaults selected</div>
+      </header>
+
+      <div class="layout">
+        <form
+          id="questions"
+          class="panel"
+          aria-label="Decision questionnaire"
+        ></form>
+
+        <aside class="panel">
+          <h2>Current Decision Summary</h2>
+          <p class="muted">
+            This updates as choices change. Copy an export when the page
+            reflects your decision.
+          </p>
+          <div id="summary" class="summary-list"></div>
+          <div id="missing" class="missing"></div>
+          <div class="actions">
+            <button class="primary" type="button" data-copy="summary">
+              Copy decision summary
+            </button>
+            <button type="button" data-copy="prompt">Copy agent prompt</button>
+            <button type="button" data-copy="json">Copy JSON</button>
+          </div>
+          <p
+            id="copy-status"
+            class="muted"
+            role="status"
+            aria-live="polite"
+          ></p>
+          <textarea
+            id="fallback"
+            class="fallback"
+            aria-label="Copy fallback"
+          ></textarea>
+        </aside>
+      </div>
+    </main>
+
+    <script>
+      const data = {
+        title: "Project Intake Decisions",
+        goal: "Choose the scope and constraints needed before Codex writes the plan.",
+        nextAction: "create an implementation plan",
+        questions: [
+          {
+            id: "scope",
+            label: "How broad should the first version be?",
+            required: true,
+            recommended: "thin-slice",
+            options: [
+              {
+                value: "thin-slice",
+                label: "Thin vertical slice",
+                summary: "One end-to-end path first",
+                impact: "Reduces risk and gives the fastest testable result.",
+              },
+              {
+                value: "full-flow",
+                label: "Full workflow",
+                summary: "All major states in one pass",
+                impact:
+                  "More complete, but slower and more sensitive to unclear requirements.",
+              },
+              {
+                value: "research-only",
+                label: "Research first",
+                summary: "No implementation yet",
+                impact:
+                  "Best when the codebase or external constraints are still uncertain.",
+              },
+            ],
+          },
+          {
+            id: "quality-gate",
+            label: "What quality gate should block completion?",
+            required: true,
+            recommended: "tests-and-lint",
+            options: [
+              {
+                value: "tests-and-lint",
+                label: "Tests and lint",
+                summary: "Run local checks",
+                impact: "Balanced default for code changes.",
+              },
+              {
+                value: "visual-check",
+                label: "Visual check too",
+                summary: "Browser verification required",
+                impact: "Use for UI changes or user-visible flows.",
+              },
+              {
+                value: "docs-only",
+                label: "Docs validation only",
+                summary: "No runtime checks",
+                impact: "Use only when no code path changes.",
+              },
+            ],
+          },
+          {
+            id: "risk-style",
+            label: "How should unresolved risk be handled?",
+            required: false,
+            recommended: "name-and-continue",
+            options: [
+              {
+                value: "name-and-continue",
+                label: "Name and continue",
+                summary: "Proceed with explicit assumptions",
+                impact: "Keeps momentum while making risk visible.",
+              },
+              {
+                value: "block-on-risk",
+                label: "Block on risk",
+                summary: "Stop until answered",
+                impact: "Safer for irreversible choices.",
+              },
+              {
+                value: "defer-risk",
+                label: "Defer to follow-up",
+                summary: "Keep risk out of this slice",
+                impact: "Useful when the first slice can avoid the decision.",
+              },
+            ],
+          },
+        ],
+      };
+
+      const state = {
+        answers: Object.fromEntries(
+          data.questions.map((q) => [q.id, q.recommended || ""]),
+        ),
+        notes: "",
+      };
+
+      function optionFor(question) {
+        return question.options.find(
+          (option) => option.value === state.answers[question.id],
+        );
+      }
+
+      function renderQuestions() {
+        const root = document.getElementById("questions");
+        root.innerHTML =
+          data.questions
+            .map(
+              (question) => `
+    <section class="question">
+      <div class="question-title">
+        <span>${question.label}</span>
+        ${question.required ? '<span class="required">Required</span>' : '<span class="badge">Optional</span>'}
+      </div>
+      <div class="options">
+        ${question.options
+          .map(
+            (option) => `
+          <label class="option">
+            <input type="radio" name="${question.id}" value="${option.value}" ${state.answers[question.id] === option.value ? "checked" : ""}>
+            <span>
+              <strong>${option.label}${question.recommended === option.value ? ' <span class="badge ok">Recommended</span>' : ""}</strong>
+              <span>${option.summary}. ${option.impact}</span>
+            </span>
+          </label>
+        `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `,
+            )
+            .join("") +
+          `
+    <section class="section">
+      <h2>Notes</h2>
+      <textarea id="notes" placeholder="Constraints, preferences, or context the agent should preserve.">${state.notes}</textarea>
+    </section>
+  `;
+      }
+
+      function buildExport() {
+        const missing = data.questions.filter(
+          (q) => q.required && !state.answers[q.id],
+        );
+        const decisions = data.questions.map((question) => {
+          const selected = optionFor(question);
+          return {
+            id: question.id,
+            label: question.label,
+            value: selected?.value || "",
+            summary: selected?.summary || "Not selected",
+            rationale:
+              question.recommended === selected?.value
+                ? "Recommended default accepted."
+                : "Selected by user.",
+            impact: selected?.impact || "This decision is still missing.",
+            confidence: selected ? "high" : "unknown",
+          };
+        });
+        return {
+          title: data.title,
+          goal: data.goal,
+          version: 1,
+          completedAt: new Date().toISOString(),
+          status: missing.length ? "blocked" : "complete",
+          decisions,
+          notes: state.notes.trim(),
+          openQuestions: missing.map((q) => q.label),
+          agentPrompt: buildPrompt(decisions, missing),
+        };
+      }
+
+      function buildSummary(exportData) {
+        return `# Decision Summary: ${exportData.title}
+
+Goal: ${exportData.goal}
+Status: ${exportData.status}
+
+## Selected Decisions
+
+${exportData.decisions.map((d) => `- ${d.label}: ${d.summary} — ${d.impact}`).join("\n")}
+
+## Notes
+
+${exportData.notes || "None"}
+
+## Open Questions
+
+${exportData.openQuestions.length ? exportData.openQuestions.map((q) => `- ${q}`).join("\n") : "None"}
+`;
+      }
+
+      function buildPrompt(decisions, missing) {
+        return `Use these decisions as the source of truth.
+
+Goal: ${data.goal}
+
+Decisions:
+${decisions.map((d) => `- ${d.label}: ${d.summary}. ${d.impact}`).join("\n")}
+
+Notes:
+${state.notes.trim() || "None"}
+
+Continue by ${data.nextAction}.
+${missing.length ? "First resolve the open questions listed in the export." : "Do not re-ask resolved decisions unless the implementation uncovers a contradiction."}`;
+      }
+
+      function renderSummary() {
+        const exportData = buildExport();
+        document.getElementById("summary").innerHTML = exportData.decisions
+          .map(
+            (decision) => `
+    <div class="summary-item">
+      <strong>${decision.label}</strong>
+      <span>${decision.summary}</span>
+      <p class="muted">${decision.impact}</p>
+    </div>
+  `,
+          )
+          .join("");
+        document.getElementById("missing").textContent = exportData
+          .openQuestions.length
+          ? `Missing required choices: ${exportData.openQuestions.join(", ")}`
+          : "";
+      }
+
+      async function copyText(kind) {
+        const exportData = buildExport();
+        const text =
+          kind === "json"
+            ? JSON.stringify(exportData, null, 2)
+            : kind === "prompt"
+              ? exportData.agentPrompt
+              : buildSummary(exportData);
+        const fallback = document.getElementById("fallback");
+        try {
+          await navigator.clipboard.writeText(text);
+          fallback.style.display = "none";
+          document.getElementById("copy-status").textContent =
+            `Copied ${kind}.`;
+        } catch {
+          fallback.value = text;
+          fallback.style.display = "block";
+          fallback.focus();
+          fallback.select();
+          document.getElementById("copy-status").textContent =
+            "Clipboard unavailable. Select and copy the text below.";
+        }
+      }
+
+      document.addEventListener("change", (event) => {
+        if (event.target.matches('input[type="radio"]')) {
+          state.answers[event.target.name] = event.target.value;
+          renderSummary();
+        }
+      });
+      document.addEventListener("input", (event) => {
+        if (event.target.id === "notes") {
+          state.notes = event.target.value;
+          renderSummary();
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (event.target.matches("[data-copy]"))
+          copyText(event.target.dataset.copy);
+      });
+
+      document.getElementById("page-title").textContent = data.title;
+      document.getElementById("page-goal").textContent = data.goal;
+      renderQuestions();
+      renderSummary();
+    </script>
+  </body>
+</html>

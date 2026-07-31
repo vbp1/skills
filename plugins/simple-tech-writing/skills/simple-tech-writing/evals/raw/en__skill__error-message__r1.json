@@ -1,0 +1,32 @@
+{
+  "text": "Error: S3 upload failed with AccessDenied.\nThe IAM credentials do not have permission for `s3:PutObject`.\nAdd `s3:PutObject` to the IAM policy for this bucket.",
+  "input_tokens": 6723,
+  "output_tokens": 550,
+  "cost_usd": 0.05943040000000001,
+  "lang": "en",
+  "arm": "skill",
+  "scenario": "error-message",
+  "type": "procedural",
+  "run": 1,
+  "lint": {
+    "type": "procedural",
+    "words": 25,
+    "sentences": 3,
+    "mean_sentence_words": 8.0,
+    "longest_sentence_words": 10,
+    "violations": {
+      "sentence_over_limit": 0,
+      "contraction": 0,
+      "banned_modal": 0,
+      "perfect_tense": 0,
+      "ing_clause": 0,
+      "semicolon": 0,
+      "latin_abbrev": 0,
+      "slop_word": 0,
+      "trailing_condition": 0,
+      "synonym_rotation": 0
+    },
+    "violations_total": 0,
+    "violations_per_100w": 0.0
+  }
+}
