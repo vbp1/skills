@@ -77,7 +77,7 @@ VERSIONS = {
     "langfuse-debug": "1.0.1",
     "phased-task-delivery": "1.0.1",
     "remote-ssh-workspace": "1.0.1",
-    "review-panel": "1.0.0",
+    "review-panel": "1.0.1",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
     "technical-premortem": "1.0.1",
