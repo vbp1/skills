@@ -65,6 +65,19 @@ If the judge fails or times out, use the triage proposal unchanged and say so ou
 
 ## 2. Confirm, open the round, run the tracks
 
+If `over-engineering` is in the set, first check that its lens is actually available:
+
+```
+claude plugin list 2>/dev/null | grep -q ponytail && echo lens-ok || echo lens-missing
+```
+
+On `lens-missing` that track would run and report `LENS NOT LOADED`, so raise it **in the same
+question** rather than discovering it in the report: say gate 8 is currently half-covered, offer
+the two install commands from *The optional lens* below, and let the user choose to install, or to
+proceed knowing `over-engineering` will not review anything. Do not install it for them — it comes
+from a third-party marketplace, and a plugin that pulls in another author's plugin unasked is
+exactly what Claude Code's cross-marketplace block exists to prevent.
+
 Show the final set via `AskUserQuestion` — tracks to run, what was dropped and why, the judge's
 `riskNote` — with options "run the proposed subset" / "run the full panel" / "skip the panel".
 Then claim a round:

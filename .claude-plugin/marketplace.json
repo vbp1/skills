@@ -205,7 +205,7 @@
       "name": "review-panel",
       "source": "./plugins/review-panel",
       "description": "Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, adversarial verification, persisted rounds, re-review until clean.",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "category": "development",
       "keywords": [
         "code-review",
