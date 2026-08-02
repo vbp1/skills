@@ -1,30 +1,14 @@
 ---
 name: feature-plan-storyboard
 description: >-
-  End-to-end workflow for feature/design planning and explaining it visually.
-  Use this whenever the user wants to CREATE or UPDATE a feature plan, ASSESS a
-  plan's readiness, verify a plan against the CURRENT codebase, turn a plan into
-  user-story scenarios, or build an interactive HTML storyboard/walkthrough page
-  for a feature. The workflow: (1) create or update the plan; (2) verify every
-  claim against current code with parallel research agents and file:line
-  evidence, flagging stale or missing references; (3) surface product/
-  architecture forks to the user via AskUserQuestion in plain language; (4) write
-  the plan as prose + file:line links (NO code blocks in plans); (5) cross-review
-  the plan with a second AI reviewer (codex) iterating to a formal APPROVED;
-  (6) build a self-contained interactive "user-stories storyboard" HTML page
-  themed to the product's own UI (a Scenarios tab = stepper over user stories
-  with one window per role (1…N actors) + an "under the hood" panel + a
-  collapsible bottom scenario-text panel; an optional Input-sandbox tab = live
-  composer); (7) verify the
-  page in a browser (screenshots + JS-error check) and open it. Triggers (RU):
-  "оцени план", "обнови план", "создай план фичи", "сверь план с кодом", "готов
-  ли план", "сделай страничку сценариев", "покажи как фича работает для
-  пользователей", "user story страничка", "storyboard". Triggers (EN): "assess
-  this plan", "update the plan", "write a feature plan", "check the plan against
-  the code", "is the plan ready to implement", "make a user-stories page",
-  "build a storyboard / walkthrough for this feature". Prefer this skill even
-  when the user doesn't say "storyboard" but is clearly working a design doc
-  toward implementation or wants to explain a feature's UX visually.
+  End-to-end feature-planning workflow: create or update the plan, verify every
+  claim against the current code with parallel agents (file:line evidence),
+  surface product forks via plain-language questions, write prose + file:line
+  links (no code blocks), cross-review with codex until APPROVED, then build
+  and browser-verify an interactive user-stories storyboard HTML page themed to
+  the product UI. Triggers (RU): "оцени/обнови/создай план", "сверь план с
+  кодом", "страничка сценариев", "storyboard". Triggers (EN): "assess/update
+  the plan", "check plan against code", "user-stories storyboard page".
 ---
 
 # Feature Plan & Storyboard

@@ -1,22 +1,14 @@
 ---
 name: simple-tech-writing
-description: |
+description: >-
   Write or rewrite technical text so that a tired reader cannot misread it, in
-  Russian or in English. Structural rules from ASD-STE100 Simplified Technical
-  English plus a Russian rule set for the same goal: short sentences, one
-  instruction per sentence, condition before command, one term per concept,
-  active voice, no filler.
-  Use for documentation, READMEs, runbooks, procedures, error messages, release
-  notes, incident reports, commit bodies, agent instructions, and for normative
-  documents: specifications, requirements, design docs, ADRs, PRDs, API
-  contracts.
-  Triggers (EN): "simple english", "STE", "plain technical English", "de-slop",
-  "make this readable", "write for non-native readers", "rewrite these docs",
-  "write a spec", "write the requirements", "design doc", "ADR", "PRD".
-  Triggers (RU): "напиши документацию", "перепиши по-человечески", "убери воду",
-  "почисти текст", "простым языком", "техписательский стиль", "без канцелярита",
-  "инструкция для дежурного", "текст ошибки", "описание аварии", "напиши спеку",
-  "опиши требования", "техзадание", "дизайн-док", "проектное решение".
+  Russian or in English: ASD-STE100-style structural rules — short sentences,
+  one instruction per sentence, condition before command, one term per concept,
+  active voice, no filler. Use for docs, READMEs, runbooks, specs, ADRs, PRDs,
+  release notes, error messages. Triggers (EN): "simple english", "STE",
+  "de-slop", "make this readable", "write a spec". Triggers (RU): "напиши
+  доку/спеку", "перепиши по-человечески", "простым языком", "убери воду", "без
+  канцелярита", "дизайн-док".
 license: MIT
 metadata:
   origin: structural rules paraphrased from ASD-STE100 Issue 9; Russian rules are ours

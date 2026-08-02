@@ -1,6 +1,14 @@
 ---
 name: cloakbrowser
-description: Use a local stealth headless Chromium (CloakBrowser) to inspect web pages programmatically — capture screenshots, catch client-side JavaScript errors with stack traces, watch console messages, observe failed network requests, inject JS, and measure main-thread long tasks (TBT) to verify client-side performance / UI-freeze fixes. Triggers include "use cloakbrowser", "посмотри в браузере", "check visually", "сделай скриншот", "open the page", "look at the UI", "what does the browser see", "замерь фриз" / "measure the freeze / long tasks", and proactive use for client-side exceptions / "Application error" overlays / hydration mismatches / RSC issues / UI-freeze perf checks — anything where the answer lives in DevTools rather than server logs.
+description: >-
+  Use a local stealth headless Chromium (CloakBrowser) to inspect web pages:
+  screenshots, client-side JS errors with stack traces, console messages,
+  failed network requests, JS injection, long-task/TBT measurement for
+  UI-freeze and perf checks. Use proactively for client-side exceptions,
+  "Application error" overlays, hydration/RSC issues — anything where the
+  answer lives in DevTools rather than server logs. Triggers: "use
+  cloakbrowser", "посмотри в браузере", "сделай скриншот", "check visually",
+  "замерь фриз".
 allowed-tools: Bash(python3:*), Bash(~/.local/bin/cloakbrowser:*), Read
 ---
 
