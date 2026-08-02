@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Refuse to push a plugin whose files changed without a version bump.
+#
+# Publishing this marketplace IS pushing: both agents install from the GitHub repo. So push
+# is the moment the check has to hold. Editing a plugin without moving its number means the
+# change reaches nobody — the agent keeps its cached copy and reports it as up to date — and
+# nothing anywhere reports an error. This is the last place to catch that.
+#
+# Enable once per clone:
+#     git config core.hooksPath hooks
+#
+# Bypass deliberately with `git push --no-verify` when you know the push carries no plugin
+# change (documentation, this hook itself, CI config).
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-push: python3 not found, so the version check could not run." >&2
+  echo "          Install python3, or push with --no-verify if you are sure no plugin changed." >&2
+  exit 1
+fi
+
+if ! python3 "$root/scripts/check_versions.py" --root "$root"; then
+  echo >&2
+  echo "pre-push: refusing to push. Bump the plugin above in the VERSIONS table of" >&2
+  echo "          scripts/gen-manifests.py, rerun the generator, and commit." >&2
+  echo "          If this push genuinely carries no plugin change, use --no-verify." >&2
+  exit 1
+fi

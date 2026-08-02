@@ -1,0 +1,31 @@
+name: manifests
+
+# Publishing this marketplace is pushing: both agents install straight from the repo. So the
+# checks that matter run here, where forgetting to run them locally cannot skip them.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The version check compares each plugin against its {name}--v{version} tag, so the
+          # tags have to be present. A shallow checkout would report every plugin as untagged
+          # and pass without checking anything.
+          fetch-depth: 0
+
+      - name: Every changed plugin has a bumped version
+        run: python3 scripts/check_versions.py
+
+      - name: Manifests match the catalogue table
+        run: |
+          python3 scripts/gen-manifests.py
+          if ! git diff --quiet; then
+            echo "::error::Generated manifests differ from what is committed."
+            echo "Run scripts/gen-manifests.py and commit the result."
+            git --no-pager diff --stat
+            exit 1
+          fi

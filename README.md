@@ -95,13 +95,34 @@ claude plugin validate ./plugins/create-pr --strict   # a single plugin
 2. Add a row to the `PLUGINS` table in [`scripts/gen-manifests.py`](scripts/gen-manifests.py):
    name, display name, one-line description, a category for each agent, keywords,
    and which agent it was written for.
-3. Run `./scripts/gen-manifests.py`. It rewrites every plugin manifest and both
+3. Add its starting version to the `VERSIONS` table in the same file. A plugin missing
+   from it stops the generator rather than defaulting.
+4. Run `./scripts/gen-manifests.py`. It rewrites every plugin manifest and both
    catalogues, so the two never drift apart. See `--help` for details.
-4. Validate, commit, push.
+5. Validate, commit, push, then `claude plugin tag ./plugins/<name> --push`.
 
-Editing an existing skill needs the same run plus a `VERSION` bump in that script.
-Both agents cache a plugin under its pinned version and skip an update while the
-version string is unchanged, so an unbumped edit never reaches installed copies.
+## Release a change
+
+Both agents cache a plugin under its pinned version and skip an update while the version
+string is unchanged, so an edit without a bump never reaches installed copies — and nothing
+reports an error, because as far as the agent is concerned there is nothing new. The cycle:
+
+1. Edit the plugin.
+2. Bump its entry in the `VERSIONS` table — only that plugin's, the numbers are independent.
+3. `./scripts/gen-manifests.py`, which refuses to write while any plugin's files have moved
+   since its version was tagged.
+4. Commit, then `claude plugin tag ./plugins/<name> --push` to cut `<name>--v<version>`.
+
+Three things watch for a forgotten bump. The generator checks before it writes.
+[`scripts/check_versions.py`](scripts/check_versions.py) does the same on demand, and exits 3
+when something is stale. A `pre-push` hook blocks the push itself — enable it once per clone:
+
+```bash
+git config core.hooksPath hooks
+```
+
+CI runs both the version check and a regeneration diff on every push, so a clone without the
+hook is still covered.
 
 ## License
 
