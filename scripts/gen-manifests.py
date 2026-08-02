@@ -35,12 +35,19 @@ Exit codes:
 import argparse
 import json
 import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from check_versions import format_report, stale_plugins  # noqa: E402
 
 parser = argparse.ArgumentParser(
     description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--root", default=pathlib.Path(__file__).resolve().parent.parent,
                     type=pathlib.Path, help="repository root (default: parent of scripts/)")
-ROOT = parser.parse_args().root
+parser.add_argument("--allow-stale", action="store_true",
+                    help="write manifests even when a plugin changed without a version bump")
+args = parser.parse_args()
+ROOT = args.root
 AUTHOR = {"name": "Vadim Ponomarev", "url": "https://github.com/vbp1"}
 REPO = "https://github.com/vbp1/skills"
 LICENSE = "Apache-2.0"
@@ -160,6 +167,21 @@ EXTRAS = {
 
 if not (ROOT / "plugins").is_dir():
     raise SystemExit(f"no plugins/ directory under {ROOT}; pass the repository root via --root")
+
+# Before writing anything: a plugin whose files moved since its version was tagged would be
+# published under a number users already hold, so the change would reach nobody and nothing
+# would say so. Checked against VERSIONS rather than the manifests on disk, which still carry
+# the previous number during a bump. Stop here, before any file is touched.
+stale = stale_plugins(ROOT, VERSIONS)
+if stale and not args.allow_stale:
+    raise SystemExit(
+        f"{len(stale)} plugin(s) changed without a version bump — nothing was written:\n"
+        + format_report(stale)
+        + "\n  Pass --allow-stale to write anyway (the change will not reach installed copies)."
+    )
+if stale:
+    print(f"--allow-stale: writing with {len(stale)} unbumped plugin(s): "
+          f"{', '.join(e['plugin'] for e in stale)}")
 
 claude_entries, codex_entries = [], []
 
