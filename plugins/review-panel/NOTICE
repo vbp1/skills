@@ -25,5 +25,11 @@ was taken; scripts/check-forks.py compares those against an installed pr-review-
 upstream changes surface as a decision rather than as silent staleness.
 
 The agents/review-adversary.md and agents/review-over-engineering.md tracks are original to this
-plugin. The over-engineering track preloads the ponytail-review skill from the ponytail plugin,
-which it declares as a dependency and does not copy.
+plugin. The over-engineering track preloads the ponytail-review skill from the ponytail plugin
+(https://github.com/DietrichGebert/ponytail) rather than copying it. That plugin is an optional
+companion, not a declared dependency: seven tracks do not need it, and a declared dependency that
+cannot be resolved disables the whole plugin. Without it, the over-engineering track reports
+LENS NOT LOADED and returns no findings instead of improvising a lens.
+
+    claude plugin marketplace add DietrichGebert/ponytail
+    claude plugin install ponytail@ponytail

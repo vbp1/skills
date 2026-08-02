@@ -212,6 +212,21 @@ not the same claim as one from the full panel. If `over-engineering` opened its 
 counting it clean, and fix the `skills:` entry in
 `${CLAUDE_PLUGIN_ROOT}/agents/review-over-engineering.md`.
 
+## The optional lens
+
+The `over-engineering` track applies the `ponytail-review` lens, preloaded from the ponytail
+plugin. That plugin is an optional companion rather than a declared dependency — the other seven
+tracks do not need it, and a dependency that cannot be resolved would disable this plugin
+entirely. Install it to get the eighth track:
+
+```
+claude plugin marketplace add DietrichGebert/ponytail
+claude plugin install ponytail@ponytail
+```
+
+Without it the track reports `LENS NOT LOADED` and returns nothing, which is a declared gap
+rather than a clean verdict.
+
 ## Maintenance
 
 Six tracks are forks of Anthropic's `pr-review-toolkit` agents, copied rather than referenced

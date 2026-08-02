@@ -77,7 +77,7 @@ VERSIONS = {
     "langfuse-debug": "1.0.1",
     "phased-task-delivery": "1.0.1",
     "remote-ssh-workspace": "1.0.1",
-    "review-panel": "1.0.1",
+    "review-panel": "1.0.2",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
     "technical-premortem": "1.0.1",
@@ -152,15 +152,19 @@ PLUGINS = [
 # Manifest fields the PLUGINS table does not carry, for the few plugins that need them.
 # Everything absent from here keeps the plain shape, so adding a field costs one entry
 # rather than a column on all rows.
-#   hooks         relative path to a hook manifest inside the plugin
-#   dependencies  other plugins this one requires, optionally with semver constraints
+#   hooks         path to an ADDITIONAL hook manifest. The standard hooks/hooks.json is
+#                 loaded on its own, so naming it here loads it twice and the plugin dies
+#                 with "Duplicate hooks file detected".
+#   dependencies  other plugins this one requires. An unresolved dependency disables the
+#                 whole plugin, and a dependency in another marketplace is refused unless
+#                 the root marketplace allowlists it — so this is for hard requirements
+#                 only. An optional companion belongs in the documentation, degrading at
+#                 runtime instead.
 #   claudeOnly    leave out of the Codex catalogue — the plugin is built on Claude Code
 #                 agents and hooks, which Codex has no equivalent for, so listing it
 #                 there would offer an install that cannot work
 EXTRAS = {
     "review-panel": {
-        "hooks": "./hooks/hooks.json",
-        "dependencies": [{"name": "ponytail"}],
         "claudeOnly": True,
     },
 }
