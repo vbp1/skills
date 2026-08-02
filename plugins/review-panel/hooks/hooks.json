@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/review-agent-guard.py\"",
+            "commandWindows": "python \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\review-agent-guard.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking review-track shell restrictions..."
+          }
+        ]
+      }
+    ]
+  }
+}

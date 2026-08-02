@@ -1,0 +1,29 @@
+review-panel
+Copyright 2026 Vadim Ponomarev
+Licensed under the Apache License, Version 2.0 (see the LICENSE file at the root of this
+repository).
+
+This plugin contains derivative works.
+
+Six of its review-track agents are derived from the pr-review-toolkit plugin, Copyright
+Anthropic, licensed under the Apache License, Version 2.0:
+
+    agents/review-correctness.md      from  code-reviewer.md
+    agents/review-silent-failures.md  from  silent-failure-hunter.md
+    agents/review-type-design.md      from  type-design-analyzer.md
+    agents/review-tests.md            from  pr-test-analyzer.md
+    agents/review-comments.md         from  comment-analyzer.md
+    agents/review-simplify.md         from  code-simplifier.md
+
+Each has been modified: the tool list was narrowed to read-only, a working-constraints section
+was added, reporting was aligned to the panel's shared severity vocabulary, and instructions
+specific to the upstream author's own codebase were replaced with a reference to the reviewed
+project's own conventions.
+
+scripts/fork-sources.json records the upstream file and its content hash at the moment each fork
+was taken; scripts/check-forks.py compares those against an installed pr-review-toolkit so that
+upstream changes surface as a decision rather than as silent staleness.
+
+The agents/review-adversary.md and agents/review-over-engineering.md tracks are original to this
+plugin. The over-engineering track preloads the ponytail-review skill from the ponytail plugin,
+which it declares as a dependency and does not copy.

@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.0.1"
+    "version": "1.1.0"
   },
   "plugins": [
     {

@@ -3,7 +3,15 @@
 
 The catalogue lives in the PLUGINS table below: one row per plugin, holding the
 plugin name, display name, one-line description, the category each agent uses,
-keywords, and which agent the skill was written for. Everything else is derived.
+keywords, and which agent the skill was written for. Two side tables carry what
+does not fit a row:
+
+    VERSIONS   one version per plugin, bumped independently. Required for every
+               plugin — a missing entry stops the run rather than defaulting,
+               because an unversioned publish fails silently at the user's end.
+    EXTRAS     manifest fields only a few plugins need: a hook manifest path,
+               plugin dependencies, and whether to leave the plugin out of the
+               Codex catalogue because it is built on Claude Code components.
 
 Usage:
     scripts/gen-manifests.py [--root DIR]
@@ -13,12 +21,16 @@ Writes:
     .claude-plugin/marketplace.json             catalogue for Claude Code
     .agents/plugins/marketplace.json            catalogue for Codex CLI
 
-To add a skill: drop it into plugins/<name>/skills/<name>/, add a row to PLUGINS,
-run this script, then verify with `claude plugin validate . --strict`.
+To add a skill: drop it into plugins/<name>/skills/<name>/, add a row to PLUGINS
+and a version to VERSIONS, run this script, then verify with
+`claude plugin validate . --strict`.
+
+To release a change: bump that plugin's entry in VERSIONS. Users receive nothing
+until the number moves.
 
 Exit codes:
     0  manifests written
-    1  a plugin listed in PLUGINS has no directory under plugins/
+    1  a plugin listed in PLUGINS has no directory, or no version in VERSIONS
 """
 import argparse
 import json
@@ -32,7 +44,39 @@ ROOT = parser.parse_args().root
 AUTHOR = {"name": "Vadim Ponomarev", "url": "https://github.com/vbp1"}
 REPO = "https://github.com/vbp1/skills"
 LICENSE = "Apache-2.0"
-VERSION = "1.0.1"  # bump on every published change; agents keep a pinned version cached
+MARKETPLACE_VERSION = "1.1.0"  # the catalogue itself; bump when the plugin roster changes
+
+# One version per plugin, bumped independently — bump only what you touched.
+#
+# Claude Code caches an installed plugin by this exact string: a user receives a change only
+# after the number moves, and `claude plugin update` answers "already at the latest version"
+# until it does. So a forgotten bump is a silent non-delivery, not an error. Follow semver:
+# MAJOR for a breaking change, MINOR for new behaviour, PATCH for a fix.
+#
+# `claude plugin tag` cuts a {name}--v{version} tag per plugin and checks that plugin.json
+# and the marketplace entry agree, which both come from here.
+VERSIONS = {
+    "audio-restore": "1.0.1",
+    "break-it": "1.0.1",
+    "claude-review": "1.0.1",
+    "cloakbrowser": "1.0.1",
+    "cloakbrowser-codex": "1.0.1",
+    "codex-genimage": "1.0.1",
+    "create-pr": "1.0.1",
+    "create-pr-codex": "1.0.1",
+    "decision-playground": "1.0.1",
+    "feature-challenge-workflow": "1.0.1",
+    "feature-plan-storyboard": "1.0.1",
+    "langfuse-debug": "1.0.1",
+    "phased-task-delivery": "1.0.1",
+    "remote-ssh-workspace": "1.0.1",
+    "review-panel": "1.0.0",
+    "rust-code-review": "1.0.1",
+    "simple-tech-writing": "1.0.1",
+    "technical-premortem": "1.0.1",
+    "user-clear-communication": "1.0.1",
+    "youtube-transcript": "1.0.1",
+}
 
 # name, displayName, description, claude category, codex category, keywords, agent
 PLUGINS = [
@@ -78,6 +122,9 @@ PLUGINS = [
     ("remote-ssh-workspace", "Remote SSH Workspace",
      "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
      "ops", "Ops", ["ssh", "remote", "sshfs", "ops"], "codex"),
+    ("review-panel", "Review Panel",
+     "Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, adversarial verification, persisted rounds, re-review until clean.",
+     "development", "Coding", ["code-review", "agents", "pre-commit", "quality"], "claude"),
     ("rust-code-review", "Rust Code Review",
      "Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, lock and transaction flows.",
      "development", "Coding", ["rust", "code-review", "async", "unsafe"], "codex"),
@@ -95,6 +142,22 @@ PLUGINS = [
      "media", "Productivity", ["youtube", "transcript", "subtitles"], "claude"),
 ]
 
+# Manifest fields the PLUGINS table does not carry, for the few plugins that need them.
+# Everything absent from here keeps the plain shape, so adding a field costs one entry
+# rather than a column on all rows.
+#   hooks         relative path to a hook manifest inside the plugin
+#   dependencies  other plugins this one requires, optionally with semver constraints
+#   claudeOnly    leave out of the Codex catalogue — the plugin is built on Claude Code
+#                 agents and hooks, which Codex has no equivalent for, so listing it
+#                 there would offer an install that cannot work
+EXTRAS = {
+    "review-panel": {
+        "hooks": "./hooks/hooks.json",
+        "dependencies": [{"name": "ponytail"}],
+        "claudeOnly": True,
+    },
+}
+
 if not (ROOT / "plugins").is_dir():
     raise SystemExit(f"no plugins/ directory under {ROOT}; pass the repository root via --root")
 
@@ -104,12 +167,17 @@ for name, display, desc, cat, codex_cat, keywords, agent in PLUGINS:
     pdir = ROOT / "plugins" / name
     if not pdir.is_dir():
         raise SystemExit(f"missing plugin directory: {pdir}")
+    # A missing entry stops the run rather than defaulting: an unversioned plugin would be
+    # published, and the omission would only show up as users never receiving its changes.
+    if name not in VERSIONS:
+        raise SystemExit(f"no version recorded for '{name}' — add it to VERSIONS. Nothing was written.")
+    version = VERSIONS[name]
 
     manifest = {
         "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
         "name": name,
         "displayName": display,
-        "version": VERSION,
+        "version": version,
         "description": desc,
         "author": AUTHOR,
         "homepage": REPO,
@@ -117,6 +185,10 @@ for name, display, desc, cat, codex_cat, keywords, agent in PLUGINS:
         "license": LICENSE,
         "keywords": keywords,
     }
+    extra = EXTRAS.get(name, {})
+    for key in ("hooks", "dependencies"):
+        if key in extra:
+            manifest[key] = extra[key]
     (pdir / ".claude-plugin").mkdir(exist_ok=True)
     (pdir / ".claude-plugin" / "plugin.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -125,20 +197,21 @@ for name, display, desc, cat, codex_cat, keywords, agent in PLUGINS:
         "name": name,
         "source": f"./plugins/{name}",
         "description": desc,
-        "version": VERSION,
+        "version": version,
         "category": cat,
         "keywords": keywords,
         "license": LICENSE,
     })
-    codex_entries.append({
-        "name": name,
-        "source": {"source": "local", "path": f"./plugins/{name}"},
-        "description": desc,
-        "version": VERSION,
-        "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-        "category": codex_cat,
-        "license": LICENSE,
-    })
+    if not extra.get("claudeOnly"):
+        codex_entries.append({
+            "name": name,
+            "source": {"source": "local", "path": f"./plugins/{name}"},
+            "description": desc,
+            "version": version,
+            "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+            "category": codex_cat,
+            "license": LICENSE,
+        })
 
 MARKETPLACE_DESC = "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI."
 
@@ -148,7 +221,7 @@ MARKETPLACE_DESC = "Vadim Ponomarev's agent skills for Claude Code and OpenAI Co
     "name": "vbp1-skills",
     "description": MARKETPLACE_DESC,
     "owner": AUTHOR,
-    "metadata": {"description": MARKETPLACE_DESC, "version": VERSION},
+    "metadata": {"description": MARKETPLACE_DESC, "version": MARKETPLACE_VERSION},
     "plugins": claude_entries,
 }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -156,7 +229,7 @@ MARKETPLACE_DESC = "Vadim Ponomarev's agent skills for Claude Code and OpenAI Co
 (ROOT / ".agents" / "plugins" / "marketplace.json").write_text(json.dumps({
     "name": "vbp1-skills",
     "interface": {"displayName": "vbp1 skills"},
-    "metadata": {"description": MARKETPLACE_DESC, "version": VERSION},
+    "metadata": {"description": MARKETPLACE_DESC, "version": MARKETPLACE_VERSION},
     "plugins": codex_entries,
 }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

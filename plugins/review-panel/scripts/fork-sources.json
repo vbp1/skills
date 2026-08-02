@@ -1,0 +1,36 @@
+{
+  "_note": "Six panel tracks are derived from Anthropic's pr-review-toolkit agents. Each entry records the upstream file this fork was taken from and the git blob hash it had at that moment. check-forks.py compares those hashes against the installed plugin, so an upstream improvement surfaces as a deliberate re-fork decision instead of silent staleness. Two tracks — adversary and over-engineering — have no upstream and are absent here.",
+  "upstream": {
+    "plugin": "pr-review-toolkit",
+    "marketplace": "claude-plugins-official",
+    "author": "Anthropic",
+    "license": "Apache-2.0",
+    "recorded": "2026-08-02"
+  },
+  "forks": {
+    "review-correctness.md": {
+      "source": "code-reviewer.md",
+      "sha1": "834b70c21f1f1bd4d01b8025bc830bf00887f2e7"
+    },
+    "review-silent-failures.md": {
+      "source": "silent-failure-hunter.md",
+      "sha1": "b8a8dfa41e18ef6ac801ae64be38b2508aa04f44"
+    },
+    "review-type-design.md": {
+      "source": "type-design-analyzer.md",
+      "sha1": "9c17fec6b276cbe42f80b5e96e21e016b59c8e06"
+    },
+    "review-tests.md": {
+      "source": "pr-test-analyzer.md",
+      "sha1": "05b342b9175af85c5d7404bac67f5c62da375aa2"
+    },
+    "review-comments.md": {
+      "source": "comment-analyzer.md",
+      "sha1": "41ab074f50953c1f0fed5cf1972c9d2f36a97b31"
+    },
+    "review-simplify.md": {
+      "source": "code-simplifier.md",
+      "sha1": "89a01c0b972f99fb33515de5f1e9ef1613dd9381"
+    }
+  }
+}

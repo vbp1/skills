@@ -8,7 +8,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.0.1"
+    "version": "1.1.0"
   },
   "plugins": [
     {
@@ -198,6 +198,20 @@
         "remote",
         "sshfs",
         "ops"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "review-panel",
+      "source": "./plugins/review-panel",
+      "description": "Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, adversarial verification, persisted rounds, re-review until clean.",
+      "version": "1.0.0",
+      "category": "development",
+      "keywords": [
+        "code-review",
+        "agents",
+        "pre-commit",
+        "quality"
       ],
       "license": "Apache-2.0"
     },
