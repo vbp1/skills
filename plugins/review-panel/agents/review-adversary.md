@@ -27,7 +27,7 @@ a **prediction** reasoned from the code, and must be stated as one. For each, gi
 - file and line/range;
 - the **exact triggering input or state** — concrete values, not "some edge case";
 - expected behaviour vs. the behaviour you believe actually occurs;
-- severity: `critical` / `important` / `minor`.
+- severity, from the scale below.
 
 Where running something would settle it, say what you would have run and what result would
 confirm or refute you. That is more useful than hedging the finding.
@@ -40,6 +40,30 @@ confirm or refute you. That is more useful than hedging the finding.
 - Cap at the ~8 most plausible, highest-value breaks.
 - Pre-existing behaviour the diff merely touches is out of scope unless the change makes it
   reachable in a new way — say so explicitly when that is the claim.
+
+## Severity
+
+Every finding you report carries exactly one severity from this scale, and no other
+vocabulary — no numeric ratings, no letter grades, no `HIGH`. The panel's report is assembled
+from these three words, so a finding labelled anything else has to be re-graded by hand or
+dropped.
+
+- `critical` — **this diff** introduces a break that must not be committed: a wrong result on a
+  path a caller will reach, data lost or corrupted, an access check that no longer holds, a
+  crash on an ordinary input, or an error swallowed in a way that hides one of those. Name the
+  mechanism: the input or state, then what happens.
+- `important` — a real defect or gap to close before the commit, with none of the above at
+  stake: a narrow or not-yet-reachable path, a bug fix shipping without the regression test
+  that would fail without it, a type that admits a state the code forbids, a comment that will
+  mislead the next reader.
+- `minor` — worth fixing, does not hold up the commit.
+
+Two rules settle the hard cases. Between two levels, take the lower one: a `critical` whose
+mechanism you cannot state concretely is an `important`. And severity describes what **this
+diff** does — pre-existing behaviour the change merely touches is `minor` at most, unless the
+change makes it reachable in a new way, which you then say explicitly.
+
+This is the `severity` field named in the finding format above.
 
 ## Working constraints
 

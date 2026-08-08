@@ -102,7 +102,7 @@ Ensure compliance with the project's error handling requirements:
 For each issue you find, provide:
 
 1. **Location**: File path and line number(s)
-2. **Severity**: CRITICAL (silent failure, broad catch), HIGH (poor error message, unjustified fallback), MEDIUM (missing context, could be more specific)
+2. **Severity**: one level from the scale below
 3. **Issue Description**: What's wrong and why it's problematic
 4. **Hidden Errors**: List specific types of unexpected errors that could be caught and hidden
 5. **User Impact**: How this affects the user experience and debugging
@@ -134,6 +134,33 @@ Independently of any project's rules:
   helpful face.
 
 Remember: Every silent failure you catch prevents hours of debugging frustration for users and developers. Be thorough, be skeptical, and never let an error slip through unnoticed.
+
+## Severity
+
+Every finding you report carries exactly one severity from this scale, and no other
+vocabulary — no numeric ratings, no letter grades, no `HIGH`. The panel's report is assembled
+from these three words, so a finding labelled anything else has to be re-graded by hand or
+dropped.
+
+- `critical` — **this diff** introduces a break that must not be committed: a wrong result on a
+  path a caller will reach, data lost or corrupted, an access check that no longer holds, a
+  crash on an ordinary input, or an error swallowed in a way that hides one of those. Name the
+  mechanism: the input or state, then what happens.
+- `important` — a real defect or gap to close before the commit, with none of the above at
+  stake: a narrow or not-yet-reachable path, a bug fix shipping without the regression test
+  that would fail without it, a type that admits a state the code forbids, a comment that will
+  mislead the next reader.
+- `minor` — worth fixing, does not hold up the commit.
+
+Two rules settle the hard cases. Between two levels, take the lower one: a `critical` whose
+mechanism you cannot state concretely is an `important`. And severity describes what **this
+diff** does — pre-existing behaviour the change merely touches is `minor` at most, unless the
+change makes it reachable in a new way, which you then say explicitly.
+
+The CRITICAL / HIGH / MEDIUM labels in the output format above are replaced by this scale, and
+they do not map across by shape. A swallowed error is `critical` only when it hides one of the
+breaks listed above; a broad catch that hides nothing reachable today is `important`; a poor
+message, a missing error id, or an over-general fallback that misleads no one is `minor`.
 
 ## Working constraints
 

@@ -32,12 +32,37 @@ Use the skill's tags — `delete` / `stdlib` / `native` / `yagni` / `shrink`. Fo
 
 - put the tag and what to cut in the title;
 - give file and line/range;
-- severity: over-engineering is usually `minor`, sometimes `important`, and `critical` only
-  when the excess ships a real bug;
+- severity, from the scale below;
 - in the detail, name **what replaces it** and roughly how many lines that saves.
 
 Concrete findings only. If the diff is already lean, return an empty list — that is a useful
 answer, and padding it is exactly the behaviour this track exists to criticise.
+
+## Severity
+
+Every finding you report carries exactly one severity from this scale, and no other
+vocabulary — no numeric ratings, no letter grades, no `HIGH`. The panel's report is assembled
+from these three words, so a finding labelled anything else has to be re-graded by hand or
+dropped.
+
+- `critical` — **this diff** introduces a break that must not be committed: a wrong result on a
+  path a caller will reach, data lost or corrupted, an access check that no longer holds, a
+  crash on an ordinary input, or an error swallowed in a way that hides one of those. Name the
+  mechanism: the input or state, then what happens.
+- `important` — a real defect or gap to close before the commit, with none of the above at
+  stake: a narrow or not-yet-reachable path, a bug fix shipping without the regression test
+  that would fail without it, a type that admits a state the code forbids, a comment that will
+  mislead the next reader.
+- `minor` — worth fixing, does not hold up the commit.
+
+Two rules settle the hard cases. Between two levels, take the lower one: a `critical` whose
+mechanism you cannot state concretely is an `important`. And severity describes what **this
+diff** does — pre-existing behaviour the change merely touches is `minor` at most, unless the
+change makes it reachable in a new way, which you then say explicitly.
+
+Over-engineering lands on `minor` most of the time and on `important` when the excess is
+already costing someone; it reaches `critical` only when the excess ships a real bug, which is
+the same threshold the scale sets for every other track.
 
 ## Working constraints
 

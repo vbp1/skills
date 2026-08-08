@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "review-panel",
   "displayName": "Review Panel",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, every must-fix finding checked against the code, persisted rounds, re-review until clean.",
   "author": {
     "name": "Vadim Ponomarev",
