@@ -1,6 +1,6 @@
 ---
 name: review-panel
-description: "Run a parallel panel of read-only review tracks over a scope of changes: mechanical triage, one agent per lens, adversarial verification of critical findings, a persisted round file, and re-review rounds until nothing must-fix or important survives. Use before committing, when the user asks for a thorough or multi-perspective review of a branch or diff, or when a review needs to be repeatable rather than a single opinion."
+description: "Run a parallel panel of read-only review tracks over a scope of changes: mechanical triage, one agent per lens, every must-fix finding checked against the code before it is reported, a persisted round file, and re-review rounds until nothing must-fix or important survives. Use before committing, when the user asks for a thorough or multi-perspective review of a branch or diff, or when a review needs to be repeatable rather than a single opinion."
 argument-hint: "[scope: worktree (default) | staged | <git revision>]"
 ---
 
@@ -40,8 +40,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/triage.py" --scope worktree --json
 #   a revision  → --base <revision>
 ```
 
-It proposes a track subset with a reason per track kept and per track skipped, sets `verifiers`
-(1 normally, 3 in the high zone), and prints `judgeQuestions` — the things a regex structurally
+It proposes a track subset with a reason per track kept and per track skipped, and prints
+`judgeQuestions` — the things a regex structurally
 cannot decide. If `recommendation` is `optout`, no code changed: say so and stop, rather than
 spending the panel on nothing.
 
@@ -54,12 +54,9 @@ brief:
 > below. Answer only its `judgeQuestions` against the real diff and adjust the track list. Read
 > the changed files and, where a contract may have moved, their direct callers — do NOT audit
 > logic, do NOT report bugs, do NOT modify files. Return `add[]` / `remove[]` (each entry: track
-> + one-sentence reason), `verifiers`, and a one-line `riskNote`.
+> + one-sentence reason) and a one-line `riskNote`.
 > Zone `high` means you may only REMOVE tracks, never fewer than `correctness`, each with a
 > stated reason. Zone `normal` means you may both add and remove, each with a stated reason.
-> `verifiers` must be an odd integer between 1 and 5 — a majority decides each finding, so an
-> even panel would let one sceptic veto a real one, and the count multiplies by the number of
-> critical findings.
 
 If the judge fails or times out, use the triage proposal unchanged and say so out loud.
 
@@ -127,7 +124,7 @@ Every track prompt gives the absolute path of `round-$N.diff` as the authoritati
 review, and states: review **only** the changed lines/files; report concrete findings with file,
 line/range, severity (`critical`/`important`/`minor`) and a precise detail — no generic advice.
 
-## 3. Assert the tree is untouched, verify the criticals, write the report
+## 3. Assert the tree is untouched, check the findings, write the report
 
 The moment the tracks return:
 
@@ -140,22 +137,25 @@ while a read-only panel was running — name it to the user as an incident and r
 continuing; do not fold it into the review. The tracks cannot cause this any more, but the check
 costs nothing and is the only thing that would catch it if that ever stops holding.
 
-**Verify `critical` findings only.** Spawn one verifier `Agent` per critical finding (`verifiers`
-from triage: 1 normally, 3 on a fragile path — odd, so a majority decides), each told to
-adversarially check the claim against the real code and answer *does this hold*.
+**You check the findings yourself, against the code.** A track's `critical` is the report's
+must-fix, and every one of them is settled in the main loop before it reaches the report: read
+the lines the track names, follow the mechanism, and where a claim is mechanically decidable,
+decide it by evidence — run the query, apply the migration chain, reproduce the loss. You hold
+the diff already; a fresh session would spend ~25k tokens just to boot and re-read a file you
+have open, and the answer it most often returns is "the facts hold, but this is not worth fixing
+before commit" or "not introduced by this diff" — a priority call, which is yours to make.
 
-Everything below `critical` goes into the report **as its track raised it**. Measured over a real
-141-agent run, 19 of 22 verifier rejections were "the facts hold, but this is not worth fixing
-before commit" or "not introduced by this diff" — a priority call you make for free with the diff
-already in context, where a fresh verifier session costs ~25k tokens just to boot and re-read a
-file you have open. So **triage the unverified findings yourself**, and never relay them to the
-user as confirmed.
+Each item in the report carries the outcome of that check: confirmed (with what settled it),
+corrected (the mechanism differs from the claim — state how), or dropped (with the reason).
+Findings you did not check go in **as the track raised them, marked unchecked** — never relay one
+to the user as confirmed. Where the evidence runs long, put it in `$DIR/round-$N-verify.md` and
+link it from the report rather than inlining it.
 
 **Write `$DIR/round-$N.md` before touching any code.** Nothing else holds this report.
 
 ```markdown
 # Review — round <N> — <verdict: ready | needs-fixes | blocked>
-Branch: <branch>   Tracks: correctness, tests, …   Verifiers: <N>
+Branch: <branch>   Tracks: correctness, tests, …
 
 ## Tracks
 | track | agent id |            # the identifier each spawn returned — how round N+1 reaches it
@@ -169,8 +169,8 @@ Count: <N>                       # must-fix + important only; what the next roun
 ## Nice-to-have                  # for the record; earns no round
 - [minor][comments] …
 
-## Rejected by verify
-- <title> — <one-line reason>
+## Dropped                       # checked against the code and not upheld
+- <title> — <one-line reason, and what settled it>
 ```
 
 Then act on it: apply must-fix and important findings, reject the rest **with reasoning** — the

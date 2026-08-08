@@ -218,7 +218,6 @@ def triage(root: str, config: dict, scope: str, base: str | None) -> dict:
             "nontrivialHits": hits,
             "zone": "trivial",
             "tracks": [],
-            "verifiers": 1,
             "recommendation": "optout",
             "reasons": {},
             "skipped": {"*": "no code files changed"},
@@ -274,7 +273,6 @@ def triage(root: str, config: dict, scope: str, base: str | None) -> dict:
         "nontrivialHits": hits,
         "zone": zone,
         "tracks": [t for t in ALL_TRACKS if t in tracks],
-        "verifiers": 3 if zone == "high" else 1,
         "recommendation": "panel",
         "reasons": tracks,
         "skipped": skipped,
@@ -296,14 +294,14 @@ def main() -> None:
             "CONFIG (optional)\n"
             "  .claude/review-panel.json, else .claude/hooks/precommit-gate.json.\n"
             "  Only one key is read: nontrivial_globs — path patterns whose blast radius\n"
-            "  justifies the full panel and three verifiers. Without it, zone is decided by\n"
+            "  justifies the full panel. Without it, zone is decided by\n"
             "  diff size alone.\n\n"
             "OUTPUT\n"
             "  recommendation=optout  no code files changed; record a reasoned skip instead\n"
             "                         of spending the panel on nothing.\n"
             "  recommendation=panel   tracks[] with a reason each in reasons{}, what was left\n"
-            "                         out in skipped{}, verifiers (1 normally, 3 in the high\n"
-            "                         zone), and judgeQuestions[] for the judge subagent.\n\n"
+            "                         out in skipped{}, and judgeQuestions[] for the judge\n"
+            "                         subagent.\n\n"
             "EXIT CODES\n"
             "  0  proposal printed\n"
             "  1  not a git repository, or git failed\n"
@@ -337,7 +335,7 @@ def main() -> None:
     if result["recommendation"] == "optout":
         print("proposal:    SKIP the panel — no code changed. Record the skip with a reason instead.")
     else:
-        print(f"proposal:    run {len(result['tracks'])}/{len(ALL_TRACKS)} tracks, verifiers={result['verifiers']}")
+        print(f"proposal:    run {len(result['tracks'])}/{len(ALL_TRACKS)} tracks")
         if result["zone"] == "high":
             print(f"  all tracks — {result['reasons'][result['tracks'][0]]}")
             print("  the judge may only REMOVE tracks here, each with a stated reason")
