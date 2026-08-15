@@ -37,9 +37,10 @@ bash <skill-dir>/scripts/generate.sh \
 
 Run it inline via the Bash tool with a generous timeout — generation typically takes **60–120 seconds**. Set `timeout: 240000` (4 min) to be safe. Don't run it in the background; you need the saved file before continuing.
 
-The wrapper prints codex's transcript to stdout and ends with either:
-- `✓ saved: <path>` and `file <path>` output, or
-- `✗ no fresh image found ...` if codex refused to call `image_gen` (rare — usually means a refusal at the model level; check the transcript).
+The wrapper prints codex's transcript to stdout and ends with one of:
+- `✓ saved: <path>` and `file <path>` output — image saved.
+- `✗ codex produced no image: <dir> was never created` — codex never called `image_gen` (rare — usually a model-level refusal, or a model without the tool; check the transcript).
+- `✗ codex created <dir> but left no .png in it` — `image_gen` ran but produced no PNG; the wrapper lists the directory so you can see what landed there.
 
 ## After generation
 
@@ -60,7 +61,9 @@ After codex exits, the wrapper picks up the result this way:
 
 1. `tee`s codex's stdout/stderr to a tempfile while still streaming it to the terminal.
 2. Greps the startup banner (`session id: <uuid>`) — printed once per `codex exec` run.
-3. Looks only inside `~/.codex/generated_images/<that-uuid>/` for the freshest `ig_*.png` and copies it to `--output`.
+3. Looks only inside `~/.codex/generated_images/<that-uuid>/` for the freshest `*.png` and copies it to `--output`.
+
+The pickup matches any `*.png` rather than a fixed filename prefix. Codex names `image_gen` output differently per version and per mode — `exec-<uuid>.png` under `codex exec`, `ig_<hash>.png` in the TUI — and the session directory holds nothing but that run's `image_gen` output.
 
 Scoping the pickup by session uuid (rather than "newest file globally by mtime") makes parallel `generate.sh` invocations race-safe: each codex exec gets its own uuid and its own subdirectory, so concurrent calls never see each other's files.
 
@@ -119,6 +122,6 @@ bash <skill-dir>/scripts/generate.sh \
 ## Notes
 
 - **One image per call.** For multiple variants, call the wrapper multiple times. Sequential or concurrent both work — the wrapper scopes pickup by codex session id, so parallel calls don't collide.
-- **Storage.** Codex keeps every original under `~/.codex/generated_images/<session>/ig_*.png`. The wrapper copies (not moves) the freshest one to your `--output`; the originals stay there as a cache.
+- **Storage.** Codex keeps every original under `~/.codex/generated_images/<session>/`. The wrapper copies (not moves) the freshest one to your `--output`; the originals stay there as a cache.
 - **Cost.** Billed via existing Codex auth — no `OPENAI_API_KEY`, no extra config. With the lean wrapper a single generation costs ~15–25k tokens (vs. 30k+ when codex was also running shell commands).
 - **Sandbox / git check.** `--dangerously-bypass-approvals-and-sandbox` and `--skip-git-repo-check` are always passed so the wrapper works from `/tmp` and other non-git locations regardless of the user's config.

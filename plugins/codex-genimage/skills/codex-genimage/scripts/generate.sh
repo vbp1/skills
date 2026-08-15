@@ -2,11 +2,16 @@
 # Generate an image via codex CLI and save it to a target absolute path.
 #
 # Strategy: codex calls image_gen and stops. The wrapper extracts codex's
-# session id from its stdout, looks up the resulting ig_*.png in that
-# session's directory under ~/.codex/generated_images/, and copies it to
-# $OUTPUT. Codex never touches the local filesystem itself, so this is
-# race-safe with concurrent generate.sh invocations — each codex exec has
-# its own session uuid and writes to its own directory.
+# session id from its stdout, looks up the resulting *.png in that session's
+# directory under ~/.codex/generated_images/, and copies it to $OUTPUT.
+# Codex never touches the local filesystem itself, so this is race-safe with
+# concurrent generate.sh invocations — each codex exec has its own session
+# uuid and writes to its own directory.
+#
+# The pickup matches any *.png in the session directory rather than a fixed
+# filename prefix: codex names image_gen output differently per version and
+# per mode (`exec-<uuid>.png` under `codex exec`, `ig_<hash>.png` in the TUI),
+# and the session directory holds nothing but that run's image_gen output.
 
 set -euo pipefail
 
@@ -30,7 +35,7 @@ Optional:
 Exit codes:
   0  image saved at --output
   1  invalid arguments
-  2  could not pick up the image (session id missing or no ig_*.png produced)
+  2  could not pick up the image (session id missing, or no PNG produced)
 EOF
 }
 
@@ -111,12 +116,22 @@ if [[ -z "${SESSION_ID:-}" ]]; then
 fi
 
 SESSION_DIR="$GEN_DIR/$SESSION_ID"
-FRESH=$(find "$SESSION_DIR" -maxdepth 1 -type f -name 'ig_*.png' -printf '%T@ %p\n' 2>/dev/null \
+
+if [[ ! -d "$SESSION_DIR" ]]; then
+  echo "✗ codex produced no image: $SESSION_DIR was never created" >&2
+  echo "  image_gen was not called at all in session $SESSION_ID (codex exit code: $CODEX_RC)." >&2
+  echo "  Check the transcript above for a refusal, and check that the model in use offers image_gen." >&2
+  exit 2
+fi
+
+FRESH=$(find "$SESSION_DIR" -maxdepth 1 -type f -name '*.png' -printf '%T@ %p\n' 2>/dev/null \
   | sort -nr | head -1 | awk '{print $2}')
 
 if [[ -z "${FRESH:-}" ]]; then
-  echo "✗ no image_gen output found in $SESSION_DIR" >&2
-  echo "  (codex session $SESSION_ID exited with code $CODEX_RC; image_gen may have been skipped)" >&2
+  echo "✗ codex created $SESSION_DIR but left no .png in it" >&2
+  echo "  (codex session $SESSION_ID exited with code $CODEX_RC)" >&2
+  echo "  Directory contents:" >&2
+  ls -la "$SESSION_DIR" >&2
   exit 2
 fi
 

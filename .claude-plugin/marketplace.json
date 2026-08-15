@@ -82,7 +82,7 @@
       "name": "codex-genimage",
       "source": "./plugins/codex-genimage",
       "description": "Generate images through the Codex CLI built-in image tool, billed via existing Codex auth instead of a separate API key.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "media",
       "keywords": [
         "images",
