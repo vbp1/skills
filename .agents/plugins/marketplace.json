@@ -255,7 +255,7 @@
         "path": "./plugins/technical-premortem"
       },
       "description": "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

@@ -34,8 +34,9 @@ description: >
 
 ## 2. Запусти субагента
 
-Agent tool: `subagent_type: "premortem-analyst"`, `run_in_background: false`,
-в prompt — передача целиком.
+Agent tool: `subagent_type: "premortem-analyst"`, в prompt — передача целиком.
+Агент уходит в фон (режима «дождаться на месте» у инструмента нет) — дождись уведомления
+о его завершении и только потом продолжай; результат не додумывай.
 
 ## 3. Если вернулся блок NEED-INFO
 

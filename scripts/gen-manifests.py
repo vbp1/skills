@@ -77,10 +77,10 @@ VERSIONS = {
     "langfuse-debug": "1.0.1",
     "phased-task-delivery": "1.0.1",
     "remote-ssh-workspace": "1.0.1",
-    "review-panel": "1.0.6",
+    "review-panel": "1.0.7",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
-    "technical-premortem": "1.0.1",
+    "technical-premortem": "1.0.2",
     "user-clear-communication": "1.0.1",
     "youtube-transcript": "1.0.1",
 }

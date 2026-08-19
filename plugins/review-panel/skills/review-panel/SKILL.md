@@ -47,8 +47,10 @@ spending the panel on nothing.
 
 ### 1b. Judge subagent (1 agent)
 
-Spawn ONE subagent (`general-purpose`, `run_in_background: false`) with the triage JSON and this
-brief:
+Spawn ONE subagent (`general-purpose`) with the triage JSON and this brief. Every agent runs in
+the background — the Agent tool has no wait-in-place mode — so spawn this one alone and **stop
+until its completion notification arrives**: no round opened, no tracks spawned, and never a
+guess at what it would have said.
 
 > You are triaging a review, not performing it. A mechanical pass already produced the JSON
 > below. Answer only its `judgeQuestions` against the real diff and adjust the track list. Read
@@ -88,9 +90,11 @@ one that was triaged reports findings about code nobody asked about. That writes
 `$DIR/round-$N.diff`, which is both the "before" for the next round **and the only thing the
 tracks are given to review**. Open a fresh round the same way for every re-review round.
 
-Then spawn **one `Agent` per selected track, all in a single message** so they run concurrently,
-`run_in_background: true`. **Record the identifier each spawn returns** — it is how you reach that
-track in a later round, and it goes in the report.
+Then spawn **one `Agent` per selected track, all in a single message** so they run concurrently —
+background is the only mode there is. **Record the identifier each spawn returns** — it is how you
+reach that track in a later round, and it goes in the report. Wait for every track's completion
+notification before checking findings or writing the report; a report written while a track is
+still running describes a review that did not finish.
 
 | Track | `subagent_type` | Focus |
 | --- | --- | --- |
