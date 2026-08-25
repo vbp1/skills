@@ -92,7 +92,12 @@ CMD=(codex exec
   -c model_reasoning_effort=low)
 [[ -n "$MODEL" ]] && CMD+=(--model "$MODEL")
 for ref in "${REFS[@]}"; do CMD+=(--image "$ref"); done
-CMD+=("$FULL_PROMPT")
+# `--` closes the option list before the positional prompt. codex declares
+# `-i, --image <FILE>...` as variadic, so without the separator the prompt
+# following a `--image` is swallowed as another image path — codex then finds
+# no prompt argument, falls back to stdin, and exits with
+# "No prompt provided via stdin".
+CMD+=(-- "$FULL_PROMPT")
 
 # Tee codex output to a tempfile so we can extract `session id: <uuid>`
 # from its startup banner. Each session writes to its own dir under

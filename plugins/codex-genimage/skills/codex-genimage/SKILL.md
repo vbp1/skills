@@ -116,12 +116,15 @@ User: "Возьми ~/photo.jpg и сделай через codex акварел�
 bash <skill-dir>/scripts/generate.sh \
   --prompt "Recreate the attached photograph as a watercolor painting. Preserve composition and subject identity but render with soft watercolor textures, visible paper grain, and gentle bleeding edges. Maintain the original aspect ratio." \
   --output "/tmp/watercolor.png" \
-  --ref "~/photo.jpg"
+  --ref "$HOME/photo.jpg"
 ```
+
+Pass `--ref` an absolute path. A quoted `~` is not expanded by the shell, and the wrapper rejects the path as a missing file.
 
 ## Notes
 
 - **One image per call.** For multiple variants, call the wrapper multiple times. Sequential or concurrent both work — the wrapper scopes pickup by codex session id, so parallel calls don't collide.
 - **Storage.** Codex keeps every original under `~/.codex/generated_images/<session>/`. The wrapper copies (not moves) the freshest one to your `--output`; the originals stay there as a cache.
 - **Cost.** Billed via existing Codex auth — no `OPENAI_API_KEY`, no extra config. With the lean wrapper a single generation costs ~15–25k tokens (vs. 30k+ when codex was also running shell commands).
+- **Argument order.** The prompt is passed as the positional argument after `--`. codex declares `-i, --image <FILE>...` as variadic, so a prompt placed after `--image` without the separator is consumed as another image path.
 - **Sandbox / git check.** `--dangerously-bypass-approvals-and-sandbox` and `--skip-git-repo-check` are always passed so the wrapper works from `/tmp` and other non-git locations regardless of the user's config.
