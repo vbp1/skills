@@ -90,7 +90,7 @@
         "path": "./plugins/codex-genimage"
       },
       "description": "Generate images through the Codex CLI built-in image tool, billed via existing Codex auth instead of a separate API key.",
-      "version": "1.0.2",
+      "version": "1.0.3",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
