@@ -42,6 +42,7 @@ exist as two separate variants because the two versions diverged.
 | `decision-playground` | Codex | Turn a long list of choices into a self-contained interactive HTML page, read the answers back as structured data. |
 | `feature-challenge-workflow` | Codex | Challenge a feature request before any code: real problem, existing capability, alternatives, decision gates. |
 | `feature-plan-storyboard` | Claude | Plan a feature, verify every claim against the current code, build an interactive user-story storyboard page. |
+| `kill-the-idea` | Claude | Argue against an idea from the position that it should not be built, anchor every claim to the code, end with a verdict. |
 | `langfuse-debug` | Claude | Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns. |
 | `phased-task-delivery` | Codex | Run a complex task through explicit phases: plan documents, review gates, per-phase commits, final validation. |
 | `remote-ssh-workspace` | Codex | Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs. |

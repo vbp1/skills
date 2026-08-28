@@ -161,6 +161,20 @@
       "license": "Apache-2.0"
     },
     {
+      "name": "kill-the-idea",
+      "source": "./plugins/kill-the-idea",
+      "description": "Argue against an idea from the position that it should not be built, with every claim anchored to the code, and end with a verdict.",
+      "version": "1.0.0",
+      "category": "planning",
+      "keywords": [
+        "product",
+        "planning",
+        "decision",
+        "review"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
       "name": "langfuse-debug",
       "source": "./plugins/langfuse-debug",
       "description": "Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns.",
