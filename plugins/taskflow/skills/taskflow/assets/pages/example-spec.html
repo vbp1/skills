@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#007 · Task · Export the report to CSV</title>
+<script>try{var t=localStorage.getItem('taskflow-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="taskflow.css">
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Shared chrome: id + title + step/status. Copy this header into every doc page. -->
+  <header class="topbar">
+    <div class="id">#007</div>
+    <div class="ttl">
+      <div class="title">Export the report to CSV</div>
+      <div class="metarow">
+        <span class="chip dep">↳ depends on #003 (merged)</span>
+        <span class="chip">UI + backend</span>
+      </div>
+    </div>
+    <div class="state">
+      <div class="step">step 3 / 10 · task description</div>
+      <div class="bar"><span style="width:30%"></span></div>
+      <div class="pill ip">in&nbsp;progress</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a class="tab active" href="example-spec.html"><span class="n">01</span>Task</a>
+    <a class="tab" href="example-plan.html"><span class="n">02</span>Plan</a>
+    <a class="tab" href="example-summary.html"><span class="n">03</span>Result</a>
+    <button id="themebtn" class="themebtn" onclick="tfTheme()">☀ Light</button>
+  </nav>
+
+  <section class="block">
+    <div class="label">GOAL</div>
+    <div class="in"><div class="goal"><span class="mk code">▸</span>Let an analyst take the numbers they see on the report page into a spreadsheet, without asking anyone for a database dump.</div></div>
+  </section>
+
+  <div class="cols">
+    <section class="block">
+      <div class="label">CONTEXT</div>
+      <div class="in"><ul class="kv">
+        <li><b>Exists:</b> the report page renders a filtered table server-side.</li>
+        <li><b>Foundation:</b> the shared query builder from #003 (merged).</li>
+        <li><b>Who:</b> an analyst, at the end of a weekly review.</li>
+      </ul></div>
+    </section>
+    <section class="block">
+      <div class="label">CONSTRAINTS</div>
+      <div class="in"><ul class="kv">
+        <li>The export follows <b>the filters on screen</b>, not the whole table.</li>
+        <li>No new background jobs — the file is produced in the request.</li>
+        <li>Rows are capped at <b>50 000</b>; above that the user is told, not truncated.</li>
+      </ul></div>
+    </section>
+  </div>
+
+  <section class="block">
+    <div class="label">USER STORIES</div>
+    <div class="in">
+      <!-- Every acceptance criterion carries its own "how to check" line. -->
+      <div class="story">
+        <div class="story-h"><span class="tag">US-1</span><span class="t">As an analyst, I want to download what I see, so that I can work on it in a spreadsheet.</span></div>
+        <ul class="ac">
+          <li>An export control is visible on the report page.<br><small>Check: open the report with any filter set — expect an export control next to the filters.</small></li>
+          <li>The file holds exactly the filtered rows, in the on-screen column order.<br><small>Check: filter to one week, export, open the file — expect the same rows and columns as on screen.</small></li>
+          <li>The download names the file after the report and the date.<br><small>Check: export twice on different days — expect two differently named files.</small></li>
+        </ul>
+      </div>
+      <div class="story">
+        <div class="story-h"><span class="tag">US-2</span><span class="t">As an analyst, I want to be told when the export is too large, so that I narrow the filter instead of waiting.</span></div>
+        <ul class="ac">
+          <li>Above the row cap the export is refused with a message naming the cap.<br><small>Check: clear all filters on a large report — expect a message that names the limit and no download.</small></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">OUT OF SCOPE</div>
+    <div class="in"><ul class="oos">
+      <li>Scheduled or emailed exports.</li>
+      <li>Any format other than CSV.</li>
+      <li>Exporting from the dashboard tiles.</li>
+    </ul></div>
+  </section>
+
+  <section class="block">
+    <div class="label">MOCKUP</div>
+    <div class="in">
+      <a class="mocklink" href="example-mockup.html" target="_blank" rel="noopener">
+        <span class="mi">▣</span>
+        <span class="mt"><b>Clickable mockup: report page · export</b><small>separate page — opens in a new window</small></span>
+        <span class="ma">Open the mockup →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">OPEN QUESTIONS → DECISIONS</div>
+    <div class="in">
+      <!-- One .qa block per question; saveAnswers() below collects them all. -->
+      <div class="qa" data-qid="q1">
+        <div class="q">Should the export follow the on-screen filters, or always cover the whole report?</div>
+        <div class="proposed">Proposed: follow the filters — the analyst is exporting what they are already looking at.</div>
+        <div class="choice">
+          <label><input type="radio" name="q1" value="accept" checked> Agree</label>
+          <label><input type="radio" name="q1" value="change"> Change</label>
+        </div>
+        <textarea class="ans" placeholder="your answer or a clarification (optional)"></textarea>
+      </div>
+      <div class="qa" data-qid="q2">
+        <div class="q">Above the row cap: refuse with a message, or export the first rows?</div>
+        <div class="proposed">Proposed: refuse and name the cap — a silently truncated file reads as complete.</div>
+        <div class="choice">
+          <label><input type="radio" name="q2" value="accept" checked> Agree</label>
+          <label><input type="radio" name="q2" value="change"> Change</label>
+        </div>
+        <textarea class="ans" placeholder="your answer or a clarification (optional)"></textarea>
+      </div>
+      <div class="saverow">
+        <button class="btn" onclick="saveAnswers()">Save the answers</button>
+        <span class="hint">→ example-spec.answers.json (next to this page)</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><b>issue</b> <a href="#">#412</a></span>
+    <span><b>PR</b> —</span>
+    <span><b>branch</b> feat/007-export-csv</span>
+    <span><b>updated</b> 2026-01-31</span>
+  </footer>
+
+</div>
+<div class="toast" id="toast"></div>
+<script src="taskflow.js"></script>
+<script>
+function saveAnswers(){
+  var items=[].map.call(document.querySelectorAll('.qa'),function(el){
+    var id=el.getAttribute('data-qid');
+    var picked=el.querySelector('input[name="'+id+'"]:checked');
+    return {id:id,
+      question:el.querySelector('.q').textContent.trim(),
+      proposed:el.querySelector('.proposed').textContent.replace(/^Proposed:\s*/,'').trim(),
+      decision:picked?picked.value:'accept',
+      answer:el.querySelector('.ans').value.trim()};
+  });
+  tfSave('example-spec.answers.json',{task:'007',kind:'spec-answers',ts:new Date().toISOString(),items:items});
+}
+tfAnnotateDoc({task:'007',kind:'spec-notes',file:'example-spec.notes.json'});
+</script>
+</body>
+</html>

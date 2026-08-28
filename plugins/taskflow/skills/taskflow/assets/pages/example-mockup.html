@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#007 · Mockup · report export</title>
+<script>try{var t=localStorage.getItem('taskflow-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="taskflow.css">
+<style>
+  /* this page: no global zoom (precise dragging + natural-size mockup), wider, mockup-led */
+  body{zoom:1}
+  .wrap{max-width:1340px;padding:18px 22px 28px}
+  .bk{margin-bottom:8px}
+  .hd{margin:6px 0 8px}
+  .note{margin-bottom:10px}
+  .toolsrow{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .toolsrow .modehint{font-family:var(--mono);font-size:12px;color:var(--dim)}
+  /* big mockup window */
+  .stage{position:relative;min-height:auto;padding:0}
+  .stage iframe{width:100%;height:82vh;min-height:560px;border:0;display:block;background:var(--bg)}
+  .overlay{position:absolute;inset:0;z-index:5}
+  .overlay:not(.arming){pointer-events:none}
+  .overlay.arming{pointer-events:auto;cursor:crosshair;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+  .pinlayer{position:absolute;inset:0;z-index:6;pointer-events:none}
+  /* the floating notes panel lives in taskflow.css (shared with the doc pages) */
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bk"><a href="example-spec.html">← back to task #007</a></div>
+  <div class="hd"><span class="id">#007</span><span class="t">Mockup: report page · export</span></div>
+  <div class="note">// the real look of the screen, from ui-mockup. In normal mode click through the mockup itself.</div>
+
+  <div class="toolsrow">
+    <span class="modehint">The notes panel on the right can be dragged by its header and collapsed.</span>
+    <div style="margin-left:auto"></div>
+    <button id="themebtn" class="themebtn" onclick="tfTheme()">☀ Light</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <iframe id="mock" src="example-mockup-view.html" title="Report export mockup"></iframe>
+    <div class="overlay" id="overlay"></div>
+    <div class="pinlayer" id="pinlayer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="taskflow.js"></script>
+<script>tfAnnotateMockup({task:'007',kind:'mockup-notes',file:'example-mockup.notes.json'});</script>
+</body>
+</html>

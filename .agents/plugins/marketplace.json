@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
@@ -204,21 +204,6 @@
       "license": "Apache-2.0"
     },
     {
-      "name": "phased-task-delivery",
-      "source": {
-        "source": "local",
-        "path": "./plugins/phased-task-delivery"
-      },
-      "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
-      "version": "1.0.1",
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Coding",
-      "license": "Apache-2.0"
-    },
-    {
       "name": "remote-ssh-workspace",
       "source": {
         "source": "local",
@@ -271,6 +256,21 @@
       },
       "description": "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
       "version": "1.0.2",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "ui-mockup",
+      "source": {
+        "source": "local",
+        "path": "./plugins/ui-mockup"
+      },
+      "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
+      "version": "1.0.0",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

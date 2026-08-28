@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#007 · Result · Export the report to CSV</title>
+<script>try{var t=localStorage.getItem('taskflow-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="taskflow.css">
+</head>
+<!-- The summary page uses the "done" chrome. -->
+<body class="done">
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="id">#007</div>
+    <div class="ttl">
+      <div class="title">Export the report to CSV</div>
+      <div class="metarow">
+        <span class="chip dep">↳ depends on #003 (merged)</span>
+        <span class="chip">UI + backend</span>
+      </div>
+    </div>
+    <div class="state">
+      <div class="step">step 10 / 10 · result</div>
+      <div class="bar"><span style="width:100%"></span></div>
+      <div class="pill done">done</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a class="tab" href="example-spec.html"><span class="n">01</span>Task</a>
+    <a class="tab" href="example-plan.html"><span class="n">02</span>Plan</a>
+    <a class="tab active" href="example-summary.html"><span class="n">03</span>Result</a>
+    <button id="themebtn" class="themebtn" onclick="tfTheme()">☀ Light</button>
+  </nav>
+
+  <section class="block">
+    <div class="label">DONE VS THE SPEC</div>
+    <div class="in">
+      <ul class="sr">
+        <li><span class="tg">US-1</span><span class="st done">done</span><span>Export follows the on-screen filters; columns and order match the page.</span></li>
+        <li><span class="tg">US-2</span><span class="st done">done</span><span>Above the cap the export is refused with the limit named on the page.</span></li>
+        <li><span class="tg">—</span><span class="st chg">changed</span><span>The file name gained the date — decided at the plan gate, see the deviations block.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="block">
+      <div class="label">CHANGED FILES</div>
+      <div class="in">
+        <ul class="diff">
+          <li><span class="f">src/reports/csv-utils.ts</span><span class="pm"><span class="p">+88</span> <span class="m">−0</span></span></li>
+          <li><span class="f">src/reports/export-route.ts</span><span class="pm"><span class="p">+64</span> <span class="m">−0</span></span></li>
+          <li><span class="f">src/reports/report-page.tsx</span><span class="pm"><span class="p">+31</span> <span class="m">−9</span></span></li>
+          <li><span class="f">src/reports/query-builder.ts</span><span class="pm"><span class="p">+12</span> <span class="m">−4</span></span></li>
+        </ul>
+      </div>
+    </section>
+    <section class="block">
+      <div class="label">TESTS (RED → GREEN)</div>
+      <div class="in">
+        <div class="tline"><span class="r2g">R→G</span><span>separators, quotes and newlines round-trip</span></div>
+        <div class="tline"><span class="r2g">R→G</span><span>column order follows the page</span></div>
+        <div class="tline"><span class="r2g">R→G</span><span>above the cap → refusal, no file</span></div>
+        <div class="tline"><span class="r2g">R→G</span><span>leading equals sign is neutralized</span></div>
+        <div class="tline muted" style="border:0;padding-top:9px">run: 4 passed · 0 failed</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="block">
+    <div class="label">REVIEW</div>
+    <div class="in">
+      <div class="track"><span class="tname">review panel · correctness</span><span class="muted">2 findings → cap check moved before the query; <span class="ok-d">clean</span></span></div>
+      <div class="track"><span class="tname">review panel · silent failures</span><span class="muted">a swallowed stream error now goes up; <span class="ok-d">clean</span></span></div>
+      <div class="track"><span class="tname">review panel · simplify</span><span class="muted">dropped a wrapper around the query builder; <span class="ok-d">applied</span></span></div>
+      <div class="track"><span class="tname">cross-agent review</span><span class="muted"><span class="ok-d">APPROVED</span> — filters and the cap agree with the page</span></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="block">
+      <div class="label">E2E</div>
+      <div class="in"><p class="muted" style="margin:0">Added <span class="code">e2e/report-export.spec.ts</span> <span class="chip">fast</span> — filters the report, exports, and compares the file against the visible rows. Green.</p></div>
+    </section>
+    <section class="block">
+      <div class="label">DEVIATIONS FROM THE PLAN</div>
+      <div class="in"><p class="muted" style="margin:0">The file name carries the date, which the plan did not ask for; agreed at the plan gate so two exports on different days do not overwrite each other.</p></div>
+    </section>
+  </div>
+
+  <section class="block">
+    <div class="label">LINKS AND FOLLOW-UPS</div>
+    <div class="in">
+      <div class="links">
+        <span class="lk"><b>PR</b> <a href="#">#421</a></span>
+        <span class="lk"><b>issue</b> <a href="#">#412</a></span>
+        <span class="lk"><b>commit</b> a1b2c3d</span>
+        <span class="lk"><b>branch</b> feat/007-export-csv</span>
+      </div>
+      <p class="muted" style="margin:14px 0 0">→ follow-ups: export from the dashboard tiles; a column picker before the download.</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><b>task</b> #007</span>
+    <span><b>status</b> done</span>
+    <span><b>closed</b> 2026-01-31</span>
+  </footer>
+
+</div>
+<script src="taskflow.js"></script>
+</body>
+</html>

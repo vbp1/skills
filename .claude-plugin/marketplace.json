@@ -8,7 +8,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
@@ -189,19 +189,6 @@
       "license": "Apache-2.0"
     },
     {
-      "name": "phased-task-delivery",
-      "source": "./plugins/phased-task-delivery",
-      "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
-      "version": "1.0.1",
-      "category": "workflow",
-      "keywords": [
-        "workflow",
-        "planning",
-        "delivery"
-      ],
-      "license": "Apache-2.0"
-    },
-    {
       "name": "remote-ssh-workspace",
       "source": "./plugins/remote-ssh-workspace",
       "description": "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
@@ -258,6 +245,20 @@
       "license": "Apache-2.0"
     },
     {
+      "name": "taskflow",
+      "source": "./plugins/taskflow",
+      "description": "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
+      "version": "1.0.0",
+      "category": "workflow",
+      "keywords": [
+        "workflow",
+        "planning",
+        "review",
+        "tdd"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
       "name": "technical-premortem",
       "source": "./plugins/technical-premortem",
       "description": "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
@@ -267,6 +268,20 @@
         "risk",
         "planning",
         "premortem"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "ui-mockup",
+      "source": "./plugins/ui-mockup",
+      "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
+      "version": "1.0.0",
+      "category": "design",
+      "keywords": [
+        "ui",
+        "mockup",
+        "prototype",
+        "design"
       ],
       "license": "Apache-2.0"
     },

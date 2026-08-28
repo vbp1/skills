@@ -51,7 +51,7 @@ ROOT = args.root
 AUTHOR = {"name": "Vadim Ponomarev", "url": "https://github.com/vbp1"}
 REPO = "https://github.com/vbp1/skills"
 LICENSE = "Apache-2.0"
-MARKETPLACE_VERSION = "1.1.0"  # the catalogue itself; bump when the plugin roster changes
+MARKETPLACE_VERSION = "1.2.0"  # the catalogue itself; bump when the plugin roster changes
 
 # One version per plugin, bumped independently — bump only what you touched.
 #
@@ -76,12 +76,13 @@ VERSIONS = {
     "feature-plan-storyboard": "1.0.1",
     "kill-the-idea": "1.0.0",
     "langfuse-debug": "1.0.1",
-    "phased-task-delivery": "1.0.1",
     "remote-ssh-workspace": "1.0.1",
     "review-panel": "1.0.7",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
+    "taskflow": "1.0.0",
     "technical-premortem": "1.0.2",
+    "ui-mockup": "1.0.0",
     "user-clear-communication": "1.0.1",
     "youtube-transcript": "1.0.1",
 }
@@ -127,9 +128,6 @@ PLUGINS = [
     ("langfuse-debug", "Langfuse Debug",
      "Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns.",
      "observability", "Ops", ["langfuse", "tracing", "llm", "debugging"], "claude"),
-    ("phased-task-delivery", "Phased Task Delivery",
-     "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
-     "workflow", "Coding", ["workflow", "planning", "delivery"], "codex"),
     ("remote-ssh-workspace", "Remote SSH Workspace",
      "Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs with logs.",
      "ops", "Ops", ["ssh", "remote", "sshfs", "ops"], "codex"),
@@ -142,9 +140,15 @@ PLUGINS = [
     ("simple-tech-writing", "Simple Technical Writing",
      "Rewrite technical text so a tired reader cannot misread it: ASD-STE100 structural rules plus a Russian rule set.",
      "writing", "Productivity", ["writing", "documentation", "ste", "russian"], "claude"),
+    ("taskflow", "Taskflow",
+     "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
+     "workflow", "Coding", ["workflow", "planning", "review", "tdd"], "claude"),
     ("technical-premortem", "Technical Pre-Mortem",
      "Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict.",
      "planning", "Productivity", ["risk", "planning", "premortem"], "claude"),
+    ("ui-mockup", "UI Mockup",
+     "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
+     "design", "Productivity", ["ui", "mockup", "prototype", "design"], "claude"),
     ("user-clear-communication", "User-Clear Communication",
      "Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler.",
      "writing", "Productivity", ["communication", "writing", "russian"], "codex"),
@@ -169,6 +173,9 @@ PLUGINS = [
 #                 there would offer an install that cannot work
 EXTRAS = {
     "review-panel": {
+        "claudeOnly": True,
+    },
+    "taskflow": {
         "claudeOnly": True,
     },
 }

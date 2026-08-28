@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/taskflow-state.py\" 2>/dev/null || true",
+            "commandWindows": "python \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\taskflow-state.py\"",
+            "timeout": 10,
+            "statusMessage": "Re-anchoring the taskflow step..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/taskflow-state.py\" 2>/dev/null || true",
+            "commandWindows": "python \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\taskflow-state.py\"",
+            "timeout": 10,
+            "statusMessage": "Re-anchoring the taskflow step..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/precommit-gate.py\"",
+            "commandWindows": "python \"$env:CLAUDE_PLUGIN_ROOT\\hooks\\precommit-gate.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking the review barrier before the commit..."
+          }
+        ]
+      }
+    ]
+  }
+}

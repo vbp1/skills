@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#007 · Plan · Export the report to CSV</title>
+<script>try{var t=localStorage.getItem('taskflow-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="taskflow.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="id">#007</div>
+    <div class="ttl">
+      <div class="title">Export the report to CSV</div>
+      <div class="metarow">
+        <span class="chip dep">↳ depends on #003 (merged)</span>
+        <span class="chip">UI + backend</span>
+      </div>
+    </div>
+    <div class="state">
+      <div class="step">step 4 / 10 · technical plan</div>
+      <div class="bar"><span style="width:40%"></span></div>
+      <div class="pill ip">in&nbsp;progress</div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a class="tab" href="example-spec.html"><span class="n">01</span>Task</a>
+    <a class="tab active" href="example-plan.html"><span class="n">02</span>Plan</a>
+    <a class="tab" href="example-summary.html"><span class="n">03</span>Result</a>
+    <button id="themebtn" class="themebtn" onclick="tfTheme()">☀ Light</button>
+  </nav>
+
+  <section class="block">
+    <div class="label">TECHNICAL APPROACH</div>
+    <div class="in">
+      <p>Reuse the shared query builder from #003: the export runs the same query the page already runs, with paging removed and a hard row cap applied. Serialization is a pure function under unit tests; the route only streams what it returns.</p>
+      <div class="flow">
+        <span class="node">Export control</span><span class="arr">→</span>
+        <span class="node k">GET /reports/:id/export</span><span class="arr">→</span>
+        <span class="node">query builder (#003)</span><span class="arr">→</span>
+        <span class="node">CSV stream</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">FILE-LEVEL CHANGE PLAN</div>
+    <div class="in">
+      <table class="grid">
+        <thead><tr><th style="width:34%">File</th><th style="width:12%"></th><th>What and why</th></tr></thead>
+        <tbody>
+          <tr><td><span class="code">src/reports/export-route.ts</span></td><td><span class="badge new">new</span></td><td>Route: reuses the filters from the query string, applies the row cap, streams the file.</td></tr>
+          <tr><td><span class="code">src/reports/csv-utils.ts</span></td><td><span class="badge new">new</span></td><td>Pure serialization: escaping, column order, file name — unit-tested.</td></tr>
+          <tr><td><span class="code">src/reports/report-page.tsx:118</span></td><td><span class="badge mod">mod</span></td><td>Export control next to the filters, disabled state and the over-cap message.</td></tr>
+          <tr><td><span class="code">src/reports/query-builder.ts:64</span></td><td><span class="badge mod">mod</span></td><td>Accept "no paging" as an explicit option instead of a magic page size.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">FAILURE BEHAVIOUR</div>
+    <div class="in">
+      <table class="grid">
+        <tbody>
+          <tr><td>Row count above the cap</td><td class="muted">refused with a message naming the cap; nothing is downloaded (user's decision, journal 2026-01-30)</td></tr>
+          <tr><td>Query fails mid-stream</td><td class="muted">the error goes up; the partial file is not offered as a result</td></tr>
+          <tr><td>Report id unknown or not permitted</td><td class="muted">the error goes up, same response the page itself gives</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">STAGES AND TASKS</div>
+    <div class="in">
+      <!-- One .stg per stage: heading, task list, and the closing "done when" line. -->
+      <div class="stg">
+        <div class="stg-h"><span class="stg-n">S1</span><span class="t">Serialization</span><small>pure logic, unit-tested</small></div>
+        <ul class="tasks">
+          <li class="done">Escaping: separators, quotes and newlines inside a cell survive a round trip.</li>
+          <li>Column order follows the on-screen order, not the database order.</li>
+          <li>File name from the report name plus the date.</li>
+        </ul>
+        <div class="stg-when"><b>Done when:</b> a row holding every awkward character reads back identical in a spreadsheet.</div>
+      </div>
+      <div class="stg">
+        <div class="stg-h"><span class="stg-n">S2</span><span class="t">Route and row cap</span><small>builds on S1</small></div>
+        <ul class="tasks">
+          <li>The route reuses the page's filters unchanged.</li>
+          <li>Above the cap it refuses with a message naming the limit.</li>
+        </ul>
+        <div class="stg-when"><b>Done when:</b> the same filter produces the same rows on screen and in the file.</div>
+      </div>
+      <div class="stg">
+        <div class="stg-h"><span class="stg-n">S3</span><span class="t">The human surface</span><small>per example-mockup-view.html</small></div>
+        <ul class="tasks">
+          <li>Export control next to the filters, with its pending state.</li>
+          <li>The over-cap message on the page, not in a browser dialog.</li>
+        </ul>
+        <div class="stg-when"><b>Done when:</b> every mockup scenario matches the live report page.</div>
+      </div>
+      <div class="stg">
+        <div class="stg-h"><span class="stg-n">S4</span><span class="t">Acceptance pass</span></div>
+        <ul class="tasks">
+          <li>The "how to check" scenarios from the stories become e2e specs.</li>
+        </ul>
+        <div class="stg-when"><b>Done when:</b> every acceptance criterion is closed by a spec or explicitly listed as manual.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="label">TEST PLAN (RED FIRST)</div>
+    <div class="in">
+      <ul class="tests">
+        <li>a cell holding a separator, a quote and a newline round-trips unchanged <small>· csv-utils</small></li>
+        <li>column order matches the on-screen order <small>· csv-utils</small></li>
+        <li>row count above the cap → refusal, no file <small>· route</small></li>
+        <li>filters from the page reach the query unchanged <small>· route</small></li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="block">
+      <div class="label">RISKS AND MITIGATIONS</div>
+      <div class="in">
+        <table class="grid">
+          <tbody>
+            <tr><td>A long export holds a database connection</td><td class="muted">stream in chunks, statement timeout, row cap</td></tr>
+            <tr><td>Spreadsheets read a leading <span class="code">=</span> as a formula</td><td class="muted">prefix such cells per the escaping rule, covered by a test</td></tr>
+            <tr><td>Filters drift apart from the page's own query</td><td class="muted">both go through the builder from #003, no second query path</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="block">
+      <div class="label">PLAN REVIEW</div>
+      <div class="in">
+        <!-- Verdict strip: one chip per reviewer. The ledger below carries the findings. -->
+        <div class="verdict"><span class="vmark grill">grill-me</span><div class="muted">Hardened: the row cap became a refusal rather than a truncation, and the file name gained the date.</div></div>
+        <div class="verdict"><span class="vmark ok">pre-mortem · GO</span><div class="muted">No blocking risk; the connection-hold risk carries a mitigation and a pre-flight check.</div></div>
+        <div class="verdict"><span class="vmark ok">cross-agent review · APPROVED</span><div class="muted">2 findings, both closed — see the ledger.</div></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="block">
+    <div class="label">CLOSED FINDINGS (LEDGER)</div>
+    <div class="in">
+      <ul class="kv">
+        <li>round 1 · pre-mortem · a long export holds a connection · a full-table export on the largest report keeps a pooled connection for minutes — fixed, see risks and S2.</li>
+        <li>round 1 · cross-agent review · truncation reads as a complete file · a user exports above the cap and works on a silently shortened file — fixed, see failure behaviour.</li>
+        <li>round 2 · cross-agent review · leading equals sign · a cell starting with an equals sign is executed as a formula on open — fixed, see the test plan.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span><b>issue</b> <a href="#">#412</a></span>
+    <span><b>PR</b> —</span>
+    <span><b>branch</b> feat/007-export-csv</span>
+    <span><b>updated</b> 2026-01-31</span>
+  </footer>
+
+</div>
+<div class="toast" id="toast"></div>
+<script src="taskflow.js"></script>
+<script>tfAnnotateDoc({task:'007',kind:'plan-notes',file:'example-plan.notes.json'});</script>
+</body>
+</html>

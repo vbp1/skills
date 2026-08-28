@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "phased-task-delivery",
-  "displayName": "Phased Task Delivery",
-  "version": "1.0.1",
-  "description": "Run a complex task through explicit phases: plan documents, checklists, review gates, per-phase commits, final full-suite validation.",
+  "name": "ui-mockup",
+  "displayName": "UI Mockup",
+  "version": "1.0.0",
+  "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
   "author": {
     "name": "Vadim Ponomarev",
     "url": "https://github.com/vbp1"
@@ -12,8 +12,9 @@
   "repository": "https://github.com/vbp1/skills",
   "license": "Apache-2.0",
   "keywords": [
-    "workflow",
-    "planning",
-    "delivery"
+    "ui",
+    "mockup",
+    "prototype",
+    "design"
   ]
 }

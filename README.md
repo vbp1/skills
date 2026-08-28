@@ -44,11 +44,12 @@ exist as two separate variants because the two versions diverged.
 | `feature-plan-storyboard` | Claude | Plan a feature, verify every claim against the current code, build an interactive user-story storyboard page. |
 | `kill-the-idea` | Claude | Argue against an idea from the position that it should not be built, anchor every claim to the code, end with a verdict. |
 | `langfuse-debug` | Claude | Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns. |
-| `phased-task-delivery` | Codex | Run a complex task through explicit phases: plan documents, review gates, per-phase commits, final validation. |
 | `remote-ssh-workspace` | Codex | Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs. |
 | `rust-code-review` | Codex | Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, locks. |
 | `simple-tech-writing` | Claude | Rewrite technical text so a tired reader cannot misread it: ASD-STE100 rules plus a Russian rule set. |
+| `taskflow` | Claude | Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review, PR, summary. |
 | `technical-premortem` | Claude | Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict. |
+| `ui-mockup` | Claude | Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product. |
 | `user-clear-communication` | Codex | Write user-facing replies, statuses and reports that stay readable: plain wording, explicit outcomes, no filler. |
 | `youtube-transcript` | Claude | Pull the transcript of a YouTube video, with or without timestamps. |
 
@@ -56,6 +57,14 @@ Some skills need external tooling that is not bundled here: `cloakbrowser` expec
 the CloakBrowser CLI on the machine, `langfuse-debug` expects Langfuse credentials,
 `codex-genimage` expects an authenticated Codex CLI. Each `SKILL.md` states its
 prerequisites.
+
+`taskflow` runs on its own, and grows steps when its companions are installed:
+`ui-mockup` for the mockup, `review-panel` for the review round,
+`technical-premortem` for the risk pass, `create-pr` for the pull request, and any
+cross-agent review skill for the second opinion. It ships its own hooks — a state
+anchor that survives context compaction, and a review barrier that stays dormant
+until a repo opts in. Already running the same barrier from your own settings? Keep
+one copy, or every commit asks twice.
 
 Commands inside a `SKILL.md` refer to bundled scripts as `<skill-dir>/scripts/…`.
 `<skill-dir>` is the directory that holds that `SKILL.md`, wherever the agent
