@@ -45,6 +45,11 @@ element you mirror — read the real classes and the literal strings out of the 
 rather than inferring them from the component source. Then check each line against
 the capture, per surface and per state:
 
+**Content is what has to match.** Open a finding for a wrong, missing or
+reordered item: the logo, a menu entry, a button caption, a column header, a
+state word, an icon. Copy sizes and spacing from the capture where they are
+visible, and leave a few pixels of difference alone.
+
 - **Button and menu wording** — the literal caption ("Cancel", not "Stop").
 - **Duration format** — how the product spells an elapsed time, and whether the row
   form differs from the card form.

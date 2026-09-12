@@ -82,7 +82,7 @@ VERSIONS = {
     "simple-tech-writing": "1.0.1",
     "taskflow": "1.1.0",
     "technical-premortem": "1.0.2",
-    "ui-mockup": "1.1.0",
+    "ui-mockup": "1.1.1",
     "user-clear-communication": "1.0.1",
     "youtube-transcript": "1.0.1",
 }
