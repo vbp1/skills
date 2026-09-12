@@ -58,6 +58,11 @@ the capture, per surface and per state:
 - **Table columns** — what each column actually holds and its header wording.
 - **Container width** — full-width region vs centered narrow column.
 - **Page chrome** — the header above the surface and its tab strip.
+- **App frame** — the left menu (every item, its order, its grouping, the badge
+  counts, which one is active), the top bar and what sits in it (logo, project
+  switcher, status, avatar). The frame is product UI and is drawn around every
+  surface; a logo or illustration comes from the product's own image file, embedded
+  as a `data:` URI.
 - **Empty, loading and failure states** — all three, not just the happy frame.
 
 ## Verifying the mockup itself
@@ -65,12 +70,15 @@ the capture, per surface and per state:
 Looking is the test — there are no type-checks here. Any browser tool does; what has
 to come out of it:
 
-- **No page errors and no console errors**, on every scenario tab.
-- **Both themes**, light and dark.
+- **No page errors and no console errors**, on every scenario of the list.
+- **Both themes**, light and dark — the review column follows the theme too.
 - **Every frame you intend to show** — advance the stepper to it before the shot
   rather than shooting the first frame only.
+- **The column collapsed**, so the screen can be judged on its own.
 - **Scroll and pinning behaviour** wherever the surface has a scrolling region.
-- Read the resulting image; fix layout collisions and re-shoot.
+- Read the resulting image; fix layout collisions (a product dialog or toast that
+  escapes the mockup area over the column belongs in `.mk-stage` with
+  `position: absolute`) and re-shoot.
 
 **CSS-transition gotcha.** Elements with a `transition` (theme highlight, chevron
 rotate, panel expand) are mid-animation right after a click, so a shot taken

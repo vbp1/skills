@@ -1,51 +1,465 @@
 <!doctype html>
-<html lang="en">
+<!--
+  ui-mockup skeleton — copy this file, then FILL the marked spots:
+    1. <style> THEME TOKENS: replace the placeholder palette with your project's own
+       design tokens (see references/project-ui.md for where to find them).
+    2. JS "FILL: scenarios": write buildX() flows that mutate state + snap(), and list
+       them in SCENARIOS.
+    3. JS "FILL: render": draw one frame's state into #stage (+ optional #pinned).
+  The app frame (top bar + left menu) is product UI: keep it, and fill it from the
+  live capture. The review column on the left (scenario picker, stepper, step notes,
+  the notes slot) is reusable machinery — leave it as-is. It is deliberately styled
+  unlike the product so no one mistakes scaffolding for the real design.
+-->
+<html lang="en" class="">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>#007 · Mockup · report export</title>
-<script>try{var t=localStorage.getItem('taskflow-theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<link rel="stylesheet" href="taskflow.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>#007 · Mockup · report page · export</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-  /* this page: no global zoom (precise dragging + natural-size mockup), wider, mockup-led */
-  body{zoom:1}
-  .wrap{max-width:1340px;padding:18px 22px 28px}
-  .bk{margin-bottom:8px}
-  .hd{margin:6px 0 8px}
-  .note{margin-bottom:10px}
-  .toolsrow{display:flex;align-items:center;gap:12px;margin:0 0 12px}
-  .toolsrow .modehint{font-family:var(--mono);font-size:12px;color:var(--dim)}
-  /* big mockup window */
-  .stage{position:relative;min-height:auto;padding:0}
-  .stage iframe{width:100%;height:82vh;min-height:560px;border:0;display:block;background:var(--bg)}
-  .overlay{position:absolute;inset:0;z-index:5}
-  .overlay:not(.arming){pointer-events:none}
-  .overlay.arming{pointer-events:auto;cursor:crosshair;background:color-mix(in srgb,var(--accent) 7%,transparent)}
-  .pinlayer{position:absolute;inset:0;z-index:6;pointer-events:none}
-  /* the floating notes panel lives in taskflow.css (shared with the doc pages) */
+  /* ===== THEME TOKENS — PLACEHOLDER palette (shadcn-shaped, neutral + a violet accent).
+     Replace every value with the tokens copied verbatim from your project. ===== */
+  :root {
+    --radius: 0.5rem;
+    --background: oklch(0.985 0 0);
+    --foreground: oklch(21% 0.006 285.885);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(21% 0.006 285.885);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(21% 0.006 285.885);
+    --primary: oklch(0.562 0.19 287.499);
+    --primary-foreground: oklch(1 0 0);
+    --card-primary: oklch(96.9% 0.016 293.756);
+    --secondary: oklch(92% 0.004 286.32);
+    --muted: oklch(96.7% 0.001 286.375);
+    --muted-foreground: oklch(44.2% 0.017 285.786);
+    --accent: oklch(92% 0.004 286.32);
+    --destructive: oklch(63.7% 0.237 25.331);
+    --danger: oklch(63.7% 0.237 25.331);
+    --success: oklch(72.3% 0.219 149.579);
+    --warning: oklch(79.5% 0.184 86.047);
+    --border: oklch(92% 0.004 286.32);
+    --input: oklch(87.1% 0.006 286.286);
+    --ring: oklch(0.602 0.208 287.67);
+    --sidebar: oklch(98.5% 0 0);
+    --sidebar-border: oklch(87.1% 0.006 286.286);
+  }
+  .dark {
+    --background: oklch(14.1% 0.005 285.823);
+    --foreground: oklch(1 0 0);
+    --card: oklch(21% 0.006 285.885);
+    --card-foreground: oklch(1 0 0);
+    --popover: oklch(21% 0.006 285.885);
+    --popover-foreground: oklch(1 0 0);
+    --primary: oklch(0.562 0.19 287.499);
+    --primary-foreground: oklch(1 0 0);
+    --card-primary: oklch(0.272 0.069 288.23);
+    --secondary: oklch(27.4% 0.006 286.033);
+    --muted: oklch(27.4% 0.006 286.033);
+    --muted-foreground: oklch(70.5% 0.015 286.067);
+    --accent: oklch(27.4% 0.006 286.033);
+    --danger: oklch(70.4% 0.191 22.216);
+    --success: oklch(79.2% 0.209 151.711);
+    --warning: oklch(85.2% 0.199 91.936);
+    --border: oklch(0.271 0.031 292.281);
+    --input: oklch(27.4% 0.006 286.033);
+    --ring: oklch(0.732 0.151 291.32);
+    --sidebar: oklch(14.1% 0.005 285.823);
+    --sidebar-border: oklch(21% 0.006 285.885);
+  }
+
+  * { box-sizing: border-box; border-color: var(--border); }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--background); color: var(--foreground);
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    display: flex; height: 100vh; overflow: hidden;
+  }
+  code, .mono { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; }
+  .muted { color: var(--muted-foreground); }
+
+  /* ===== review column: SCAFFOLDING. It follows the mockup's own theme tokens, and is
+     told apart from the product by its dashed edge and monospace type, not by colour.
+     Reusable — leave as-is. ===== */
+  .mk-panel {
+    flex: 0 0 300px; width: 300px; height: 100vh; overflow-y: auto; z-index: 50;
+    background-color: var(--card);
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 6%, transparent) 0 2px, transparent 2px 10px);
+    color: var(--foreground);
+    border-right: 2px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
+    padding: 13px 14px 22px; display: flex; flex-direction: column; gap: 14px;
+    font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.5;
+  }
+  body.mk-collapsed .mk-panel { display: none; }
+  .mk-head { display: flex; align-items: center; gap: 8px; }
+  .mk-head .t { font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+  .mk-ico {
+    margin-left: auto; background: none; border: 1px solid transparent; color: var(--muted-foreground);
+    border-radius: 6px; padding: 2px 7px; cursor: pointer; font: inherit;
+  }
+  .mk-ico:hover { background: var(--accent); color: var(--foreground); }
+  .mk-ico.info { margin-left: 0; cursor: help; }
+  .mk-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 6px; }
+  .mk-sec { border-top: 1px solid var(--border); padding-top: 12px; }
+  .mk-sec:first-of-type { border-top: 0; padding-top: 0; }
+  .mk-select {
+    width: 100%; font: inherit; cursor: pointer; padding: 6px 9px; border-radius: 7px;
+    color: var(--foreground); background: var(--secondary); border: 1px solid var(--input);
+  }
+  .mk-select:focus { outline: none; border-color: var(--ring); }
+  .mk-dots { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 9px; }
+  .mk-dots button {
+    width: 22px; height: 22px; padding: 0; font: inherit; font-size: 11px; cursor: pointer;
+    color: var(--muted-foreground); background: var(--secondary); border: 1px solid var(--input); border-radius: 6px;
+  }
+  .mk-dots button:hover { color: var(--foreground); }
+  .mk-dots button.on { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+  .mk-ctrls { display: flex; align-items: center; gap: 5px; }
+  .mk-btn {
+    font: inherit; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    color: var(--foreground); background: var(--secondary); border: 1px solid var(--input); border-radius: 7px; padding: 5px 9px;
+  }
+  .mk-btn:hover { background: var(--accent); }
+  .mk-btn:disabled { opacity: .4; cursor: default; }
+  .mk-btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+  .mk-btn svg { width: 13px; height: 13px; }
+  .mk-step { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  .mk-card { border: 1px dashed var(--input); border-radius: 8px; background: var(--card); padding: 9px 11px; color: var(--muted-foreground); }
+  .mk-card .h { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; opacity: .85; }
+  .mk-card code { background: var(--muted); border-radius: 5px; padding: 1px 5px; font-size: .9em; }
+  .mk-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 10px; }
+  /* collapsed column: a thin rail that gives the width back to the mockup */
+  .mk-rail {
+    display: none; flex: 0 0 16px; height: 100vh; cursor: pointer; padding: 0;
+    background-color: var(--card); color: var(--muted-foreground);
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 6%, transparent) 0 2px, transparent 2px 10px);
+    border: 0; border-right: 2px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
+    align-items: center; justify-content: center; font: 12px/1 'Geist Mono', ui-monospace, monospace;
+  }
+  .mk-rail:hover { color: var(--foreground); }
+  body.mk-collapsed .mk-rail { display: flex; }
+  .dark .mk-panel, .dark .mk-rail {
+    background-color: color-mix(in srgb, var(--primary) 11%, var(--card));
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 13%, transparent) 0 2px, transparent 2px 10px);
+  }
+
+  /* the mockup itself fills everything the column leaves */
+  .mk-stage { position: relative; flex: 1; min-width: 0; height: 100vh; overflow: hidden; }
+  .mk-overlay { position: absolute; inset: 0; z-index: 5; }
+  .mk-overlay:not(.arming) { pointer-events: none; }
+  .mk-overlay.arming { pointer-events: auto; cursor: crosshair; background: color-mix(in srgb, var(--primary) 8%, transparent); }
+  .mk-pinlayer { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  .pin {
+    position: absolute; transform: translate(-50%,-50%); width: 24px; height: 24px; border-radius: 50%;
+    background: var(--warning, #f0a92e); color: #241a02; font: 600 12px/24px 'Geist Mono', ui-monospace, monospace;
+    text-align: center; box-shadow: 0 0 0 2px color-mix(in srgb, var(--foreground) 25%, transparent);
+  }
+
+  /* ----- app frame (product UI): top bar + left menu. FILL: mirror the live capture ----- */
+  .app { display: flex; flex-direction: column; height: 100%; }
+  .shell { display: flex; flex: 1; min-height: 0; }
+  .sidenav { width: 232px; flex-shrink: 0; overflow-y: auto; background: var(--sidebar); border-right: 1px solid var(--sidebar-border); padding: 8px 8px 16px; display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; }
+  .sidenav .group { margin-top: 14px; padding: 4px 8px; font-size: 11px; letter-spacing: .04em; color: var(--muted-foreground); }
+  .sidenav a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: var(--radius); color: var(--foreground); text-decoration: none; }
+  .sidenav a:hover { background: var(--accent); }
+  .sidenav a.active { background: var(--accent); font-weight: 600; }
+  .sidenav a .count { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+  .sidenav .dot { width: 15px; height: 15px; flex-shrink: 0; border-radius: 4px; background: var(--muted); }
+
+  /* ----- app shell (product UI) ----- */
+  .main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  header.bar { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--border); }
+  .bar .title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+  .bar .spacer { margin-left: auto; }
+  .icon-btn { width: 32px; height: 32px; border-radius: var(--radius); border: 1px solid transparent; background: transparent; color: var(--foreground); display: grid; place-items: center; cursor: pointer; }
+  .icon-btn:hover { background: var(--accent); }
+  .scroll { flex: 1; overflow-y: auto; }
+  .col { max-width: 48rem; margin: 0 auto; padding: 0 16px; }
+  #pinned { position: sticky; top: 0; z-index: 20; padding-top: 14px; background: linear-gradient(var(--background) 72%, transparent); }
+  #stage { padding: 14px 0 40px; display: flex; flex-direction: column; gap: 18px; }
+
+  /* a couple of generic product-ish primitives (extend per surface) */
+  .card { border: 1px solid var(--border); background: var(--card); border-radius: calc(var(--radius) + 2px); padding: 12px 14px; }
+  .bubble-user { margin-left: auto; width: fit-content; max-width: 36rem; background: var(--muted); border-radius: 12px; padding: 8px 12px; }
+  .assistant { display: flex; gap: 14px; }
+  .avatar { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: var(--background); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--border); }
+  .avatar svg { width: 14px; height: 14px; }
+  .spin { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== notes block (filled by the host's annotation engine when this page is wired to one;
+     inert and invisible standalone). Scoped under .tfa so product styles cannot leak in. ===== */
+  .tfa { display: flex; flex-direction: column; gap: 8px; }
+  .tfa .tbtn { font: inherit; cursor: pointer; color: var(--foreground); background: var(--secondary); border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--input)); border-radius: 7px; padding: 6px 10px; font-weight: 600; }
+  .tfa .tbtn:hover { background: var(--accent); }
+  .dark .tfa .tf-mode { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, var(--card)); }
+  .dark .tfa .tf-mode:hover { background: color-mix(in srgb, var(--primary) 30%, var(--card)); }
+  .dark .tfa .tf-mode.on { background: var(--primary); color: var(--primary-foreground); }
+  .dark .tfa .tf-mode.on:hover { background: color-mix(in srgb, var(--primary) 85%, var(--foreground)); }
+  .tfa .modehint { font-size: 11px; color: var(--muted-foreground); }
+  .tfa .empty { font-size: 11.5px; color: var(--muted-foreground); }
+  .tfa textarea {
+    width: 100%; min-height: 46px; resize: vertical; font: inherit; padding: 6px 8px;
+    color: var(--foreground); background: var(--card); border: 1px solid var(--input); border-radius: 6px;
+  }
+  .tfa textarea:focus { outline: none; border-color: var(--ring); }
+  .tfa .noterow { display: flex; gap: 7px; align-items: flex-start; }
+  .tfa .noterow .num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--warning, #f0a92e); color: #241a02; font-size: 11px; font-weight: 600; text-align: center; line-height: 20px; }
+  .tfa .noterow > textarea, .tfa .noterow .qt { flex: 1; min-width: 0; }
+  .tfa .del { flex-shrink: 0; background: none; border: 0; color: var(--muted-foreground); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  .tfa .del:hover { color: var(--danger, var(--destructive, #e5484d)); }
+  .tfa .general label { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); margin: 4px 0 5px; }
+  .tfa .btn { font: inherit; cursor: pointer; background: var(--primary); color: var(--primary-foreground); border: 0; border-radius: 7px; padding: 6px 12px; font-weight: 600; }
+  .tfa .hint { font-size: 11px; color: var(--muted-foreground); }
+  .toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 80;
+    background: var(--card); border: 1px solid var(--success, #46a758); color: var(--foreground); border-radius: 8px;
+    padding: 9px 15px; font: 12.5px 'Geist Mono', ui-monospace, monospace; opacity: 0; transition: opacity .25s;
+  }
+  .toast.show { opacity: 1; }
+  .toast.err { border-color: var(--danger, var(--destructive, #e5484d)); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="bk"><a href="example-spec.html">← back to task #007</a></div>
-  <div class="hd"><span class="id">#007</span><span class="t">Mockup: report page · export</span></div>
-  <div class="note">// the real look of the screen, from ui-mockup. In normal mode click through the mockup itself.</div>
 
-  <div class="toolsrow">
-    <span class="modehint">The notes panel on the right can be dragged by its header and collapsed.</span>
-    <div style="margin-left:auto"></div>
-    <button id="themebtn" class="themebtn" onclick="tfTheme()">☀ Light</button>
+<!-- ===== review column (scaffolding) — leave the machinery, fill only the title ===== -->
+<aside class="mk-panel" id="mkPanel">
+  <div class="mk-head">
+    <span class="t">#007 · report export</span>
+    <span class="mk-ico info" title="Review column of the mockup — not part of the product. The scenario picks a flow, the steps scrub it over time.">?</span>
+    <button class="mk-ico" id="mkCollapse" title="Collapse the column">✕</button>
   </div>
 
-  <div class="stage" id="stage">
-    <iframe id="mock" src="example-mockup-view.html" title="Report export mockup"></iframe>
-    <div class="overlay" id="overlay"></div>
-    <div class="pinlayer" id="pinlayer"></div>
+  <div class="mk-sec">
+    <div class="mk-label">Scenario</div>
+    <select class="mk-select" id="mkScenarios"></select>
   </div>
+
+  <div class="mk-sec">
+    <div class="mk-label">Step <span class="mk-step" id="frameLabel">1 / 1</span></div>
+    <div class="mk-dots" id="mkDots"></div>
+    <div class="mk-ctrls">
+      <button class="mk-btn" id="resetBtn" title="Reset"></button>
+      <button class="mk-btn" id="prevBtn" title="Previous (←)"></button>
+      <button class="mk-btn" id="nextBtn" title="Next (→)">Step</button>
+      <button class="mk-btn primary" id="playBtn">Play</button>
+    </div>
+  </div>
+
+  <div class="mk-card" id="mkCaption" hidden></div>
+  <div class="mk-card" id="under" hidden></div>
+
+  <!-- notes slot: a host that collects feedback (e.g. taskflow) mounts its notes block here -->
+  <div class="mk-sec" id="mkNotes" hidden></div>
+
+  <div class="mk-foot">
+    <button class="mk-btn" id="mkTheme" title="Light / dark theme of the mockup"></button>
+  </div>
+</aside>
+<button class="mk-rail" id="mkRail" title="Show the column">›</button>
+
+<!-- ===== the mockup: product UI only, nothing of the review machinery below this line =====
+     FILL: replace the logo, the project name and every menu item with the ones read off the
+     live capture — same wording, same order, same grouping, same badge counts. Mark the item
+     the mocked surface lives under with class="active". Delete rows the product does not have. -->
+<div class="mk-stage" id="mkStage">
+<div class="app">
+  <header class="bar">
+    <div class="title"><span id="title">Mockup</span></div>
+    <div class="spacer"></div>
+    <span class="muted" id="project">project</span>
+    <span class="avatar" title="Account"></span>
+  </header>
+  <div class="shell">
+  <nav class="sidenav">
+    <a href="#"><span class="dot"></span>First item</a>
+    <a href="#" class="active"><span class="dot"></span>The surface being mocked</a>
+    <a href="#"><span class="dot"></span>Another item<span class="count">9</span></a>
+    <div class="group">Group label</div>
+    <a href="#"><span class="dot"></span>Grouped item</a>
+  </nav>
+  <div class="main">
+  <div class="scroll" id="scroll">
+    <div class="col">
+      <div id="pinned"></div>
+      <div id="stage"></div>
+    </div>
+  </div>
+  </div>
+  </div>
+</div>
+<div class="mk-overlay" id="overlay"></div>
+<div class="mk-pinlayer" id="pinlayer"></div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<script>
+// ===== inline lucide-style icons (add paths as needed) =====
+const ICON = {
+  spark: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+  check: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  circle: '<circle cx="12" cy="12" r="10"/>',
+  loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+  pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  next: '<path d="m9 18 6-6-6-6"/>', prev: '<path d="m15 18-6-6 6-6"/>',
+  reset: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>'
+};
+function svg(name, cls) { return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICON[name] || '') + '</svg>'; }
+
+// ===== scrubbable-snapshots core (reusable — leave as-is) =====
+// Build a flow by mutating `state`, calling snap() after each visible change.
+// Each snapshot is a deep copy; the stepper can render any of them.
+let frames = [], state;
+function resetBuild() { frames = []; state = { pinned: null, under: null, caption: null, items: [] }; }
+function snap() { frames.push(JSON.parse(JSON.stringify(state))); }
+
+// ===== FILL: scenarios ==========================================================
+// Author the flow(s). Each returns its frames. Use small helpers freely.
+function buildA() {
+  resetBuild();
+  state.pinned = '<div class="card"><strong>Pinned panel</strong> — replace with your real surface.</div>';
+  // caption (one line per step) + under (optional "under the hood" note) demonstrate the pattern
+  state.caption = 'A person sends a message';
+  state.under = 'Captured on the client; nothing saved yet.';
+  state.items.push({ role: 'user', html: 'A user message (replace me).' }); snap();
+  state.caption = 'The assistant replies';
+  state.under = 'Server streams the answer over the live channel, then persists it.';
+  state.items.push({ role: 'assistant', html: 'An assistant reply appears…' }); snap();
+  state.caption = 'The pinned panel updates in place';
+  state.under = 'Derived from the messages on screen — no extra storage.';
+  state.items.push({ role: 'assistant', html: 'Pinned panel updates in place.' }); state.pinned = '<div class="card"><strong>Pinned panel</strong> — now showing a later state.</div>'; snap();
+  return frames;
+}
+function buildB() {
+  resetBuild();
+  // caption only, no under-the-hood — both are optional; leave them null to hide
+  state.caption = 'A second scenario behind its own button';
+  state.items.push({ role: 'user', html: 'A second scenario lives behind its own button.' }); snap();
+  state.caption = 'No pinned panel and no under-the-hood here';
+  state.items.push({ role: 'assistant', html: 'state.pinned and state.under are null, so both are hidden.' }); snap();
+  return frames;
+}
+
+// FILL: one entry per scenario — the order here is the order of the buttons in the column.
+const SCENARIOS = [
+  { id: 'A', label: 'Scenario A', build: buildA },
+  { id: 'B', label: 'Scenario B', build: buildB }
+];
+
+// ===== FILL: render =============================================================
+// Draw ONE frame: write its state into #pinned and #stage. Mirror real component
+// shapes read from your project's own components (see references/project-ui.md).
+// The per-step caption and the "under the hood" note are NOT drawn here — the review
+// column renders them, so the mockup area stays product-only.
+function render(f) {
+  const pinned = document.getElementById('pinned');
+  pinned.style.display = f.pinned ? '' : 'none';
+  pinned.innerHTML = f.pinned || '';
+  document.getElementById('stage').innerHTML = f.items.map(function (it) {
+    if (it.role === 'user') return '<div><div class="bubble-user">' + it.html + '</div></div>';
+    return '<div class="assistant"><div class="avatar">' + svg('spark') + '</div><div>' + it.html + '</div></div>';
+  }).join('');
+  requestAnimationFrame(function () { document.getElementById('scroll').scrollTop = 99999; });
+}
+
+// ===== review column: stepper, scenarios, theme (reusable — leave as-is) =========
+let idx = 0, playing = null, scenario = SCENARIOS[0].id;
+
+function paintNote(el, label, html) {
+  el.hidden = !html;
+  el.innerHTML = html ? '<div class="h">' + label + '</div><div>' + html + '</div>' : '';
+}
+function paintDots() {
+  document.getElementById('mkDots').innerHTML = frames.map(function (_, i) {
+    return '<button data-i="' + i + '" class="' + (i === idx ? 'on' : '') + '" title="Step ' + (i + 1) + '">' + (i + 1) + '</button>';
+  }).join('');
+}
+function paint() {
+  render(frames[idx]);
+  document.getElementById('frameLabel').textContent = (idx + 1) + ' / ' + frames.length;
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('nextBtn').disabled = idx === frames.length - 1;
+  paintNote(document.getElementById('mkCaption'), 'What happens', frames[idx].caption);
+  paintNote(document.getElementById('under'), 'Under the hood', frames[idx].under);
+  paintDots();
+  document.dispatchEvent(new CustomEvent('mk:frame', { detail: { scenario: scenario, step: idx } }));
+}
+function setPlay(on) {
+  const btn = document.getElementById('playBtn');
+  if (on) {
+    if (idx === frames.length - 1) idx = 0;
+    btn.innerHTML = svg('pause') + ' Pause';
+    playing = setInterval(function () { if (idx >= frames.length - 1) { setPlay(false); return; } idx++; paint(); }, 1100);
+  } else { btn.innerHTML = svg('play') + ' Play'; clearInterval(playing); playing = null; }
+  paint();
+}
+document.getElementById('playBtn').onclick = function () { setPlay(!playing); };
+document.getElementById('nextBtn').onclick = function () { setPlay(false); if (idx < frames.length - 1) { idx++; paint(); } };
+document.getElementById('prevBtn').onclick = function () { setPlay(false); if (idx > 0) { idx--; paint(); } };
+document.getElementById('resetBtn').onclick = function () { setPlay(false); idx = 0; paint(); };
+document.getElementById('mkDots').onclick = function (e) {
+  const b = e.target.closest('button'); if (!b) return;
+  setPlay(false); idx = +b.dataset.i; paint();
+};
+window.addEventListener('keydown', function (e) {
+  if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;   // typing in the notes column
+  if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
+  if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
+});
+
+// Scenario buttons. The active one is announced to the annotation engine (if the page is
+// wired to one), so notes pinned on a screen show only while that screen is on.
+function loadScenario(id) {
+  const s = SCENARIOS.filter(function (x) { return x.id === id; })[0] || SCENARIOS[0];
+  scenario = s.id; if (playing) setPlay(false);
+  frames = s.build(); idx = 0;
+  document.getElementById('mkScenarios').value = s.id;
+  paint();
+  // the current scenario is also readable from the DOM, so an engine that loads after
+  // this line (taskflow's notes block does) still knows which screen is on show.
+  document.documentElement.setAttribute('data-mk-scenario', s.id);
+  document.documentElement.setAttribute('data-mk-scenario-label', s.label);
+  document.dispatchEvent(new CustomEvent('mk:scenario', { detail: { id: s.id, label: s.label } }));
+}
+document.getElementById('mkScenarios').innerHTML = SCENARIOS.map(function (s) {
+  return '<option value="' + s.id + '">' + s.label + '</option>';
+}).join('');
+document.getElementById('mkScenarios').onchange = function (e) { loadScenario(e.target.value); };
+
+const themeBtn = document.getElementById('mkTheme');
+function applyTheme() {
+  const dark = document.documentElement.classList.contains('dark');
+  themeBtn.innerHTML = svg(dark ? 'moon' : 'sun') + (dark ? ' Dark' : ' Light');
+}
+themeBtn.onclick = function () { document.documentElement.classList.toggle('dark'); applyTheme(); };
+
+document.getElementById('mkCollapse').onclick = function () { document.body.classList.add('mk-collapsed'); };
+document.getElementById('mkRail').onclick = function () { document.body.classList.remove('mk-collapsed'); };
+
+// hydrate static control icons
+document.getElementById('resetBtn').innerHTML = svg('reset');
+document.getElementById('prevBtn').innerHTML = svg('prev');
+document.getElementById('nextBtn').innerHTML = svg('next') + ' Step';
+
+applyTheme();
+loadScenario(SCENARIOS[0].id);
+</script>
+
+<!-- taskflow's notes block: mounts into the column's #mkNotes slot and pins on .mk-stage.
+     taskflow.css is deliberately NOT linked here — its generic selectors would overwrite the
+     mockup's own; the column carries its styles inside this file. -->
 <script src="taskflow.js"></script>
-<script>tfAnnotateMockup({task:'007',kind:'mockup-notes',file:'example-mockup.notes.json'});</script>
+<script>tfAnnotateMockup({ task: '007', kind: 'mockup-notes', file: 'example-mockup.notes.json', frame: null, stage: 'mkStage', mount: 'mkNotes' });</script>
 </body>
 </html>

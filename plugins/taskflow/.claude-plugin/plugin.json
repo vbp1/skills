@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "taskflow",
   "displayName": "Taskflow",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
   "author": {
     "name": "Vadim Ponomarev",

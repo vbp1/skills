@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "ui-mockup",
   "displayName": "UI Mockup",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
   "author": {
     "name": "Vadim Ponomarev",

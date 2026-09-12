@@ -80,9 +80,9 @@ VERSIONS = {
     "review-panel": "1.0.7",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
-    "taskflow": "1.0.0",
+    "taskflow": "1.1.0",
     "technical-premortem": "1.0.2",
-    "ui-mockup": "1.0.0",
+    "ui-mockup": "1.1.0",
     "user-clear-communication": "1.0.1",
     "youtube-transcript": "1.0.1",
 }

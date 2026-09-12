@@ -3,11 +3,13 @@
   ui-mockup skeleton — copy this file, then FILL the marked spots:
     1. <style> THEME TOKENS: replace the placeholder palette with your project's own
        design tokens (see references/project-ui.md for where to find them).
-    2. JS "FILL: scenarios": write buildX() flows that mutate state + snap().
+    2. JS "FILL: scenarios": write buildX() flows that mutate state + snap(), and list
+       them in SCENARIOS.
     3. JS "FILL: render": draw one frame's state into #stage (+ optional #pinned).
-  The header, demo bar, stepper, theme toggle, and scenario tabs are reusable
-  machinery — leave them as-is. Keep demo controls visually distinct from the
-  product UI so no one mistakes scaffolding for the real design.
+  The app frame (top bar + left menu) is product UI: keep it, and fill it from the
+  live capture. The review column on the left (scenario picker, stepper, step notes,
+  the notes slot) is reusable machinery — leave it as-is. It is deliberately styled
+  unlike the product so no one mistakes scaffolding for the real design.
 -->
 <html lang="en" class="">
 <head>
@@ -75,12 +77,104 @@
     margin: 0; background: var(--background); color: var(--foreground);
     font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+    display: flex; height: 100vh; overflow: hidden;
   }
   code, .mono { font-family: 'Geist Mono', ui-monospace, Menlo, monospace; }
   .muted { color: var(--muted-foreground); }
 
+  /* ===== review column: SCAFFOLDING. It follows the mockup's own theme tokens, and is
+     told apart from the product by its dashed edge and monospace type, not by colour.
+     Reusable — leave as-is. ===== */
+  .mk-panel {
+    flex: 0 0 300px; width: 300px; height: 100vh; overflow-y: auto; z-index: 50;
+    background-color: var(--card);
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 6%, transparent) 0 2px, transparent 2px 10px);
+    color: var(--foreground);
+    border-right: 2px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
+    padding: 13px 14px 22px; display: flex; flex-direction: column; gap: 14px;
+    font-family: 'Geist Mono', ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.5;
+  }
+  body.mk-collapsed .mk-panel { display: none; }
+  .mk-head { display: flex; align-items: center; gap: 8px; }
+  .mk-head .t { font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+  .mk-ico {
+    margin-left: auto; background: none; border: 1px solid transparent; color: var(--muted-foreground);
+    border-radius: 6px; padding: 2px 7px; cursor: pointer; font: inherit;
+  }
+  .mk-ico:hover { background: var(--accent); color: var(--foreground); }
+  .mk-ico.info { margin-left: 0; cursor: help; }
+  .mk-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 6px; }
+  .mk-sec { border-top: 1px solid var(--border); padding-top: 12px; }
+  .mk-sec:first-of-type { border-top: 0; padding-top: 0; }
+  .mk-select {
+    width: 100%; font: inherit; cursor: pointer; padding: 6px 9px; border-radius: 7px;
+    color: var(--foreground); background: var(--secondary); border: 1px solid var(--input);
+  }
+  .mk-select:focus { outline: none; border-color: var(--ring); }
+  .mk-dots { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 9px; }
+  .mk-dots button {
+    width: 22px; height: 22px; padding: 0; font: inherit; font-size: 11px; cursor: pointer;
+    color: var(--muted-foreground); background: var(--secondary); border: 1px solid var(--input); border-radius: 6px;
+  }
+  .mk-dots button:hover { color: var(--foreground); }
+  .mk-dots button.on { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+  .mk-ctrls { display: flex; align-items: center; gap: 5px; }
+  .mk-btn {
+    font: inherit; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    color: var(--foreground); background: var(--secondary); border: 1px solid var(--input); border-radius: 7px; padding: 5px 9px;
+  }
+  .mk-btn:hover { background: var(--accent); }
+  .mk-btn:disabled { opacity: .4; cursor: default; }
+  .mk-btn.primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); font-weight: 600; }
+  .mk-btn svg { width: 13px; height: 13px; }
+  .mk-step { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  .mk-card { border: 1px dashed var(--input); border-radius: 8px; background: var(--card); padding: 9px 11px; color: var(--muted-foreground); }
+  .mk-card .h { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; opacity: .85; }
+  .mk-card code { background: var(--muted); border-radius: 5px; padding: 1px 5px; font-size: .9em; }
+  .mk-foot { margin-top: auto; display: flex; align-items: center; gap: 8px; padding-top: 10px; }
+  /* collapsed column: a thin rail that gives the width back to the mockup */
+  .mk-rail {
+    display: none; flex: 0 0 16px; height: 100vh; cursor: pointer; padding: 0;
+    background-color: var(--card); color: var(--muted-foreground);
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 6%, transparent) 0 2px, transparent 2px 10px);
+    border: 0; border-right: 2px dashed color-mix(in srgb, var(--primary) 55%, var(--border));
+    align-items: center; justify-content: center; font: 12px/1 'Geist Mono', ui-monospace, monospace;
+  }
+  .mk-rail:hover { color: var(--foreground); }
+  body.mk-collapsed .mk-rail { display: flex; }
+  .dark .mk-panel, .dark .mk-rail {
+    background-color: color-mix(in srgb, var(--primary) 11%, var(--card));
+    background-image: repeating-linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 13%, transparent) 0 2px, transparent 2px 10px);
+  }
+
+  /* the mockup itself fills everything the column leaves */
+  .mk-stage { position: relative; flex: 1; min-width: 0; height: 100vh; overflow: hidden; }
+  .mk-overlay { position: absolute; inset: 0; z-index: 5; }
+  .mk-overlay:not(.arming) { pointer-events: none; }
+  .mk-overlay.arming { pointer-events: auto; cursor: crosshair; background: color-mix(in srgb, var(--primary) 8%, transparent); }
+  .mk-pinlayer { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  .pin {
+    position: absolute; transform: translate(-50%,-50%); width: 24px; height: 24px; border-radius: 50%;
+    background: var(--warning, #f0a92e); color: #241a02; font: 600 12px/24px 'Geist Mono', ui-monospace, monospace;
+    text-align: center; box-shadow: 0 0 0 2px color-mix(in srgb, var(--foreground) 25%, transparent);
+  }
+
+  /* ----- app frame (product UI): top bar + left menu. FILL: mirror the live capture ----- */
+  .app { display: flex; flex-direction: column; height: 100%; }
+  .shell { display: flex; flex: 1; min-height: 0; }
+  .sidenav { width: 232px; flex-shrink: 0; overflow-y: auto; background: var(--sidebar); border-right: 1px solid var(--sidebar-border); padding: 8px 8px 16px; display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; }
+  .sidenav .group { margin-top: 14px; padding: 4px 8px; font-size: 11px; letter-spacing: .04em; color: var(--muted-foreground); }
+  .sidenav a { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: var(--radius); color: var(--foreground); text-decoration: none; }
+  .sidenav a:hover { background: var(--accent); }
+  .sidenav a.active { background: var(--accent); font-weight: 600; }
+  .sidenav a .count { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+  .sidenav .dot { width: 15px; height: 15px; flex-shrink: 0; border-radius: 4px; background: var(--muted); }
+
   /* ----- app shell (product UI) ----- */
-  .main { display: flex; flex-direction: column; height: 100vh; }
+  .main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
   header.bar { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--border); }
   .bar .title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
   .bar .spacer { margin-left: auto; }
@@ -89,13 +183,7 @@
   .scroll { flex: 1; overflow-y: auto; }
   .col { max-width: 48rem; margin: 0 auto; padding: 0 16px; }
   #pinned { position: sticky; top: 0; z-index: 20; padding-top: 14px; background: linear-gradient(var(--background) 72%, transparent); }
-  #stage { padding: 8px 0 120px; display: flex; flex-direction: column; gap: 18px; }
-
-  /* per-step caption + optional "under the hood" panel — SCAFFOLDING, styled distinct */
-  .caption { text-align: center; color: var(--muted-foreground); font-size: 12.5px; padding: 2px 0 4px; }
-  #under { margin-top: 14px; padding: 8px 12px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--card); color: var(--muted-foreground); font-size: 12.5px; }
-  #under .uh-label { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 3px; opacity: .8; }
-  #under .uh-body code { background: var(--muted); border-radius: 5px; padding: 1px 5px; font-size: .85em; }
+  #stage { padding: 14px 0 40px; display: flex; flex-direction: column; gap: 18px; }
 
   /* a couple of generic product-ish primitives (extend per surface) */
   .card { border: 1px solid var(--border); background: var(--card); border-radius: calc(var(--radius) + 2px); padding: 12px 14px; }
@@ -103,58 +191,115 @@
   .assistant { display: flex; gap: 14px; }
   .avatar { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; background: var(--background); display: grid; place-items: center; box-shadow: 0 0 0 1px var(--border); }
   .avatar svg { width: 14px; height: 14px; }
-
-  /* ----- intro banner + demo controls: SCAFFOLDING, styled distinct from product ----- */
-  .intro { margin: 16px 0 0; padding: 9px 13px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--card); color: var(--muted-foreground); font-size: 12.5px; }
-  .intro strong { color: var(--foreground); }
-  .demo { position: fixed; left: 50%; transform: translateX(-50%); bottom: 16px; z-index: 60; display: flex; align-items: center; gap: 8px; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 9999px; padding: 6px 8px 6px 14px; box-shadow: 0 12px 30px -10px rgba(0,0,0,.5); font-size: 13px; }
-  .demo b { font-weight: 600; }
-  .demo .sep { width: 1px; height: 20px; background: var(--border); }
-  .demo button { font: inherit; border: 1px solid var(--border); background: var(--card); color: var(--foreground); border-radius: 9999px; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-  .demo button:hover { background: var(--accent); }
-  .demo button.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
-  .demo button:disabled { opacity: .45; cursor: default; }
-  .demo .frame-label { color: var(--muted-foreground); font-variant-numeric: tabular-nums; min-width: 96px; }
-  .demo svg { width: 15px; height: 15px; }
-  .tabs { display: inline-flex; background: var(--muted); border-radius: 9999px; padding: 2px; }
-  .tab { font: inherit; border: none; background: transparent; color: var(--muted-foreground); border-radius: 9999px; padding: 4px 12px; cursor: pointer; }
-  .tab.active { background: var(--card); color: var(--foreground); box-shadow: 0 1px 2px rgba(0,0,0,.14); font-weight: 500; }
   .spin { animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== notes block (filled by the host's annotation engine when this page is wired to one;
+     inert and invisible standalone). Scoped under .tfa so product styles cannot leak in. ===== */
+  .tfa { display: flex; flex-direction: column; gap: 8px; }
+  .tfa .tbtn { font: inherit; cursor: pointer; color: var(--foreground); background: var(--secondary); border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--input)); border-radius: 7px; padding: 6px 10px; font-weight: 600; }
+  .tfa .tbtn:hover { background: var(--accent); }
+  .dark .tfa .tf-mode { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 18%, var(--card)); }
+  .dark .tfa .tf-mode:hover { background: color-mix(in srgb, var(--primary) 30%, var(--card)); }
+  .dark .tfa .tf-mode.on { background: var(--primary); color: var(--primary-foreground); }
+  .dark .tfa .tf-mode.on:hover { background: color-mix(in srgb, var(--primary) 85%, var(--foreground)); }
+  .tfa .modehint { font-size: 11px; color: var(--muted-foreground); }
+  .tfa .empty { font-size: 11.5px; color: var(--muted-foreground); }
+  .tfa textarea {
+    width: 100%; min-height: 46px; resize: vertical; font: inherit; padding: 6px 8px;
+    color: var(--foreground); background: var(--card); border: 1px solid var(--input); border-radius: 6px;
+  }
+  .tfa textarea:focus { outline: none; border-color: var(--ring); }
+  .tfa .noterow { display: flex; gap: 7px; align-items: flex-start; }
+  .tfa .noterow .num { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; background: var(--warning, #f0a92e); color: #241a02; font-size: 11px; font-weight: 600; text-align: center; line-height: 20px; }
+  .tfa .noterow > textarea, .tfa .noterow .qt { flex: 1; min-width: 0; }
+  .tfa .del { flex-shrink: 0; background: none; border: 0; color: var(--muted-foreground); cursor: pointer; font-size: 13px; padding: 2px 4px; }
+  .tfa .del:hover { color: var(--danger, var(--destructive, #e5484d)); }
+  .tfa .general label { display: block; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted-foreground); margin: 4px 0 5px; }
+  .tfa .btn { font: inherit; cursor: pointer; background: var(--primary); color: var(--primary-foreground); border: 0; border-radius: 7px; padding: 6px 12px; font-weight: 600; }
+  .tfa .hint { font-size: 11px; color: var(--muted-foreground); }
+  .toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 80;
+    background: var(--card); border: 1px solid var(--success, #46a758); color: var(--foreground); border-radius: 8px;
+    padding: 9px 15px; font: 12.5px 'Geist Mono', ui-monospace, monospace; opacity: 0; transition: opacity .25s;
+  }
+  .toast.show { opacity: 1; }
+  .toast.err { border-color: var(--danger, var(--destructive, #e5484d)); }
 </style>
 </head>
 <body>
-<div class="main">
+
+<!-- ===== review column (scaffolding) — leave the machinery, fill only the title ===== -->
+<aside class="mk-panel" id="mkPanel">
+  <div class="mk-head">
+    <span class="t">Mockup review</span>
+    <span class="mk-ico info" title="Review column of the mockup — not part of the product. The scenario picks a flow, the steps scrub it over time.">?</span>
+    <button class="mk-ico" id="mkCollapse" title="Collapse the column">✕</button>
+  </div>
+
+  <div class="mk-sec">
+    <div class="mk-label">Scenario</div>
+    <select class="mk-select" id="mkScenarios"></select>
+  </div>
+
+  <div class="mk-sec">
+    <div class="mk-label">Step <span class="mk-step" id="frameLabel">1 / 1</span></div>
+    <div class="mk-dots" id="mkDots"></div>
+    <div class="mk-ctrls">
+      <button class="mk-btn" id="resetBtn" title="Reset"></button>
+      <button class="mk-btn" id="prevBtn" title="Previous (←)"></button>
+      <button class="mk-btn" id="nextBtn" title="Next (→)">Step</button>
+      <button class="mk-btn primary" id="playBtn">Play</button>
+    </div>
+  </div>
+
+  <div class="mk-card" id="mkCaption" hidden></div>
+  <div class="mk-card" id="under" hidden></div>
+
+  <!-- notes slot: a host that collects feedback (e.g. taskflow) mounts its notes block here -->
+  <div class="mk-sec" id="mkNotes" hidden></div>
+
+  <div class="mk-foot">
+    <button class="mk-btn" id="mkTheme" title="Light / dark theme of the mockup"></button>
+  </div>
+</aside>
+<button class="mk-rail" id="mkRail" title="Show the column">›</button>
+
+<!-- ===== the mockup: product UI only, nothing of the review machinery below this line =====
+     FILL: replace the logo, the project name and every menu item with the ones read off the
+     live capture — same wording, same order, same grouping, same badge counts. Mark the item
+     the mocked surface lives under with class="active". Delete rows the product does not have. -->
+<div class="mk-stage" id="mkStage">
+<div class="app">
   <header class="bar">
     <div class="title"><span id="title">Mockup</span></div>
     <div class="spacer"></div>
-    <button class="icon-btn" id="themeBtn" title="Toggle theme"></button>
+    <span class="muted" id="project">project</span>
+    <span class="avatar" title="Account"></span>
   </header>
+  <div class="shell">
+  <nav class="sidenav">
+    <a href="#"><span class="dot"></span>First item</a>
+    <a href="#" class="active"><span class="dot"></span>The surface being mocked</a>
+    <a href="#"><span class="dot"></span>Another item<span class="count">9</span></a>
+    <div class="group">Group label</div>
+    <a href="#"><span class="dot"></span>Grouped item</a>
+  </nav>
+  <div class="main">
   <div class="scroll" id="scroll">
     <div class="col">
-      <div class="intro">
-        <strong>Mockup</strong> — use the <strong>Demo</strong> controls below (or <kbd>←</kbd> <kbd>→</kbd>) to step through the flow.
-      </div>
-      <div id="under"></div>
       <div id="pinned"></div>
       <div id="stage"></div>
     </div>
   </div>
+  </div>
+  </div>
+</div>
+<div class="mk-overlay" id="overlay"></div>
+<div class="mk-pinlayer" id="pinlayer"></div>
 </div>
 
-<div class="demo">
-  <b>Demo</b>
-  <div class="tabs">
-    <button class="tab active" id="tabA">Scenario A</button>
-    <button class="tab" id="tabB">Scenario B</button>
-  </div>
-  <span class="frame-label" id="frameLabel">step 1 / 1</span>
-  <div class="sep"></div>
-  <button id="resetBtn" title="Reset"></button>
-  <button id="prevBtn" title="Previous"></button>
-  <button id="nextBtn" title="Next">Step</button>
-  <button id="playBtn" class="primary">Play</button>
-</div>
+<div class="toast" id="toast"></div>
 
 <script>
 // ===== inline lucide-style icons (add paths as needed) =====
@@ -199,38 +344,56 @@ function buildA() {
 function buildB() {
   resetBuild();
   // caption only, no under-the-hood — both are optional; leave them null to hide
-  state.caption = 'A second scenario behind a tab';
-  state.items.push({ role: 'user', html: 'A second scenario lives behind a tab.' }); snap();
+  state.caption = 'A second scenario behind its own button';
+  state.items.push({ role: 'user', html: 'A second scenario lives behind its own button.' }); snap();
   state.caption = 'No pinned panel and no under-the-hood here';
   state.items.push({ role: 'assistant', html: 'state.pinned and state.under are null, so both are hidden.' }); snap();
   return frames;
 }
 
+// FILL: one entry per scenario — the order here is the order of the buttons in the column.
+const SCENARIOS = [
+  { id: 'A', label: 'Scenario A', build: buildA },
+  { id: 'B', label: 'Scenario B', build: buildB }
+];
+
 // ===== FILL: render =============================================================
 // Draw ONE frame: write its state into #pinned and #stage. Mirror real component
 // shapes read from your project's own components (see references/project-ui.md).
+// The per-step caption and the "under the hood" note are NOT drawn here — the review
+// column renders them, so the mockup area stays product-only.
 function render(f) {
   const pinned = document.getElementById('pinned');
   pinned.style.display = f.pinned ? '' : 'none';
   pinned.innerHTML = f.pinned || '';
-  const under = document.getElementById('under');
-  under.style.display = f.under ? '' : 'none';
-  under.innerHTML = f.under ? '<div class="uh-label">Under the hood</div><div class="uh-body">' + f.under + '</div>' : '';
-  const cap = f.caption ? '<div class="caption">' + f.caption + '</div>' : '';
-  document.getElementById('stage').innerHTML = cap + f.items.map(function (it) {
+  document.getElementById('stage').innerHTML = f.items.map(function (it) {
     if (it.role === 'user') return '<div><div class="bubble-user">' + it.html + '</div></div>';
     return '<div class="assistant"><div class="avatar">' + svg('spark') + '</div><div>' + it.html + '</div></div>';
   }).join('');
   requestAnimationFrame(function () { document.getElementById('scroll').scrollTop = 99999; });
 }
 
-// ===== stepper + theme + tabs (reusable — leave as-is) =========================
-let idx = 0, playing = null;
+// ===== review column: stepper, scenarios, theme (reusable — leave as-is) =========
+let idx = 0, playing = null, scenario = SCENARIOS[0].id;
+
+function paintNote(el, label, html) {
+  el.hidden = !html;
+  el.innerHTML = html ? '<div class="h">' + label + '</div><div>' + html + '</div>' : '';
+}
+function paintDots() {
+  document.getElementById('mkDots').innerHTML = frames.map(function (_, i) {
+    return '<button data-i="' + i + '" class="' + (i === idx ? 'on' : '') + '" title="Step ' + (i + 1) + '">' + (i + 1) + '</button>';
+  }).join('');
+}
 function paint() {
   render(frames[idx]);
-  document.getElementById('frameLabel').textContent = 'step ' + (idx + 1) + ' / ' + frames.length;
+  document.getElementById('frameLabel').textContent = (idx + 1) + ' / ' + frames.length;
   document.getElementById('prevBtn').disabled = idx === 0;
   document.getElementById('nextBtn').disabled = idx === frames.length - 1;
+  paintNote(document.getElementById('mkCaption'), 'What happens', frames[idx].caption);
+  paintNote(document.getElementById('under'), 'Under the hood', frames[idx].under);
+  paintDots();
+  document.dispatchEvent(new CustomEvent('mk:frame', { detail: { scenario: scenario, step: idx } }));
 }
 function setPlay(on) {
   const btn = document.getElementById('playBtn');
@@ -245,55 +408,52 @@ document.getElementById('playBtn').onclick = function () { setPlay(!playing); };
 document.getElementById('nextBtn').onclick = function () { setPlay(false); if (idx < frames.length - 1) { idx++; paint(); } };
 document.getElementById('prevBtn').onclick = function () { setPlay(false); if (idx > 0) { idx--; paint(); } };
 document.getElementById('resetBtn').onclick = function () { setPlay(false); idx = 0; paint(); };
+document.getElementById('mkDots').onclick = function (e) {
+  const b = e.target.closest('button'); if (!b) return;
+  setPlay(false); idx = +b.dataset.i; paint();
+};
 window.addEventListener('keydown', function (e) {
+  if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;   // typing in the notes column
   if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
   if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
 });
 
-const themeBtn = document.getElementById('themeBtn');
-function applyTheme() { themeBtn.innerHTML = svg(document.documentElement.classList.contains('dark') ? 'moon' : 'sun'); }
+// Scenario buttons. The active one is announced to the annotation engine (if the page is
+// wired to one), so notes pinned on a screen show only while that screen is on.
+function loadScenario(id) {
+  const s = SCENARIOS.filter(function (x) { return x.id === id; })[0] || SCENARIOS[0];
+  scenario = s.id; if (playing) setPlay(false);
+  frames = s.build(); idx = 0;
+  document.getElementById('mkScenarios').value = s.id;
+  paint();
+  // the current scenario is also readable from the DOM, so an engine that loads after
+  // this line (taskflow's notes block does) still knows which screen is on show.
+  document.documentElement.setAttribute('data-mk-scenario', s.id);
+  document.documentElement.setAttribute('data-mk-scenario-label', s.label);
+  document.dispatchEvent(new CustomEvent('mk:scenario', { detail: { id: s.id, label: s.label } }));
+}
+document.getElementById('mkScenarios').innerHTML = SCENARIOS.map(function (s) {
+  return '<option value="' + s.id + '">' + s.label + '</option>';
+}).join('');
+document.getElementById('mkScenarios').onchange = function (e) { loadScenario(e.target.value); };
+
+const themeBtn = document.getElementById('mkTheme');
+function applyTheme() {
+  const dark = document.documentElement.classList.contains('dark');
+  themeBtn.innerHTML = svg(dark ? 'moon' : 'sun') + (dark ? ' Dark' : ' Light');
+}
 themeBtn.onclick = function () { document.documentElement.classList.toggle('dark'); applyTheme(); };
-// When embedded in an annotation wrapper (e.g. taskflow), follow its theme. Harmless standalone.
-window.addEventListener('message', function (e) {
-  var t = e.data && e.data.tfTheme;
-  if (t === 'dark' || t === 'light') { document.documentElement.classList.toggle('dark', t === 'dark'); applyTheme(); }
-});
+
+document.getElementById('mkCollapse').onclick = function () { document.body.classList.add('mk-collapsed'); };
+document.getElementById('mkRail').onclick = function () { document.body.classList.remove('mk-collapsed'); };
 
 // hydrate static control icons
 document.getElementById('resetBtn').innerHTML = svg('reset');
 document.getElementById('prevBtn').innerHTML = svg('prev');
 document.getElementById('nextBtn').innerHTML = svg('next') + ' Step';
 
-// scenario tabs
-let scenario = 'A';
-function loadScenario(s) {
-  scenario = s; if (playing) setPlay(false);
-  frames = (s === 'B') ? buildB() : buildA();
-  idx = 0;
-  document.getElementById('tabA').classList.toggle('active', s === 'A');
-  document.getElementById('tabB').classList.toggle('active', s === 'B');
-  paint();
-}
-document.getElementById('tabA').onclick = function () { loadScenario('A'); };
-document.getElementById('tabB').onclick = function () { loadScenario('B'); };
-
-// Announce the active screen to an embedding annotation wrapper (e.g. taskflow's mockup page),
-// so it can scope its pins to the visible screen — they hide when another screen is shown, and
-// reappear on return. Driven by which tab carries `.active`, NOT by loadScenario's body, so it
-// keeps working even if you rewrite loadScenario for more scenarios (A…E). Harmless standalone.
-// Scenario id = the active tab's id minus the "tab" prefix (tabA → A), or its text as a fallback.
-function announceScenario() {
-  var tab = document.querySelector('.tab.active');
-  if (!tab) return;
-  var id = (tab.id || '').replace(/^tab/, '') || tab.textContent.trim();
-  try { parent.postMessage({ tfScenario: id, tfScenarioLabel: tab.textContent.trim() }, '*'); } catch (e) {}
-}
-new MutationObserver(announceScenario).observe(document.querySelector('.tabs') || document.body,
-  { subtree: true, attributes: true, attributeFilter: ['class'] });
-
 applyTheme();
-loadScenario('A');
-announceScenario(); // initial post (the boot tab may already be .active, so the observer won't fire for it)
+loadScenario(SCENARIOS[0].id);
 </script>
 </body>
 </html>

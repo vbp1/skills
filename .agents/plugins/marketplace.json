@@ -270,7 +270,7 @@
         "path": "./plugins/ui-mockup"
       },
       "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

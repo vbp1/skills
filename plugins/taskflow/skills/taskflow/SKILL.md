@@ -121,7 +121,7 @@ created: 2026-01-31
 page_spec:                          # todos/pages/NNN-spec.html once built
 page_plan:
 page_summary:
-page_mockup:                        # NNN-mockup.html (annotation shell) if UI
+page_mockup:                        # NNN-mockup.html if UI
 live_ui:                            # address of the running product (asked once at step 3)
 ---
 ```
@@ -188,8 +188,7 @@ approval → `step: 3`.
   task (no per-run question later); scenarios that write to a shared database
   still get a separate ask.
 - If the task touches UI: build the realistic mockup with the **`ui-mockup`**
-  skill (`NNN-mockup-view.html`) + its annotation shell `NNN-mockup.html`; record
-  paths in `page_mockup` and `## Mockups`. Without that skill installed, say so
+  skill → `NNN-mockup.html`; record the path in `page_mockup` and `## Mockups`. Without that skill installed, say so
   and either draw a static frame or skip the mockup with one declared sentence.
 - **Live-UI reconciliation — the mockup does not reach the gate without it.** Ask
   the user once, with `AskUserQuestion`, where the running product is reachable;
@@ -198,7 +197,11 @@ approval → `step: 3`.
   reconcile the mockup against it. Record in `## Mockups` two lists:
   **"Differences"** — "in the product" / "in the mockup" / "fixed" — and
   **"Deliberately different"**, one line per deliberate departure, each shown to
-  the user at the gate for confirmation. When the address does not answer, does
+  the user at the gate for confirmation. **These two lists are the only ones — do
+  not add a third.** Every gap between the mockup and the live product belongs to
+  one of them: a surface drawn simpler than the product, an element left out, the
+  app frame drawn partially — all of it goes to "Deliberately different" and is
+  shown at the gate, whatever its relation to the task. When the address does not answer, does
   not let you in, or lacks a surface you need: STOP and take it to the user — do
   not present a mockup that was never compared, and do not fall back to the
   component source alone.
@@ -246,6 +249,19 @@ approval → `step: 3`.
   `AskUserQuestion` with its cost and follow their decision. A bespoke
   implementation enters the plan only with no reuse path, or on the user's
   instruction — record which, what was checked, and what it lacked.
+- **Constraint check, before the approach is written.** Every statement the
+  plan rests on of the form «the code does not do X / does not return X / does not
+  support X» carries the `file:line` that creates the limit, what has to change to
+  remove it, and the size of that change — the files touched, whether a data-schema
+  change is involved, whether a public contract changes. Where removing the limit
+  reaches past the place the task already changes, put the choice — extend the code
+  or work around it — to the user via `AskUserQuestion` before it enters the plan,
+  naming the measured cost of each side. A workaround (a marker inside text, a
+  heuristic over content, a naming convention, a guess at a format) standing in for
+  an explicit field, parameter or column enters the plan only on the user's
+  decision, and leaves the plan the moment the direct path proves available — the
+  two never stand side by side. Re-read the plan for such statements before the
+  step-4 gate: each one carries its `file:line` and its cost, or it is removed.
 - Write the technical solution and implementation plan into `## Solution and plan`
   (prose + `file:line` refs, no code blocks). It carries, in this order: the
   approach, what is taken ready-made, the file-level change table,
@@ -407,7 +423,7 @@ from the working tree, then drive the live product at the address the task recor
 in `live_ui` (confirm with the user when the working tree is served somewhere
 else):
 
-1. **Every scenario of `NNN-mockup-view.html` against the live UI.** Record the
+1. **Every scenario of `NNN-mockup.html` against the live UI.** Record the
    verdict as a three-column table in `## Journal`: "matches / differs / not done".
    Every "not done" row goes to the user for a decision (fix now / follow-up task /
    accept).
@@ -545,21 +561,27 @@ carries its quoted fragment and nearest section label. This is separate from the
 spec's open-questions form; both can be used.
 
 **The mockup is its own realistic page, not embedded in the spec.** For a UI task
-at step 3:
+at step 3 it is ONE file, **`NNN-mockup.html`**, built with the **`ui-mockup`**
+skill and recorded in `page_mockup`; the spec page links to it (opens in a new
+window). Model on `example-mockup.html`.
 
-1. Build the real, app-themed, clickable mockup with the **`ui-mockup`** skill →
-   `NNN-mockup-view.html` (focused feature surface, no chrome of its own). That
-   skeleton already reacts to `postMessage({tfTheme})` and announces its active
-   screen via `postMessage({tfScenario})` on every scenario switch.
-2. Wrap it in **`NNN-mockup.html`** — a thin annotation shell (model on
-   `example-mockup.html`) that iframes the view full-width and tall; a single
-   `tfAnnotateMockup({task, kind, file})` call lays the floating, draggable,
-   collapsible notes panel over it: normal mode = interact with the mockup, notes
-   mode = drop numbered pins, saving writes `NNN-mockup.notes.json`. **Pins are
-   scoped to the screen they were placed on** — the panel listens for the view's
-   `tfScenario` messages, so a pin only shows while its screen is displayed. This
-   page sets `body{zoom:1}` so dragging is precise. The spec page links to it
-   (opens in a new window).
+1. The window is split: the **review column** on the left (scenario list, step
+   number and step buttons, reset / back / step / play, the per-step caption, the
+   "under the hood" note, the theme toggle, the notes block) and the **mockup**
+   filling the rest. The mockup area holds product UI and nothing else: the feature
+   surface **inside the product's own frame** — left menu with its real items in
+   their real order, top bar, project switcher, avatar — drawn from the live
+   capture. The crossmark at the top of the column folds it into a rail, so the
+   screen can be seen alone.
+2. The notes block is wired by one call after `<script src="taskflow.js">`:
+   `tfAnnotateMockup({ task, kind, file, frame: null, stage: 'mkStage', mount:
+   'mkNotes' })`. It mounts into the column's `#mkNotes` slot: normal mode =
+   interact with the mockup, notes mode = drop numbered pins on the mockup, saving
+   writes `NNN-mockup.notes.json`. **Pins are scoped to the screen they were placed
+   on** — the block listens for the page's `mk:scenario` events, so a pin only shows
+   while its screen is displayed. `taskflow.css` is NOT linked from this page: its
+   generic selectors would overwrite the mockup's own; the column and the notes
+   block carry their styles inside the file.
 
 **Feedback loop — how the user's answers and notes reach you.** A page opened as a
 plain `file://` cannot write to disk, so to COLLECT feedback run the helper:
@@ -603,9 +625,9 @@ keep one copy, or every commit asks twice.
 
 ## Skill and agent cheat-sheet
 
-- `ui-mockup` — realistic, app-themed clickable mockup → the `NNN-mockup-view.html`
-  embedded in the annotation shell. It captures the running product at `live_ui`
-  and reconciles the mockup against it.
+- `ui-mockup` — realistic, app-themed clickable mockup → `NNN-mockup.html`, one
+  file carrying the review column and the mockup. It captures the running product
+  at `live_ui` and reconciles the mockup against it.
 - `grill-me` — adversarial questioning to harden the plan.
 - `technical-premortem` — risk pre-mortem of the plan (step 4, on the user's yes).
   Fed `todos/NNN-slug/plan.md`, never the task file. Report →

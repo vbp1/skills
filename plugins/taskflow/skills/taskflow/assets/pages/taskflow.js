@@ -52,22 +52,35 @@ function tfAnnotate(opts){
   var drawMarkers=opts.drawMarkers||function(){};
   var notes=[], seq=0, mode=false;
 
-  var panel=document.createElement('div');
-  panel.className='apanel';
-  panel.innerHTML=
-    '<div class="apanel-h"><span class="grip">⠿</span>'
-    +'<span class="ptitle">NOTES <b class="cnt">0</b></span>'
-    +'<button class="iconbtn tf-collapse" title="Collapse">▾</button></div>'
-    +'<div class="apanel-b"><button class="tbtn tf-mode">Add a note</button>'
+  // The block is the same either way; only its housing differs. `opts.mount` (an element or its id)
+  // puts it inside a host column that already exists on the page — the mockup's review column; with
+  // no mount it becomes the floating, draggable panel the document pages use.
+  var mount=typeof opts.mount==='string'?document.getElementById(opts.mount):(opts.mount||null);
+  var inner=
+    '<button class="tbtn tf-mode">Add a note</button>'
     +'<div class="modehint tf-modehint">'+(opts.idleHint||'mode: normal viewing')+'</div>'
     +'<div class="list tf-list"></div>'
     +'<div class="general"><label>NOTE ON THE WHOLE PAGE</label>'
     +'<textarea class="tf-general" placeholder="a note about the page as a whole (optional)"></textarea></div>'
     +'<div class="saverow"><button class="btn tf-save">Save the notes</button></div>'
-    +'<div class="hint tf-hint">→ '+opts.file+' (next to this page)</div></div>';
-  var shield=document.createElement('div');shield.className='dragshield';
-  document.documentElement.appendChild(panel);
-  document.documentElement.appendChild(shield);
+    +'<div class="hint tf-hint">→ '+opts.file+' (next to this page)</div>';
+  var panel=document.createElement('div');
+  if(mount){
+    panel.className='tfa';
+    panel.innerHTML='<div class="mk-label">Notes <b class="cnt">0</b></div>'+inner;
+    mount.hidden=false;
+    mount.appendChild(panel);
+  }else{
+    panel.className='apanel';
+    panel.innerHTML=
+      '<div class="apanel-h"><span class="grip">⠿</span>'
+      +'<span class="ptitle">NOTES <b class="cnt">0</b></span>'
+      +'<button class="iconbtn tf-collapse" title="Collapse">▾</button></div>'
+      +'<div class="apanel-b">'+inner+'</div>';
+    var shield=document.createElement('div');shield.className='dragshield';
+    document.documentElement.appendChild(panel);
+    document.documentElement.appendChild(shield);
+  }
 
   var q=function(s){return panel.querySelector(s);};
   var listEl=q('.tf-list'), cntEl=q('.cnt'), modeBtn=q('.tf-mode'),
@@ -113,7 +126,7 @@ function tfAnnotate(opts){
     document.documentElement.classList.toggle('tf-arming',mode);
     onArm(mode);
   });
-  q('.tf-collapse').addEventListener('click',function(){
+  if(q('.tf-collapse'))q('.tf-collapse').addEventListener('click',function(){
     var c=panel.classList.toggle('collapsed');
     this.textContent=c?'▸':'▾';this.title=c?'Expand':'Collapse';
   });
@@ -123,6 +136,7 @@ function tfAnnotate(opts){
     tfSave(opts.file,{task:opts.task,kind:opts.kind,ts:new Date().toISOString(),general:genEl.value.trim(),notes:out});
   });
   (function(){var h=q('.apanel-h'),dx=0,dy=0,drag=false;
+    if(!h)return;                                     // mounted in a host column: nothing to drag
     h.addEventListener('mousedown',function(e){if(e.target.closest('.iconbtn'))return;
       var r=panel.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;
       panel.style.right='auto';panel.style.left=r.left+'px';panel.style.top=r.top+'px';
@@ -255,21 +269,24 @@ function tfAnnotateDoc(opts){
   return anno;
 }
 
-/* ---- Mockup: pins over the embedded mockup, scoped to whichever screen is currently shown ----
-   The mockup announces its active screen via postMessage({tfScenario}); pins carry that screen
-   id and only render while it is visible, so switching screens hides the others' pins. */
+/* ---- Mockup: pins over the mockup, scoped to whichever screen is currently shown ----
+   The mockup announces its active screen: as a `mk:scenario` event when it is this same document
+   (the ui-mockup page carries its review column and the notes block inside it), or over
+   postMessage({tfScenario}) when an older page embeds it in an iframe. Pins carry that screen id
+   and only render while it is visible, so switching screens hides the others' pins. */
 function tfAnnotateMockup(opts){
-  var frame=document.getElementById(opts.frame||'mock');
+  var frame=opts.frame===null?null:document.getElementById(opts.frame||'mock');
   var stage=document.getElementById(opts.stage||'stage');
   var overlay=document.getElementById(opts.overlay||'overlay');
   var pinlayer=document.getElementById(opts.pinlayer||'pinlayer');
-  var cur=null, curLabel='';
+  var root=document.documentElement;
+  var cur=root.getAttribute('data-mk-scenario'), curLabel=root.getAttribute('data-mk-scenario-label')||'';
   function sendTheme(){var t=document.documentElement.getAttribute('data-theme')||'dark';
     try{frame.contentWindow.postMessage({tfTheme:t==='light'?'light':'dark'},'*');}catch(e){}}
   if(frame){frame.addEventListener('load',sendTheme);
     new MutationObserver(sendTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}
   var anno=tfAnnotate({
-    file:opts.file,task:opts.task,kind:opts.kind,
+    file:opts.file,task:opts.task,kind:opts.kind,mount:opts.mount,
     idleHint:'mode: interact with the mockup',
     armHint:'mode: click the mockup to drop pins',
     emptyText:'Turn on "Add a note" and click the mockup.',
@@ -285,6 +302,9 @@ function tfAnnotateMockup(opts){
     var x=(ev.clientX-r.left)/r.width*100, y=(ev.clientY-r.top)/r.height*100;
     if(x<0||x>100||y<0||y>100)return;
     anno.add({xPct:+x.toFixed(2),yPct:+y.toFixed(2),scenario:cur,scenarioLabel:curLabel});
+  });
+  document.addEventListener('mk:scenario',function(e){
+    cur=e.detail&&e.detail.id;curLabel=(e.detail&&e.detail.label)||'';anno.refresh();
   });
   window.addEventListener('message',function(e){
     if(e.data&&e.data.tfScenario){cur=e.data.tfScenario;curLabel=e.data.tfScenarioLabel||'';anno.refresh();}
