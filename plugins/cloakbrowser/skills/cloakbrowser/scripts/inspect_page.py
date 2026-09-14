@@ -62,6 +62,115 @@ LONGTASK_INIT = """
 """
 
 
+# Scrolls a container and reports what actually happened. A selector can match an
+# element that is not the scroller (a wrapper around the scrolling div), and then
+# `el.scrollTop = N` is accepted and does nothing; this returns the measurements
+# that show it, plus the scrollable elements near the target.
+SCROLL_JS = """
+(args) => {
+  const path = (el) => {
+    if (!el) return null;
+    if (el === document.documentElement) return ':root';
+    if (el === document.body) return 'body';
+    if (el.id) return '#' + CSS.escape(el.id);
+    const cls = (el.getAttribute('class') || '').trim().split(/\\s+/)
+      .filter(Boolean).slice(0, 3).map((c) => '.' + CSS.escape(c)).join('');
+    return el.tagName.toLowerCase() + cls;
+  };
+  const scrollable = (el) => {
+    const overflow = getComputedStyle(el).overflowY;
+    return /(auto|scroll|overlay)/.test(overflow) && el.scrollHeight - el.clientHeight > 1;
+  };
+  const measure = (el) => ({
+    selector: path(el),
+    scrollTop: Math.round(el.scrollTop),
+    scrollHeight: el.scrollHeight,
+    clientHeight: el.clientHeight,
+    overflowY: getComputedStyle(el).overflowY,
+    scrollable: scrollable(el),
+  });
+
+  if (!args.sel) {
+    const all = Array.from(document.querySelectorAll('*')).filter(scrollable);
+    all.sort((a, b) => b.scrollHeight - a.scrollHeight);
+    return {found: true, candidates: all.slice(0, 10).map(measure), applied: null};
+  }
+
+  const el = document.querySelector(args.sel);
+  if (!el) return {found: false, selector: args.sel};
+
+  const near = [];
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    if (scrollable(p)) { near.push(p); break; }
+  }
+  for (const d of el.querySelectorAll('*')) {
+    if (scrollable(d)) { near.push(d); if (near.length >= 4) break; }
+  }
+
+  const chosen = scrollable(el) ? el : (args.find && near.length ? near[0] : el);
+  const before = measure(chosen);
+  const value = args.target === 'top' ? 0
+    : args.target === 'bottom' ? chosen.scrollHeight
+    : parseInt(args.target, 10);
+  chosen.scrollTop = value;
+  const after = measure(chosen);
+  return {
+    found: true,
+    requested: measure(el),
+    applied: {before, after, substituted: chosen !== el, wanted: value},
+    candidates: near.map(measure),
+  };
+}
+"""
+
+
+def write_scroll_report(args: argparse.Namespace, report: dict) -> None:
+    """Print what the scroll did, and say so when it did nothing."""
+    if not report.get('found'):
+        sys.stdout.write(f'SCROLLERROR scroll-element not found: {report.get("selector")}\n')
+        return
+
+    def describe(m: dict) -> str:
+        return (f'{m["selector"]} scrollTop={m["scrollTop"]} scrollHeight={m["scrollHeight"]} '
+                f'clientHeight={m["clientHeight"]} overflow-y={m["overflowY"]}')
+
+    applied = report.get('applied')
+    if applied is None:
+        found = report.get('candidates') or []
+        sys.stdout.write(f'SCROLLERS {len(found)}\n')
+        for m in found:
+            sys.stdout.write(f'SCROLLER {describe(m)}\n')
+        if not found:
+            sys.stdout.write('SCROLLWARN no element on the page scrolls vertically\n')
+        return
+
+    before, after = applied['before'], applied['after']
+    where = args.scroll_element
+    if applied['substituted']:
+        # --find-scroller was asked for and the named element does not scroll:
+        # report the element that was actually scrolled, under its own name.
+        sys.stdout.write(f'SCROLLSUBST {where} does not scroll; scrolled {after["selector"]}\n')
+    sys.stdout.write(f'SCROLLED {after["selector"]} -> {args.scroll_to or "top"} '
+                     f'scrollTop {before["scrollTop"]} -> {after["scrollTop"]} '
+                     f'(scrollHeight={after["scrollHeight"]} clientHeight={after["clientHeight"]})\n')
+
+    if before['scrollTop'] == after['scrollTop'] and after['scrollTop'] != applied['wanted']:
+        if not after['scrollable']:
+            sys.stdout.write(
+                f'SCROLLWARN {after["selector"]} does not scroll vertically '
+                f'(overflow-y={after["overflowY"]}, scrollHeight={after["scrollHeight"]} '
+                f'<= clientHeight={after["clientHeight"]}); the screenshot is unchanged\n')
+        else:
+            sys.stdout.write(
+                f'SCROLLWARN {after["selector"]} did not move; asked for '
+                f'{applied["wanted"]}, stayed at {after["scrollTop"]}\n')
+        for m in report.get('candidates') or []:
+            sys.stdout.write(f'SCROLLER {describe(m)}\n')
+        if not report.get('candidates'):
+            sys.stdout.write('SCROLLER none near it; run with --find-scroller and no '
+                             '--scroll-element to list every scroller on the page\n')
+
+
 def summarize_longtasks(entries: list) -> str:
     """One-line summary of PerformanceObserver longtask entries.
 
@@ -186,24 +295,25 @@ async def inspect(args: argparse.Namespace) -> int:
         # in a fixed-height container with internal scroll, so neither viewport
         # nor --full-page captures the off-screen rows. This lets the caller
         # scroll the container itself; pass `top`, `bottom`, or a pixel offset.
-        if args.scroll_element:
+        if args.scroll_element or args.find_scroller:
             try:
                 target = args.scroll_to or 'top'
-                if target == 'top':
-                    js_value = '0'
-                elif target == 'bottom':
-                    js_value = 'el.scrollHeight'
-                else:
-                    js_value = str(int(target))  # raise on non-int
-                await page.evaluate(
-                    f'(sel) => {{ const el = document.querySelector(sel);'
-                    f' if (!el) throw new Error("scroll-element not found: " + sel);'
-                    f' el.scrollTop = {js_value}; }}',
-                    args.scroll_element,
-                )
+                if target not in ('top', 'bottom'):
+                    try:
+                        int(target)  # checked before the page is touched
+                    except ValueError:
+                        raise ValueError(
+                            f'--scroll-to got {target!r}; expected "top", "bottom", '
+                            f'or a whole number of pixels') from None
+                report = await page.evaluate(SCROLL_JS, {
+                    'sel': args.scroll_element,
+                    'target': target,
+                    'find': bool(args.find_scroller),
+                })
                 # Settle: give virtualized lists / smooth scroll handlers time.
-                await page.wait_for_timeout(args.scroll_settle)
-                sys.stdout.write(f'SCROLLED {args.scroll_element} -> {target}\n')
+                if report.get('applied'):
+                    await page.wait_for_timeout(args.scroll_settle)
+                write_scroll_report(args, report)
             except Exception as exc:
                 sys.stdout.write(f'SCROLLERROR {exc}\n')
 
@@ -267,6 +377,14 @@ def main() -> int:
         '--scroll-to',
         metavar='top|bottom|PIXELS',
         help='Where to scroll --scroll-element. "top" (default), "bottom", or an integer pixel offset.',
+    )
+    p.add_argument(
+        '--find-scroller',
+        action='store_true',
+        help='With --scroll-element: when that element does not scroll, scroll the '
+        'nearest element around it that does, and print which one it was. '
+        'Without --scroll-element: print every vertically scrolling element on the '
+        'page and scroll nothing.',
     )
     p.add_argument(
         '--scroll-settle',

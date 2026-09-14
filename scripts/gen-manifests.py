@@ -66,7 +66,7 @@ VERSIONS = {
     "audio-restore": "1.0.1",
     "break-it": "1.0.1",
     "claude-review": "1.0.1",
-    "cloakbrowser": "1.0.1",
+    "cloakbrowser": "1.1.0",
     "cloakbrowser-codex": "1.0.1",
     "codex-genimage": "1.0.3",
     "create-pr": "1.0.1",

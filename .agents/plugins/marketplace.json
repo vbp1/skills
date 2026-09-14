@@ -60,7 +60,7 @@
         "path": "./plugins/cloakbrowser"
       },
       "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Claude Code variant.",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

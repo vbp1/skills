@@ -113,6 +113,11 @@ view at the moment. Two extra flags fix this:
   Defaults: `--scroll-to top`, `--scroll-settle 300` (ms for virtualized
   lists / smooth scroll to settle).
 
+- `--find-scroller` — with `--scroll-element`, scroll the nearest element
+  around it that actually scrolls when the named one does not, and print
+  which one was scrolled. Without `--scroll-element`, list every vertically
+  scrolling element on the page and scroll nothing.
+
 - `--screenshot-element SELECTOR` — capture only this element's bounding
   box via `page.locator(SELECTOR).screenshot()`. Playwright auto-scrolls
   it into view first, so this also bypasses viewport size. Overrides
@@ -126,8 +131,21 @@ python3 <skill-dir>/scripts/inspect_page.py \
     --scroll-element 'main' --scroll-to top --viewport 1600x1200
 ```
 
-The script prints `SCROLLED <selector> -> <target>` so you can verify the
-scroll happened, and `SCROLLERROR <msg>` if the selector wasn't found.
+Read the scroll lines before trusting the screenshot. A selector often
+matches a wrapper around the real scroller, and assigning `scrollTop` to a
+non-scrolling element is accepted and does nothing.
+
+- `SCROLLED <selector> -> <target> scrollTop <before> -> <after> (scrollHeight=… clientHeight=…)`
+  — what moved, and by how much.
+- `SCROLLWARN <selector> …` — nothing moved: the element does not scroll, or
+  it was already where it was asked to go. The screenshot shows the same view
+  as without the flag.
+- `SCROLLER <selector> …` — an element nearby that does scroll. Re-run against
+  it, or add `--find-scroller`.
+- `SCROLLSUBST <asked> does not scroll; scrolled <selector>` — `--find-scroller`
+  used a different element; the screenshot belongs to that element.
+- `SCROLLERROR <msg>` — the selector matched nothing, or `--scroll-to` got a
+  value that is neither `top`, `bottom`, nor a whole number of pixels.
 
 ### Measuring client-side perf & injecting JS (`inspect_page.py` only)
 
