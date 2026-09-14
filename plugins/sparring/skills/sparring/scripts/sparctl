@@ -3,17 +3,25 @@
 #
 # Opponent: Codex CLI (`codex exec`). This build talks to no other agent.
 #
-# The first call with a given --state file starts a Codex session and records its id.
-# Every later call with the same --state file continues that same session, so the
-# opponent keeps the whole debate in view.
+# The first call with a given --state file opens a Codex session and records its id
+# as soon as the stream announces it. Every later call with the same --state file
+# continues that session, so the opponent keeps the whole debate in view.
+#
+# Every run ends with exactly one machine-readable terminal line on its output:
+# `wrote answer: ...` on success, `SPAR_FAILED: exit <code>` (or SPAR_TIMEOUT) on
+# every other path, including a signal — so a caller polling the log never waits
+# on a process that is already gone.
 #
 # Derived from https://github.com/nyxandro/sparring-skill (declared MIT), reduced to the
 # non-interactive path and pinned to a single opponent. See NOTICE.md next to SKILL.md.
 
 set -euo pipefail
+umask 077
 
-SPAR_TIMEOUT="${SPAR_TIMEOUT:-570}"   # seconds per opponent call
+SPAR_TIMEOUT="${SPAR_TIMEOUT:-3600}"   # seconds per opponent call
 OPPONENT_CMD="codex"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RENDER="$HERE/render-events.py"
 
 usage() {
   cat <<'HELPTEXT'
@@ -29,11 +37,14 @@ COMMANDS
             with the same --state file continue it.
 
 OPTIONS
-  --state <file>        Session file. Holds the Codex session id plus a plain-text
-                        log of every turn. Reuse it for follow-up turns of the same
-                        debate; use a fresh path for an unrelated debate.
-  --out <file>          Where the opponent's answer is written. Overwritten on success,
-                        left untouched on failure.
+  --state <file>        Session file: provider name, session id, creation time.
+                        Reuse it for follow-up turns of the same debate; use a fresh
+                        path for an unrelated debate. Two side files sit next to it:
+                        <state>.id holds the session id from the moment the provider
+                        announces it, and <state>.transcript holds the readable
+                        record of every turn.
+  --out <file>          Where the opponent's answer is written. Replaced atomically
+                        on success, left untouched on every failure.
   --prompt <text>       Prompt text. Suitable for short follow-up turns.
   --prompt-file <file>  Read the prompt from a file. Use this for long prompts: no
                         shell quoting, no argument-size limit, nothing in the process list.
@@ -41,39 +52,54 @@ OPTIONS
   -h, --help            This text.
 
 ENVIRONMENT
-  SPAR_TIMEOUT   Hard cap in seconds for one opponent call (default: 570).
+  SPAR_TIMEOUT   Hard cap in seconds for one opponent call (default: 3600).
 
 OUTPUT
-  On success, prints one final line:
+  While the opponent works, its actions are printed as a readable log: shell
+  commands, tool calls, web searches, interim messages. The run then ends with
+  one terminal line:
       wrote answer: <out> (<lines> lines, <bytes> bytes); session: <state>
-  Poll for that line when the call runs detached.
+      SPAR_TIMEOUT: ...   |   SPAR_FAILED: exit <code>
+  Poll for a terminal line when the call runs detached.
 
 EXAMPLES
-  # First turn of a debate, long prompt from a file.
-  sparctl ask --state /tmp/spar-api.session \
-              --prompt-file /tmp/spar-api.prompt \
-              --out /tmp/spar-api.turn1
-
-  # Focused rebuttal in the same debate.
-  sparctl ask --state /tmp/spar-api.session \
-              --prompt "Defend claim 2. The code at db/pool.rs:88 contradicts it." \
-              --out /tmp/spar-api.turn2
-
-  # Long turn, detached from the caller.
+  # One turn, detached from the caller, progress visible in the log.
   setsid nohup sparctl ask --state /tmp/s.session --prompt-file /tmp/s.prompt \
          --out /tmp/s.turn1 > /tmp/s.log 2>&1 &
+  tail -f /tmp/s.log
+
+  # Follow-up turn in the same debate.
+  sparctl ask --state /tmp/s.session \
+              --prompt "Defend claim 2. The code at db/pool.rs:88 contradicts it." \
+              --out /tmp/s.turn2
 
 EXIT CODES
   0  answer written
-  1  bad arguments, a missing prerequisite (codex, timeout, parent directory), or a
-     session id that could not be recorded
-
-  2  the opponent CLI failed; its stderr is reproduced above the failure line
+  1  bad arguments or a missing prerequisite (codex, python3, timeout, directories)
+  2  the opponent CLI failed; its stderr is reproduced above the terminal line
   3  the opponent exited cleanly but produced an empty answer
+  4  the opponent exceeded SPAR_TIMEOUT
+  5  the opponent's own stream reported a failed turn
 HELPTEXT
 }
 
+SPAR_SUCCESS=0
+
+report_exit() {
+  local code=$?
+  [ "$SPAR_SUCCESS" = 1 ] && return 0
+  printf 'SPAR_FAILED: exit %s\n' "$code" >&2
+  return 0
+}
+trap report_exit EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
+
 die() { printf 'SPAR_%s\n' "$*" >&2; exit 1; }
+
+need_value() {
+  [ "$#" -ge 2 ] || die "BAD_ARGS: $1 needs a value"
+}
 
 require_parent() {
   local path="$1" label="$2" parent
@@ -85,11 +111,6 @@ state_value() {
   local state="$1" key="$2"
   [ -f "$state" ] || return 0
   awk -F= -v key="$key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' "$state"
-}
-
-extract_session_id() {
-  sed -nE 's/.*"(session_id|thread_id|conversation_id)"[[:space:]]*:[[:space:]]*"([^"]+)".*/\2/p' "$1" \
-    | awk 'NF { print; exit }'
 }
 
 report_provider_failure() {
@@ -106,7 +127,7 @@ report_provider_failure() {
 
 cmd="${1:-}"
 case "$cmd" in
-  -h|--help|help|"") usage; exit 0 ;;
+  -h|--help|help|"") usage; SPAR_SUCCESS=1; exit 0 ;;
   ask) shift ;;
   *) printf 'SPAR_UNKNOWN_COMMAND: %s\n' "$cmd" >&2; usage >&2; exit 1 ;;
 esac
@@ -114,11 +135,11 @@ esac
 state=""; out=""; prompt=""; prompt_file=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --state)       state="${2:-}"; shift 2 ;;
-    --out)         out="${2:-}"; shift 2 ;;
-    --prompt)      prompt="${2:-}"; shift 2 ;;
-    --prompt-file) prompt_file="${2:-}"; shift 2 ;;
-    -h|--help)     usage; exit 0 ;;
+    --state)       need_value "$@"; state="$2"; shift 2 ;;
+    --out)         need_value "$@"; out="$2"; shift 2 ;;
+    --prompt)      need_value "$@"; prompt="$2"; shift 2 ;;
+    --prompt-file) need_value "$@"; prompt_file="$2"; shift 2 ;;
+    -h|--help)     usage; SPAR_SUCCESS=1; exit 0 ;;
     *) printf 'SPAR_UNKNOWN_OPTION: %s\n' "$1" >&2; usage >&2; exit 1 ;;
   esac
 done
@@ -137,6 +158,8 @@ fi
 require_parent "$state" "--state"
 require_parent "$out" "--out"
 command -v timeout >/dev/null 2>&1 || die "TIMEOUT_COMMAND_MISSING: GNU timeout is required"
+command -v python3 >/dev/null 2>&1 || die "PYTHON_MISSING: python3 is required to read the event stream"
+[ -x "$RENDER" ] || die "RENDERER_MISSING: no executable event renderer at $RENDER"
 exe="$(command -v "$OPPONENT_CMD" 2>/dev/null)" \
   || die "OPPONENT_MISSING: '$OPPONENT_CMD' is not on PATH; install and authenticate it"
 
@@ -145,42 +168,60 @@ if [ -n "$stored" ] && [ "$stored" != "$OPPONENT_CMD" ]; then
   die "SESSION_PROVIDER_MISMATCH: $state belongs to '$stored', not '$OPPONENT_CMD'"
 fi
 
+id_file="$state.id"
+transcript="$state.transcript"
 out_dir="$(dirname "$out")"; out_base="$(basename "$out")"
 answer="$(mktemp "$out_dir/.$out_base.XXXXXX")"
 err="$(mktemp "$out_dir/.$out_base.stderr.XXXXXX")"
 events="$(mktemp "$out_dir/.$out_base.events.XXXXXX")"
-cleanup() { rm -f "$answer" "$err" "$events"; }
-trap cleanup EXIT
+fail_file="$(mktemp "$out_dir/.$out_base.fail.XXXXXX")"
+cleanup() { rm -f "$answer" "$err" "$events" "$fail_file"; }
+trap 'cleanup; report_exit' EXIT
 
+# The session id lives in the state file once a turn has completed, and in the side
+# file from the moment the provider announced it — so a turn cut short still leaves
+# a session the next turn can resume.
 session_id="$(state_value "$state" session_id)"
-status=0
-
-if [ -z "$session_id" ]; then
-  printf '%s' "$prompt" | timeout "$SPAR_TIMEOUT" "$exe" --sandbox read-only -C "$PWD" \
-    exec --skip-git-repo-check --color never --json --output-last-message "$answer" - \
-    > "$events" 2> "$err" || status=$?
-  if [ "$status" -ne 0 ]; then
-    report_provider_failure "$status" "the first turn" "$err"
-    exit 2
-  fi
-  session_id="$(extract_session_id "$events")"
-  if [ -z "$session_id" ]; then
-    # The answer is paid for and valid; only the handle for follow-up turns is missing.
-    if [ -s "$answer" ]; then
-      mv "$answer" "$out"
-      die "SESSION_ID_MISSING: codex --json emitted no session id. The answer is in $out, but this debate cannot be continued; start a new --state file for the next turn."
-    fi
-    die "SESSION_ID_MISSING: codex --json emitted no session id"
-  fi
-else
-  printf '%s' "$prompt" | timeout "$SPAR_TIMEOUT" "$exe" --sandbox read-only -C "$PWD" \
-    exec --skip-git-repo-check --color never --json --output-last-message "$answer" \
-    resume "$session_id" - > "$events" 2> "$err" || status=$?
-  if [ "$status" -ne 0 ]; then
-    report_provider_failure "$status" "turn continuation in session $session_id" "$err"
-    exit 2
-  fi
+if [ -z "$session_id" ] && [ -s "$id_file" ]; then
+  session_id="$(tr -d '[:space:]' < "$id_file")"
 fi
+
+codex_args=(--sandbox read-only -C "$PWD" exec --skip-git-repo-check --color never --json
+            --output-last-message "$answer")
+if [ -n "$session_id" ]; then
+  codex_args+=(resume "$session_id" -)
+  phase="turn continuation in session $session_id"
+else
+  codex_args+=(-)
+  phase="the first turn"
+fi
+
+set +e
+printf '%s' "$prompt" \
+  | timeout "$SPAR_TIMEOUT" "$exe" "${codex_args[@]}" 2> "$err" \
+  | tee "$events" \
+  | python3 "$RENDER" --stream codex --session-file "$id_file" --fail-file "$fail_file"
+status="${PIPESTATUS[1]}"
+set -e
+
+if [ "$status" = 124 ]; then
+  printf 'SPAR_TIMEOUT: %s exceeded %s seconds during %s\n' "$OPPONENT_CMD" "$SPAR_TIMEOUT" "$phase" >&2
+  SPAR_SUCCESS=1   # the terminal line is printed above; do not add SPAR_FAILED
+  exit 4
+fi
+if [ "$status" != 0 ]; then
+  report_provider_failure "$status" "$phase" "$err"
+  exit 2
+fi
+if [ -s "$fail_file" ]; then
+  printf 'SPAR_TURN_FAILED: the opponent reported a failed turn: %s\n' "$(cat "$fail_file")" >&2
+  exit 5
+fi
+
+if [ -z "$session_id" ] && [ -s "$id_file" ]; then
+  session_id="$(tr -d '[:space:]' < "$id_file")"
+fi
+[ -n "$session_id" ] || die "SESSION_ID_MISSING: the stream announced no session id"
 
 if [ ! -s "$answer" ]; then
   printf 'SPAR_EMPTY_ANSWER: %s exited cleanly but wrote no answer\n' "$OPPONENT_CMD" >&2
@@ -202,8 +243,9 @@ fi
   printf -- '--- answered ---\n'
   cat "$out"
   printf '\n'
-} >> "$state"
+} >> "$transcript"
 
 lines="$(awk 'END { print NR }' "$out")"
 bytes="$(wc -c < "$out" | tr -d '[:space:]')"
+SPAR_SUCCESS=1
 printf 'wrote answer: %s (%s lines, %s bytes); session: %s\n' "$out" "$lines" "$bytes" "$state"

@@ -16,6 +16,10 @@ description: |
 The opponent is Claude Code CLI, always. Never open a second Codex for sparring; a
 debate with the same model returns the same blind spots.
 
+The opponent runs in plan permission mode and with its own sparring skill switched
+off, so it reads the working directory, edits nothing, and answers instead of starting
+a debate of its own.
+
 ## Prerequisites
 
 Check before the first turn:
@@ -23,54 +27,44 @@ Check before the first turn:
 ```bash
 command -v claude
 command -v timeout
+command -v python3
 ```
 
-Either one missing → report which one and stop. Do not substitute another agent.
+Any one missing → report which one and stop. Do not substitute another agent.
 
 The harness is `<skill-dir>/scripts/sparctl`, where `<skill-dir>` is the directory this
 SKILL.md was read from. Read `scripts/sparctl --help` when an option is unclear. No
 executable `sparctl` under that path → report `SPARRING_HARNESS_MISSING` with the path
 checked, and stop.
 
-The opponent runs in plan permission mode: it reads the working directory and edits
-nothing.
+The opponent's access to the web and to documentation servers comes from its own
+configuration, not from this skill. When a claim depends on freshness, ask the
+opponent in the prompt to name the source it checked.
 
 ## Files for one debate
 
-Pick one slug per debate (for example `spar-auth`) and keep these four paths in
-`/tmp` for its whole length:
+Pick one slug per debate (for example `spar-auth`) and keep these paths in `/tmp` for
+its whole length:
 
 | Path | Holds |
 |---|---|
 | `/tmp/<slug>.prompt` | the prompt for the current turn |
-| `/tmp/<slug>.session` | the Claude session; reuse it for every turn of this debate |
+| `/tmp/<slug>.session` | the session; reuse it for every turn of this debate |
 | `/tmp/<slug>.turnN.txt` | the opponent's answer for turn N |
-| `/tmp/<slug>.log` | the harness output when the turn runs detached |
+| `/tmp/<slug>.log` | the opponent's progress log for the current turn |
 
-A new debate gets a new slug. Never reuse a `.session` file across unrelated debates.
+The harness keeps two more files next to the session: `.id` (the session id, written
+the moment the opponent announces it) and `.transcript` (the readable record of every
+turn). A new debate gets a new slug. Never reuse a `.session` file across unrelated
+debates, and never run two turns against one session at the same time.
 
 ## Running one turn
 
-Write the prompt to `/tmp/<slug>.prompt` with a quoted heredoc, then pick one of the
-two forms below. Both write the answer to `--out` and print `wrote answer: ...` when
-done.
-
-**Short turn** — a focused rebuttal, a single clarifying question, anything expected
-under nine minutes. Run it directly and wait:
+Write the prompt to `/tmp/<slug>.prompt` with a quoted heredoc. Run every turn
+detached, so the shell call returns immediately:
 
 ```bash
-SPAR_TIMEOUT=570 <skill-dir>/scripts/sparctl ask \
-  --state /tmp/<slug>.session \
-  --prompt-file /tmp/<slug>.prompt \
-  --out /tmp/<slug>.turn2.txt
-```
-
-**Long turn** — the opening turn of any debate, a full plan or code review, or a turn
-that asks the opponent to check freshness against the web. Run it detached, so the
-shell call returns immediately:
-
-```bash
-setsid nohup env SPAR_TIMEOUT=3600 <skill-dir>/scripts/sparctl ask \
+setsid nohup <skill-dir>/scripts/sparctl ask \
   --state /tmp/<slug>.session \
   --prompt-file /tmp/<slug>.prompt \
   --out /tmp/<slug>.turn1.txt > /tmp/<slug>.log 2>&1 &
@@ -79,21 +73,27 @@ setsid nohup env SPAR_TIMEOUT=3600 <skill-dir>/scripts/sparctl ask \
 Then poll the log every 60–90 seconds:
 
 ```bash
-tail -n 3 /tmp/<slug>.log
+tail -n 5 /tmp/<slug>.log
 ```
 
-- Log ends with `wrote answer:` → read `--out`.
-- Log holds a line starting with `SPAR_` → the turn failed; report that line to the
-  user verbatim and stop.
-- Neither → the opponent is still working; poll again.
+The log carries the opponent's actions as they happen — shell commands, tool calls,
+web searches, interim messages — and ends with exactly one terminal line:
+
+- `wrote answer:` → the turn succeeded; read `--out`.
+- a line starting with `SPAR_` → the turn failed; report that line to the user
+  verbatim and stop.
+
+Neither line present → the opponent is still working; poll again. A turn that dies
+from a signal still writes a `SPAR_` line, so a log with no terminal line always means
+work in progress.
 
 Pass the prompt through `--prompt-file`. Use `--prompt "<text>"` only for a one-line
-follow-up.
+follow-up. Raise `SPAR_TIMEOUT` (seconds, default 3600) only when a turn is expected
+to run longer than an hour.
 
 ## The loop
 
-1. Write the opening prompt from the template below, in the user's language. Run it as
-   a long turn.
+1. Write the opening prompt from the template below, in the user's language, and run it.
 2. Read the answer. Set your own position against it: what you accept, what you reject,
    what stays disputed, what new question appeared.
 3. Verify every factual claim the opponent makes about the code against the code itself
@@ -102,8 +102,9 @@ follow-up.
    user. Do not invent the missing data.
 5. Send a follow-up turn while the continue gate below says yes. Name the exact
    disagreement and ask the opponent to defend it, revise it, or propose a synthesis.
-6. Delete `/tmp/<slug>.prompt`, `/tmp/<slug>.turn*.txt`, `/tmp/<slug>.log` and
-   `/tmp/<slug>.session` after the final synthesis, unless the user asked to keep them.
+6. Delete `/tmp/<slug>.prompt`, `/tmp/<slug>.turn*.txt`, `/tmp/<slug>.log`,
+   `/tmp/<slug>.session` and its `.id` and `.transcript` companions after the final
+   synthesis, unless the user asked to keep them.
 7. Answer the user with a synthesis, not a transcript.
 
 ## Continue gate
@@ -132,13 +133,17 @@ and a Russian answer. Adapt this shape:
 You are the second participant in a sparring session. Do not accept the framing
 automatically. Answer in the same language as the task above.
 
+Answer by yourself. Do not start a sparring session of your own, do not call another
+CLI agent, and do not delegate this to a sub-agent: you are the second opinion here.
+
 Work in this order:
 1. Restate the task as you understood it: the goal, the constraints that matter, and
    the assumptions being made.
 2. Check the framing: is this the right problem, is the direction necessary, is there
    unnecessary complexity, a duplicated concept, or a simpler model?
 3. Check freshness: are the proposed approaches, patterns, libraries, APIs and tools
-   current? Use web search or current documentation before recommending a solution.
+   current? Use web search or current documentation before recommending a solution,
+   and name the source you checked.
 4. List the disputed points: what is weak, where alternatives exist, what must be
    decided before a final answer.
 5. Then answer the concrete request.

@@ -9,4 +9,8 @@ This build differs from upstream:
 - one opponent only — Claude Code CLI;
 - one command, `sparctl ask`, carrying the non-interactive path;
 - prompts passed by file;
+- the opponent's machine event stream is rendered as a readable progress log while it works;
+- every run ends with one machine-readable terminal line, on success and on failure alike;
+- the session id is recorded the moment the opponent announces it;
+- machine state and the readable record of the debate live in separate files;
 - the tmux screen-scraping mode is not included.
