@@ -51,7 +51,7 @@ ROOT = args.root
 AUTHOR = {"name": "Vadim Ponomarev", "url": "https://github.com/vbp1"}
 REPO = "https://github.com/vbp1/skills"
 LICENSE = "Apache-2.0"
-MARKETPLACE_VERSION = "1.2.0"  # the catalogue itself; bump when the plugin roster changes
+MARKETPLACE_VERSION = "1.3.0"  # the catalogue itself; bump when the plugin roster changes
 
 # One version per plugin, bumped independently — bump only what you touched.
 #
@@ -80,6 +80,8 @@ VERSIONS = {
     "review-panel": "1.0.7",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
+    "sparring": "1.0.0",
+    "sparring-codex": "1.0.0",
     "taskflow": "1.1.1",
     "technical-premortem": "1.0.2",
     "ui-mockup": "1.1.1",
@@ -140,6 +142,12 @@ PLUGINS = [
     ("simple-tech-writing", "Simple Technical Writing",
      "Rewrite technical text so a tired reader cannot misread it: ASD-STE100 structural rules plus a Russian rule set.",
      "writing", "Productivity", ["writing", "documentation", "ste", "russian"], "claude"),
+    ("sparring", "Sparring (Claude Code)",
+     "Debate a plan, an idea or a risky change with Codex CLI as the opponent over several turns, then report a synthesis instead of a transcript. Claude Code variant.",
+     "planning", "Productivity", ["sparring", "second-opinion", "cross-agent", "planning", "review"], "claude"),
+    ("sparring-codex", "Sparring (Codex CLI)",
+     "Debate a plan, an idea or a risky change with Claude Code as the opponent over several turns, then report a synthesis instead of a transcript. Codex CLI variant.",
+     "planning", "Productivity", ["sparring", "second-opinion", "cross-agent", "planning", "review"], "codex"),
     ("taskflow", "Taskflow",
      "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
      "workflow", "Coding", ["workflow", "planning", "review", "tdd"], "claude"),

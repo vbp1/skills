@@ -26,8 +26,9 @@ Inside an interactive session use `/plugin marketplace add vbp1/skills` instead.
 
 Skills marked **Claude** were written against Claude Code, **Codex** against Codex
 CLI. The `SKILL.md` format is shared, so either one loads in either agent, but the
-wording and tooling assumptions follow the agent it was written for. Two skills
-exist as two separate variants because the two versions diverged.
+wording and tooling assumptions follow the agent it was written for. Three skills
+ship as two separate variants: either the two versions diverged, or each variant
+has to talk to the other agent.
 
 | Plugin | Written for | What it does |
 | --- | --- | --- |
@@ -48,6 +49,8 @@ exist as two separate variants because the two versions diverged.
 | `review-panel` | Claude | Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, every must-fix finding checked against the code, persisted rounds, re-review until clean. |
 | `rust-code-review` | Codex | Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, locks. |
 | `simple-tech-writing` | Claude | Rewrite technical text so a tired reader cannot misread it: ASD-STE100 rules plus a Russian rule set. |
+| `sparring` | Claude | Debate a plan, an idea or a risky change with Codex CLI as the opponent over several turns, then report a synthesis instead of a transcript. |
+| `sparring-codex` | Codex | Same debate, Codex variant: the opponent is Claude Code. |
 | `taskflow` | Claude | Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review, PR, summary. |
 | `technical-premortem` | Claude | Assess a planned change before it is written: blast radius, rollback plan, pre-flight checklist, go/no-go verdict. |
 | `ui-mockup` | Claude | Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product. |

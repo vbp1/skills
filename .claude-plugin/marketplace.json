@@ -8,7 +8,7 @@
   },
   "metadata": {
     "description": "Vadim Ponomarev's agent skills for Claude Code and OpenAI Codex CLI.",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "plugins": [
     {
@@ -241,6 +241,36 @@
         "documentation",
         "ste",
         "russian"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "sparring",
+      "source": "./plugins/sparring",
+      "description": "Debate a plan, an idea or a risky change with Codex CLI as the opponent over several turns, then report a synthesis instead of a transcript. Claude Code variant.",
+      "version": "1.0.0",
+      "category": "planning",
+      "keywords": [
+        "sparring",
+        "second-opinion",
+        "cross-agent",
+        "planning",
+        "review"
+      ],
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "sparring-codex",
+      "source": "./plugins/sparring-codex",
+      "description": "Debate a plan, an idea or a risky change with Claude Code as the opponent over several turns, then report a synthesis instead of a transcript. Codex CLI variant.",
+      "version": "1.0.0",
+      "category": "planning",
+      "keywords": [
+        "sparring",
+        "second-opinion",
+        "cross-agent",
+        "planning",
+        "review"
       ],
       "license": "Apache-2.0"
     },

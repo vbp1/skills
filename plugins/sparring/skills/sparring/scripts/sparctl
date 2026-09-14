@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# sparctl — ask the sparring opponent one question inside one persistent session.
+#
+# Opponent: Codex CLI (`codex exec`). This build talks to no other agent.
+#
+# The first call with a given --state file starts a Codex session and records its id.
+# Every later call with the same --state file continues that same session, so the
+# opponent keeps the whole debate in view.
+#
+# Derived from https://github.com/nyxandro/sparring-skill (declared MIT), reduced to the
+# non-interactive path and pinned to a single opponent. See NOTICE.md next to SKILL.md.
+
+set -euo pipefail
+
+SPAR_TIMEOUT="${SPAR_TIMEOUT:-570}"   # seconds per opponent call
+OPPONENT_CMD="codex"
+
+usage() {
+  cat <<'HELPTEXT'
+sparctl — ask the sparring opponent (Codex CLI) one question inside one session.
+
+USAGE
+  sparctl ask --state <file> --out <file> (--prompt <text> | --prompt-file <file>)
+  sparctl --help
+
+COMMANDS
+  ask       Send one turn to the opponent and write its answer to --out.
+            The first call for a --state file opens a Codex session; later calls
+            with the same --state file continue it.
+
+OPTIONS
+  --state <file>        Session file. Holds the Codex session id plus a plain-text
+                        log of every turn. Reuse it for follow-up turns of the same
+                        debate; use a fresh path for an unrelated debate.
+  --out <file>          Where the opponent's answer is written. Overwritten on success,
+                        left untouched on failure.
+  --prompt <text>       Prompt text. Suitable for short follow-up turns.
+  --prompt-file <file>  Read the prompt from a file. Use this for long prompts: no
+                        shell quoting, no argument-size limit, nothing in the process list.
+                        Mutually exclusive with --prompt.
+  -h, --help            This text.
+
+ENVIRONMENT
+  SPAR_TIMEOUT   Hard cap in seconds for one opponent call (default: 570).
+
+OUTPUT
+  On success, prints one final line:
+      wrote answer: <out> (<lines> lines, <bytes> bytes); session: <state>
+  Poll for that line when the call runs detached.
+
+EXAMPLES
+  # First turn of a debate, long prompt from a file.
+  sparctl ask --state /tmp/spar-api.session \
+              --prompt-file /tmp/spar-api.prompt \
+              --out /tmp/spar-api.turn1
+
+  # Focused rebuttal in the same debate.
+  sparctl ask --state /tmp/spar-api.session \
+              --prompt "Defend claim 2. The code at db/pool.rs:88 contradicts it." \
+              --out /tmp/spar-api.turn2
+
+  # Long turn, detached from the caller.
+  setsid nohup sparctl ask --state /tmp/s.session --prompt-file /tmp/s.prompt \
+         --out /tmp/s.turn1 > /tmp/s.log 2>&1 &
+
+EXIT CODES
+  0  answer written
+  1  bad arguments, a missing prerequisite (codex, timeout, parent directory), or a
+     session id that could not be recorded
+
+  2  the opponent CLI failed; its stderr is reproduced above the failure line
+  3  the opponent exited cleanly but produced an empty answer
+HELPTEXT
+}
+
+die() { printf 'SPAR_%s\n' "$*" >&2; exit 1; }
+
+require_parent() {
+  local path="$1" label="$2" parent
+  parent="$(dirname "$path")"
+  [ -d "$parent" ] || die "PARENT_MISSING: $label parent directory does not exist: $parent"
+}
+
+state_value() {
+  local state="$1" key="$2"
+  [ -f "$state" ] || return 0
+  awk -F= -v key="$key" '$1 == key { print substr($0, index($0, "=") + 1); exit }' "$state"
+}
+
+extract_session_id() {
+  sed -nE 's/.*"(session_id|thread_id|conversation_id)"[[:space:]]*:[[:space:]]*"([^"]+)".*/\2/p' "$1" \
+    | awk 'NF { print; exit }'
+}
+
+report_provider_failure() {
+  local status="$1" phase="$2" err="$3"
+  printf 'SPAR_PROVIDER_FAILED: %s exited with status %s during %s.\n' "$OPPONENT_CMD" "$status" "$phase" >&2
+  if [ -s "$err" ]; then
+    printf 'SPAR_PROVIDER_STDERR_BEGIN\n' >&2
+    cat "$err" >&2
+    printf 'SPAR_PROVIDER_STDERR_END\n' >&2
+  else
+    printf 'SPAR_PROVIDER_STDERR_EMPTY\n' >&2
+  fi
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  -h|--help|help|"") usage; exit 0 ;;
+  ask) shift ;;
+  *) printf 'SPAR_UNKNOWN_COMMAND: %s\n' "$cmd" >&2; usage >&2; exit 1 ;;
+esac
+
+state=""; out=""; prompt=""; prompt_file=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --state)       state="${2:-}"; shift 2 ;;
+    --out)         out="${2:-}"; shift 2 ;;
+    --prompt)      prompt="${2:-}"; shift 2 ;;
+    --prompt-file) prompt_file="${2:-}"; shift 2 ;;
+    -h|--help)     usage; exit 0 ;;
+    *) printf 'SPAR_UNKNOWN_OPTION: %s\n' "$1" >&2; usage >&2; exit 1 ;;
+  esac
+done
+
+[ -n "$state" ] || die "BAD_ARGS: --state is required"
+[ -n "$out" ] || die "BAD_ARGS: --out is required"
+if [ -n "$prompt" ] && [ -n "$prompt_file" ]; then
+  die "BAD_ARGS: pass either --prompt or --prompt-file, not both"
+fi
+if [ -n "$prompt_file" ]; then
+  [ -f "$prompt_file" ] || die "PROMPT_FILE_MISSING: no such file: $prompt_file"
+  prompt="$(cat "$prompt_file")"
+fi
+[ -n "$prompt" ] || die "BAD_ARGS: the prompt is empty; pass --prompt or --prompt-file"
+
+require_parent "$state" "--state"
+require_parent "$out" "--out"
+command -v timeout >/dev/null 2>&1 || die "TIMEOUT_COMMAND_MISSING: GNU timeout is required"
+exe="$(command -v "$OPPONENT_CMD" 2>/dev/null)" \
+  || die "OPPONENT_MISSING: '$OPPONENT_CMD' is not on PATH; install and authenticate it"
+
+stored="$(state_value "$state" provider)"
+if [ -n "$stored" ] && [ "$stored" != "$OPPONENT_CMD" ]; then
+  die "SESSION_PROVIDER_MISMATCH: $state belongs to '$stored', not '$OPPONENT_CMD'"
+fi
+
+out_dir="$(dirname "$out")"; out_base="$(basename "$out")"
+answer="$(mktemp "$out_dir/.$out_base.XXXXXX")"
+err="$(mktemp "$out_dir/.$out_base.stderr.XXXXXX")"
+events="$(mktemp "$out_dir/.$out_base.events.XXXXXX")"
+cleanup() { rm -f "$answer" "$err" "$events"; }
+trap cleanup EXIT
+
+session_id="$(state_value "$state" session_id)"
+status=0
+
+if [ -z "$session_id" ]; then
+  printf '%s' "$prompt" | timeout "$SPAR_TIMEOUT" "$exe" --sandbox read-only -C "$PWD" \
+    exec --skip-git-repo-check --color never --json --output-last-message "$answer" - \
+    > "$events" 2> "$err" || status=$?
+  if [ "$status" -ne 0 ]; then
+    report_provider_failure "$status" "the first turn" "$err"
+    exit 2
+  fi
+  session_id="$(extract_session_id "$events")"
+  if [ -z "$session_id" ]; then
+    # The answer is paid for and valid; only the handle for follow-up turns is missing.
+    if [ -s "$answer" ]; then
+      mv "$answer" "$out"
+      die "SESSION_ID_MISSING: codex --json emitted no session id. The answer is in $out, but this debate cannot be continued; start a new --state file for the next turn."
+    fi
+    die "SESSION_ID_MISSING: codex --json emitted no session id"
+  fi
+else
+  printf '%s' "$prompt" | timeout "$SPAR_TIMEOUT" "$exe" --sandbox read-only -C "$PWD" \
+    exec --skip-git-repo-check --color never --json --output-last-message "$answer" \
+    resume "$session_id" - > "$events" 2> "$err" || status=$?
+  if [ "$status" -ne 0 ]; then
+    report_provider_failure "$status" "turn continuation in session $session_id" "$err"
+    exit 2
+  fi
+fi
+
+if [ ! -s "$answer" ]; then
+  printf 'SPAR_EMPTY_ANSWER: %s exited cleanly but wrote no answer\n' "$OPPONENT_CMD" >&2
+  exit 3
+fi
+
+mv "$answer" "$out"
+
+if [ ! -f "$state" ]; then
+  {
+    printf 'provider=%s\n' "$OPPONENT_CMD"
+    printf 'session_id=%s\n' "$session_id"
+    printf 'created_at=%s\n' "$(date -Is)"
+  } > "$state"
+fi
+{
+  printf '\n=== TURN %s ===\n' "$(date -Is)"
+  printf -- '--- asked ---\n%s\n' "$prompt"
+  printf -- '--- answered ---\n'
+  cat "$out"
+  printf '\n'
+} >> "$state"
+
+lines="$(awk 'END { print NR }' "$out")"
+bytes="$(wc -c < "$out" | tr -d '[:space:]')"
+printf 'wrote answer: %s (%s lines, %s bytes); session: %s\n' "$out" "$lines" "$bytes" "$state"
