@@ -5,7 +5,8 @@ description: >-
   10-step pipeline with human approval gates (other sessions drive their own
   tasks in parallel): reformulate → clarify in batches → user stories (+ UI
   mockup) → spec page → tech plan (grilled + risk pre-mortem + cross-reviewed) →
-  plan page → TDD implementation + acceptance e2e green → review panel →
+  plan page → TDD implementation + acceptance e2e green → review panel (with
+  the language checklists the diff calls for) →
   cross-agent code review → live scenario pass + e2e re-run → commit + PR →
   summary page. State for each task lives in the frontmatter of
   `todos/NNN-slug.md` and is mirrored into an issue tracker when the project uses
@@ -383,7 +384,24 @@ When the classification is unclear, put that fix to the user via `AskUserQuestio
 minor (close the phase) or behaviour-changing (another round); never open a round on
 your own to settle the doubt.
 
-**Step 6 — Review panel.** Run **`review-panel`** with no argument — that reviews
+**Step 6 — Review panel.** First name the checklists, then run the panel.
+
+```
+python3 "<skill-dir>/assets/rules-for-diff.py" --repo <repo-root>
+```
+
+It prints one block per applicable checklist — its absolute path and the changed
+files it covers — over the same scope the panel reviews. Pass those paths to the
+review: into the track prompts where the panel accepts extra context, otherwise in
+the message that starts it. Open a checklist only when this command named it, and
+never read `assets/rules/rule_docs/` as a directory. Record in `## Journal` which
+checklists applied.
+
+Tell the reviewer to skip what the project decides mechanically: a point that a
+formatter, linter, type-checker or CI gate already enforces is not a review
+finding. What needs reading the code is.
+
+Then run **`review-panel`** with no argument — that reviews
 every uncommitted change in the tree, staged or not, which is the rule before a
 commit. It triages the track subset with you, runs the read-only tracks in
 parallel, verifies the criticals, writes the round file, and drives re-review
@@ -699,6 +717,14 @@ keep one copy, or every commit asks twice.
   and saves their answers and notes JSON next to them; `--wait <names>` blocks until
   one of those files is saved, prints the batch and exits. `--help` carries the
   options and exit codes.
+- `<skill-dir>/assets/rules-for-diff.py` — names which of the bundled review
+  checklists apply to a change (step 6), so only those are read. `--help` carries
+  the modes, output shapes and exit codes; `rules-for-diff-selftest.py` next to it
+  checks the resolver.
+- `<skill-dir>/assets/rules/rule_docs/` — 52 language and file-type review
+  checklists, ~240 KB in total, with `rules/mapping.json` deciding which one a path
+  gets and `rules/NOTICE.md` recording where they came from. Never read the
+  directory wholesale; reach it only through `rules-for-diff.py`.
 
 Before writing code that uses a library or API surface, fetch its current docs
 rather than working from memory.
