@@ -23,13 +23,22 @@ function flash(msg,err){
   setTimeout(function(){t.className='toast'+(err?' err':'');},2800);
 }
 
-async function tfSave(file,data){
-  var body=JSON.stringify({file:file,data:data});
+async function tfSave(file,data,confirmEmpty){
+  var body=JSON.stringify({file:file,data:data,confirm:confirmEmpty===true});
   if(location.protocol.indexOf('http')===0){
     try{
       var r=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:body});
       var j=await r.json();
       if(j&&j.ok){flash('Saved next to the page: '+file);return {saved:true,file:file};}
+      // The helper refuses to empty a file that holds feedback until the user says so a
+      // second time. Ask here rather than fall through to the download: downloading an
+      // empty file looks like a save and leaves the question unanswered.
+      if(j&&j.needsConfirm){
+        if(window.confirm(j.error+'\n\nOK — save it empty anyway.\nCancel — keep what is on disk.'))
+          return tfSave(file,data,true);
+        flash('Kept what was saved before — nothing was written',true);
+        return {saved:false,kept:true,file:file};
+      }
       throw new Error((j&&j.error)||'save failed');
     }catch(e){flash('Helper unavailable — downloading the file instead',true);}
   }
@@ -148,6 +157,7 @@ function tfAnnotate(opts){
         var t=new Date(),hh=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
         savedOnce=true;
         hintEl.textContent=(r&&r.saved?'✓ saved at '+hh+' → '+opts.file+' (next to this page)'
+                          :r&&r.kept ?'• not written — the version already saved was kept'
                                       :'↓ downloaded '+opts.file+' at '+hh);
       });
   });

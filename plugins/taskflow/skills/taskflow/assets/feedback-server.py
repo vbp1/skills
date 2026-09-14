@@ -12,6 +12,12 @@ Stdlib only. Binds 127.0.0.1. Static GET from --root; POST /save with body
 {"file":"<name>.json","data":{...}} writes <root>/<name>.json. The filename is
 restricted to a safe pattern inside root (no path traversal); body size is capped.
 
+Feedback is collected once and cannot be collected again, so a save never destroys
+what the last one left. The version being replaced is copied to
+<root>/.history/<name>.<timestamp>.json first, and a save that carries nothing over
+a file that carries something is refused with HTTP 409 until the same body comes
+back with "confirm": true — the page asks the user and resends.
+
 The helper has a second mode, --wait, that answers the other half of the loop:
 when did the user actually press Save? Serving mode never ends on its own, so the
 conductor also starts a waiter, which blocks until one of the named JSON files is
@@ -26,21 +32,30 @@ Usage:
   # blocks; prints {"saved": [...]} and exits once the batch has settled.
 Stop serving with SIGTERM / Ctrl-C when the user is done.
 Exit codes: 0 ok, 1 bad args, 2 --wait hit --timeout with nothing saved,
-3 a saved file could not be read as JSON, 130 interrupted.
+3 a saved file could not be read as JSON, 4 the port is already taken,
+130 interrupted.
 """
 
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import re
+import shutil
 import sys
 import time
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 SAFE_NAME = re.compile(r"^[A-Za-z0-9._-]+\.json$")
 MAX_BODY = 4_000_000
+HISTORY_DIR = ".history"
+HISTORY_KEEP = 20
+# Keys every page writes whether or not the user entered anything. They say what the
+# file is, not what the user said, so they do not count as content.
+BOOKKEEPING_KEYS = {"task", "kind", "ts"}
 CTYPES = {
     ".html": "text/html; charset=utf-8",
     ".json": "application/json; charset=utf-8",
@@ -49,6 +64,40 @@ CTYPES = {
     ".svg": "image/svg+xml",
     ".png": "image/png",
 }
+
+
+def has_content(value) -> bool:
+    """Whether a saved payload carries anything the user put there."""
+    if isinstance(value, dict):
+        return any(has_content(v) for k, v in value.items() if k not in BOOKKEEPING_KEYS)
+    if isinstance(value, (list, tuple)):
+        return any(has_content(v) for v in value)
+    if isinstance(value, str):
+        return bool(value.strip())
+    return value is not None and value is not False
+
+
+def keep_previous(target: Path) -> Path | None:
+    """Copy the version about to be replaced into <root>/.history/. Returns its path."""
+    if not target.is_file():
+        return None
+    history = target.parent / HISTORY_DIR
+    history.mkdir(exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    kept = history / f"{target.stem}.{stamp}{target.suffix}"
+    n = 1
+    while kept.exists():
+        n += 1
+        kept = history / f"{target.stem}.{stamp}-{n}{target.suffix}"
+    shutil.copy2(target, kept)
+    older = sorted(history.glob(f"{target.stem}.*{target.suffix}"))
+    for stale in older[:-HISTORY_KEEP]:
+        stale.unlink()
+    return kept
+
+
+class Refused(Exception):
+    """A save the helper will not make without the user saying so again."""
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -94,13 +143,35 @@ class Handler(BaseHTTPRequestHandler):
             target = self._safe_target(fname)
             if target is None:
                 raise ValueError("path traversal rejected")
+            data = payload.get("data")
+            if not has_content(data) and payload.get("confirm") is not True:
+                previous = None
+                if target.is_file():
+                    try:
+                        previous = json.loads(target.read_text(encoding="utf-8"))
+                    except (OSError, json.JSONDecodeError):
+                        previous = None
+                if has_content(previous):
+                    raise Refused(
+                        f"{fname} already holds feedback and this save is empty. "
+                        f"Save again to confirm the file should be emptied; the version "
+                        f"on disk is kept either way under {HISTORY_DIR}/."
+                    )
+            kept = keep_previous(target)
             target.write_text(
-                json.dumps(payload.get("data"), ensure_ascii=False, indent=2) + "\n",
+                json.dumps(data, ensure_ascii=False, indent=2) + "\n",
                 encoding="utf-8",
             )
+        except Refused as exc:
+            return self._send(409, json.dumps(
+                {"error": str(exc), "needsConfirm": True}, ensure_ascii=False
+            ).encode("utf-8"))
         except Exception as exc:  # noqa: BLE001 — report any failure to the page
             return self._send(400, json.dumps({"error": str(exc)}).encode("utf-8"))
-        return self._send(200, json.dumps({"ok": True, "saved": fname}).encode("utf-8"))
+        body = {"ok": True, "saved": fname}
+        if kept is not None:
+            body["kept"] = f"{HISTORY_DIR}/{kept.name}"
+        return self._send(200, json.dumps(body).encode("utf-8"))
 
     def log_message(self, *args):  # keep the console quiet
         pass
@@ -175,8 +246,14 @@ def main() -> None:
             "Waiting mode prints {\"saved\": [{\"file\": ..., \"data\": ...}, ...]} on stdout.\n"
             "It watches the files only, so run it alongside a serving process.\n"
             "\n"
+            "A save never destroys the version before it: that one is copied into\n"
+            "<root>/.history/<name>.<timestamp>.json (last 20 per file kept), and an empty\n"
+            "save over a file that holds feedback is answered 409 until the page resends it\n"
+            "with \"confirm\": true.\n"
+            "\n"
             "Exit codes: 0 ok, 1 bad arguments, 2 --timeout expired with nothing saved,\n"
-            "            3 a saved file is not readable JSON, 130 interrupted."
+            "            3 a saved file is not readable JSON, 4 the port is already taken,\n"
+            "            130 interrupted."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -232,7 +309,21 @@ def main() -> None:
 
     Handler.root = root
     port = 8799 if args.port is None else args.port
-    srv = ThreadingHTTPServer((args.host, port), Handler)
+    try:
+        srv = ThreadingHTTPServer((args.host, port), Handler)
+    except OSError as exc:
+        if exc.errno != errno.EADDRINUSE:
+            raise
+        # Serving on another port would leave the pages pointing at whoever holds this
+        # one: it answers GET and drops every save. Name the collision and stop.
+        print(
+            f"feedback-server: port {port} on {args.host} is already taken, so nothing is "
+            f"serving and no page was opened. Something else answers there and it will not "
+            f"accept saves. Find it with `ss -ltnp | grep :{port}`, then either stop it or "
+            f"start this helper on a free port with --port.",
+            file=sys.stderr,
+        )
+        sys.exit(4)
     print(f"taskflow feedback helper → http://{args.host}:{port}  (root={root})", flush=True)
     try:
         srv.serve_forever()

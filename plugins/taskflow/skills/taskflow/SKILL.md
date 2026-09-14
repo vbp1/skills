@@ -242,6 +242,19 @@ approval → `step: 3`.
 
   Write `branch: feat/NNN-slug` into the frontmatter and the chosen working copy
   into `## Journal`. Steps 4–9 run on this branch, plan review rounds included.
+
+  Then bind this task's cross-agent review state to the branch, from inside the
+  working copy the task runs in:
+
+  ```
+  bash "<skill-dir>/assets/codex-state-bind.sh" --task NNN-slug
+  ```
+
+  It carries the task's rounds and verdict over when the branch changes and moves
+  another task's leftovers into `.codex-review/archive/`. Run it again whenever the
+  task's branch changes — a rename, a move into a worktree — and at the start of
+  step 7. Exit code 2 means two directories claim the task: keep one, remove
+  `taskflow-task` from the rest, and re-run.
 - **Reuse check, before the approach is written.** Establish whether a framework
   the project already depends on, or a mechanism already in the codebase, can carry
   the feature. Read the published docs and the installed version's own type
@@ -400,7 +413,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/hooks/precommit-gate-util.py" mark --repo <repo-r
 
 Ledger the applied findings in `### Closed findings` as usual. `step: 7` when clean.
 
-**Step 7 — Cross-agent code review.** Invoke the cross-agent review skill (code
+**Step 7 — Cross-agent code review.** Entry: re-run
+`bash "<skill-dir>/assets/codex-state-bind.sh" --task NNN-slug` so the code phase
+reads the plan phase's rounds. Invoke the cross-agent review skill (code
 phase) against the diff when one is installed. Address findings — a finding about
 code this task did not change goes to the tech-debt directory under the same rule
 as step 6; continue only after a formal **APPROVED**. Then record the credit for
@@ -598,11 +613,24 @@ window). Model on `example-mockup.html`.
 plain `file://` cannot write to disk, so to COLLECT feedback run the helper as two
 background tasks — one serving, one waiting:
 
-- Serve:
-  `python3 <skill-dir>/assets/feedback-server.py --root todos/pages --port 8799`.
+- Serve, on this task's own port — `8800 + NNN % 100`, so two tasks running side by
+  side never reach for the same one:
+  `python3 <skill-dir>/assets/feedback-server.py --root todos/pages --port <port>`.
   It serves the folder and turns each page's save POST into a JSON file written
   **next to the pages**.
-- Open the page through it: `xdg-open http://127.0.0.1:8799/NNN-spec.html` (`open`
+- Check that saving works before the user is sent to the page — a server already on
+  that port answers GET and drops every POST:
+
+  ```
+  curl -sS -X POST http://127.0.0.1:<port>/save -H 'Content-Type: application/json' \
+    -d '{"file":"__probe__.json","data":{"probe":true}}'
+  rm todos/pages/__probe__.json
+  ```
+
+  Continue on `{"ok": true, ...}`. On anything else, and on exit code 4 from the
+  helper (the port is taken), stop: find the holder with `ss -ltnp | grep :<port>`,
+  then stop it or start the helper on a free port and reopen the page there.
+- Open the page through it: `xdg-open http://127.0.0.1:<port>/NNN-spec.html` (`open`
   on macOS, `wslview` under WSL).
 - Wait, naming every file the pages you just presented can write:
   `python3 <skill-dir>/assets/feedback-server.py --root todos/pages --wait
@@ -613,8 +641,13 @@ background tasks — one serving, one waiting:
 - Read the batch, fold it into the task file, and STOP the serving task. Another
   round on the same page: start a new waiter over the same names.
 - Exit code 2 means `--timeout` expired with nothing saved, 3 that a saved file is
-  not readable JSON. Report either to the user as what it is; neither is "no
-  feedback".
+  not readable JSON, 4 that the port is taken. Report each to the user as what it
+  is; none of them is "no feedback".
+- The helper copies the version it replaces into `todos/pages/.history/` and answers
+  409 to a save that empties a file holding feedback until the page asks the user and
+  resends. Try the saving machinery itself — a page's save button, the panel's
+  restore, a probe — only on a copy in the scratchpad directory with its own file
+  name, never on a file the user has written into.
 - Plain `file://` (no helper) still works: the pages fall back to **downloading**
   the JSON — then read it from the downloads folder, and no waiter fires.
 
@@ -660,6 +693,8 @@ keep one copy, or every commit asks twice.
   when it is not installed, say so and go on.
 - `create-pr` — open the pull request (step 9).
 - `visual-explainer` — OPTIONAL: a richer diagram to embed in the plan page.
+- `<skill-dir>/assets/codex-state-bind.sh` — binds this task's cross-agent review
+  state to the branch it runs on; `--help` for the details.
 - `<skill-dir>/assets/feedback-server.py` — localhost helper that serves the pages
   and saves their answers and notes JSON next to them; `--wait <names>` blocks until
   one of those files is saved, prints the batch and exits. `--help` carries the
