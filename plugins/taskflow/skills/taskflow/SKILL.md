@@ -219,11 +219,12 @@ approval → `step: 3`.
   with the stated reason. No candidate is dropped silently.
 - Build the **spec page** `NNN-spec.html` (see "Pages, the mockup and the feedback
   loop") with the interactive open-questions form and the mockup link → `page_spec`.
-- Gate: serve the pages with the feedback helper and present them. Collect the
-  user's answers (`NNN-spec.answers.json`), spec annotations (`NNN-spec.notes.json`)
-  and mockup notes (`NNN-mockup.notes.json`), fold them into `## Journal` / the next
-  revision, and iterate until approved. `awaiting: spec approval`. On approval →
-  create the tracker issue and card if the project uses one, stop the helper,
+- Gate: serve the pages with the feedback helper, present them, and arm the waiter
+  over `NNN-spec.answers.json,NNN-spec.notes.json,NNN-mockup.notes.json` before
+  ending the turn (see "Pages, the mockup and the feedback loop"). Fold the batch it
+  returns into `## Journal` / the next revision, and iterate until approved.
+  `awaiting: spec approval`. On approval →
+  create the tracker issue and card if the project uses one, stop the serving task,
   `step: 4`.
 
 **Step 4 — Tech plan.**
@@ -331,8 +332,9 @@ approval → `step: 3`.
   fold in / defer / drop — and record the decision.
 - Build the **plan page** `NNN-plan.html` from the bundled template → `page_plan`.
   Optionally embed a `visual-explainer` diagram if one clarifies the approach.
-- Gate: present the page (serve via the helper so the user can annotate it too);
-  collect plan annotations (`NNN-plan.notes.json`) and fold them in.
+- Gate: present the page (serve via the helper so the user can annotate it too) and
+  arm the waiter over `NNN-plan.notes.json` before ending the turn; fold the batch
+  it returns in.
   `awaiting: plan approval`. On approval → `step: 5`, move the board card to "in
   progress".
 
@@ -577,27 +579,44 @@ window). Model on `example-mockup.html`.
 2. The notes block is wired by one call after `<script src="taskflow.js">`:
    `tfAnnotateMockup({ task, kind, file, frame: null, stage: 'mkStage', mount:
    'mkNotes' })`. It mounts into the column's `#mkNotes` slot: normal mode =
-   interact with the mockup, notes mode = drop numbered pins on the mockup, saving
-   writes `NNN-mockup.notes.json`. **Pins are scoped to the screen they were placed
+   interact with the mockup, notes mode = the element under the cursor is outlined
+   and named and a click pins a numbered note to it, saving writes
+   `NNN-mockup.notes.json`. **A note carries the element as well as the point**: its
+   label lands in `quote` and a path to find it again in `el.path`, next to the
+   `xPct`/`yPct` the user clicked. A click on empty space still makes a plain
+   coordinate note. On the next visit an element-bound pin moves to wherever its
+   element now is, and a note whose element is gone says so and keeps its place. The
+   outlined unit is the nearest thing a person reads as one control (menu item,
+   button, table cell) — mark a region `data-mk-el="Name"` to name it yourself and
+   make it a target on its own. **Pins are scoped to the screen they were placed
    on** — the block listens for the page's `mk:scenario` events, so a pin only shows
    while its screen is displayed. `taskflow.css` is NOT linked from this page: its
    generic selectors would overwrite the mockup's own; the column and the notes
    block carry their styles inside the file.
 
 **Feedback loop — how the user's answers and notes reach you.** A page opened as a
-plain `file://` cannot write to disk, so to COLLECT feedback run the helper:
+plain `file://` cannot write to disk, so to COLLECT feedback run the helper as two
+background tasks — one serving, one waiting:
 
-- Start it in the background:
+- Serve:
   `python3 <skill-dir>/assets/feedback-server.py --root todos/pages --port 8799`.
   It serves the folder and turns each page's save POST into a JSON file written
   **next to the pages**.
 - Open the page through it: `xdg-open http://127.0.0.1:8799/NNN-spec.html` (`open`
-  on macOS, `wslview` under WSL). The user answers or annotates and clicks save.
-- When the user says they are done, READ every feedback file the pages wrote —
-  `NNN-spec.answers.json`, `NNN-spec.notes.json`, `NNN-plan.notes.json`,
-  `NNN-mockup.notes.json` (whichever exist) — fold them in, then STOP the helper.
+  on macOS, `wslview` under WSL).
+- Wait, naming every file the pages you just presented can write:
+  `python3 <skill-dir>/assets/feedback-server.py --root todos/pages --wait
+  NNN-spec.answers.json,NNN-spec.notes.json,NNN-mockup.notes.json`. Then set
+  `awaiting`, tell the user what is open, and END THE TURN. The waiter exits on the
+  user's save and the harness wakes you with the batch on its stdout:
+  `{"saved": [{"file": "…", "data": {…}}, …]}`.
+- Read the batch, fold it into the task file, and STOP the serving task. Another
+  round on the same page: start a new waiter over the same names.
+- Exit code 2 means `--timeout` expired with nothing saved, 3 that a saved file is
+  not readable JSON. Report either to the user as what it is; neither is "no
+  feedback".
 - Plain `file://` (no helper) still works: the pages fall back to **downloading**
-  the JSON — then read it from the downloads folder.
+  the JSON — then read it from the downloads folder, and no waiter fires.
 
 View-only pages (plan / summary) need no helper — just open the file. Record each
 page's path in the matching `page_*` frontmatter key.
@@ -642,7 +661,9 @@ keep one copy, or every commit asks twice.
 - `create-pr` — open the pull request (step 9).
 - `visual-explainer` — OPTIONAL: a richer diagram to embed in the plan page.
 - `<skill-dir>/assets/feedback-server.py` — localhost helper that serves the pages
-  and saves their answers and notes JSON next to them.
+  and saves their answers and notes JSON next to them; `--wait <names>` blocks until
+  one of those files is saved, prints the batch and exits. `--help` carries the
+  options and exit codes.
 
 Before writing code that uses a library or API surface, fetch its current docs
 rather than working from memory.
@@ -684,10 +705,11 @@ rather than working from memory.
   this mapping is not finished.
 - Pages need `taskflow.css` and `taskflow.js` alongside them in `todos/pages/` —
   copy them from `<skill-dir>/assets/pages/` before writing the first page of a task.
-- **Stop the feedback helper once feedback is collected** — and stop it by its
+- **Stop the serving feedback helper once feedback is collected** — by its
   background-task handle or `kill <pid>`, **not** by a pattern kill on the script
   name: that pattern also matches the shell command running it and kills your own
-  command. Free the port before restarting.
+  command. Free the port before restarting. The `--wait` task ends on its own; stop
+  it the same way when the user abandons the review.
 - **Softening a failure is the user's decision, not yours.** Substituting another
   source or version, returning a partial result, dropping into a degraded mode,
   swallowing an error — ask before it enters the plan at step 4 or the code at step

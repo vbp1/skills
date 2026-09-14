@@ -12,10 +12,21 @@ Stdlib only. Binds 127.0.0.1. Static GET from --root; POST /save with body
 {"file":"<name>.json","data":{...}} writes <root>/<name>.json. The filename is
 restricted to a safe pattern inside root (no path traversal); body size is capped.
 
+The helper has a second mode, --wait, that answers the other half of the loop:
+when did the user actually press Save? Serving mode never ends on its own, so the
+conductor also starts a waiter, which blocks until one of the named JSON files is
+written and then prints what was saved and exits — waking the agent through the
+harness's background-task notification. The waiter only watches the filesystem, so
+the serving process is untouched and keeps accepting further saves.
+
 Usage:
   feedback-server.py --root <dir> [--port 8799]
   # then open http://127.0.0.1:<port>/<page>.html and Save from the page.
-Stop it with SIGTERM / Ctrl-C when the user is done. Exit codes: 0 ok, 1 bad args.
+  feedback-server.py --root <dir> --wait 042-spec.answers.json,042-spec.notes.json
+  # blocks; prints {"saved": [...]} and exits once the batch has settled.
+Stop serving with SIGTERM / Ctrl-C when the user is done.
+Exit codes: 0 ok, 1 bad args, 2 --wait hit --timeout with nothing saved,
+3 a saved file could not be read as JSON, 130 interrupted.
 """
 
 from __future__ import annotations
@@ -24,6 +35,7 @@ import argparse
 import json
 import re
 import sys
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -94,15 +106,102 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def _signature(path: Path):
+    """What the waiter compares between polls: absent, or (size, mtime)."""
+    try:
+        st = path.stat()
+    except FileNotFoundError:
+        return None
+    return (st.st_size, st.st_mtime_ns)
+
+
+def wait_for_saves(root: Path, names: list[str], quiet: float, timeout: float, interval: float = 0.5) -> int:
+    """Block until one of `names` is written under `root`, then until `quiet` seconds
+    pass with no further write among them — a page that saves two files in a row
+    (answers, then notes) is reported as one batch. Prints the batch and returns 0."""
+    targets = {name: root / name for name in names}
+    baseline = {name: _signature(path) for name, path in targets.items()}
+    changed: dict[str, None] = {}
+    started = time.monotonic()
+    last_change = 0.0
+
+    while True:
+        for name, path in targets.items():
+            sig = _signature(path)
+            if sig is not None and sig != baseline[name]:
+                baseline[name] = sig
+                changed[name] = None
+                last_change = time.monotonic()
+        if changed and time.monotonic() - last_change >= quiet:
+            break
+        if not changed and timeout and time.monotonic() - started >= timeout:
+            print(
+                f"feedback-server: nothing was saved in {timeout:g}s. Watched under {root}: "
+                + ", ".join(names),
+                file=sys.stderr,
+            )
+            return 2
+        time.sleep(interval)
+
+    saved = []
+    for name in changed:
+        text = targets[name].read_text(encoding="utf-8")
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            # The page wrote something unreadable. Say so — an empty batch would read as "no feedback".
+            print(f"feedback-server: {targets[name]} is not valid JSON: {exc}", file=sys.stderr)
+            return 3
+        saved.append({"file": name, "data": data})
+
+    print(json.dumps({"saved": saved}, ensure_ascii=False, indent=2), flush=True)
+    return 0
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(
         prog="feedback-server",
-        description="Serve taskflow pages on localhost and save their feedback JSON next to them.",
-        epilog="Example: feedback-server.py --root todos/pages --port 8799",
+        description=(
+            "Serve taskflow pages on localhost and save their feedback JSON next to them, "
+            "or (--wait) block until one of those files is saved and print it."
+        ),
+        epilog=(
+            "Examples:\n"
+            "  Serve the pages (long-lived, stop it with Ctrl-C / SIGTERM):\n"
+            "    feedback-server.py --root todos/pages --port 8799\n"
+            "  Wait for the user to press Save on the spec page, then print the batch and exit:\n"
+            "    feedback-server.py --root todos/pages --wait 042-spec.answers.json,042-spec.notes.json\n"
+            "\n"
+            "Waiting mode prints {\"saved\": [{\"file\": ..., \"data\": ...}, ...]} on stdout.\n"
+            "It watches the files only, so run it alongside a serving process.\n"
+            "\n"
+            "Exit codes: 0 ok, 1 bad arguments, 2 --timeout expired with nothing saved,\n"
+            "            3 a saved file is not readable JSON, 130 interrupted."
+        ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--root", required=True, help="Directory to serve and save into (e.g. todos/pages).")
-    ap.add_argument("--port", type=int, default=8799, help="Port to listen on (default 8799).")
+    ap.add_argument("--port", type=int, help="Port to listen on (default 8799). Serving mode only.")
+    ap.add_argument(
+        "--wait",
+        metavar="NAMES",
+        help="Comma-separated JSON filenames inside --root to wait for instead of serving. "
+        "Blocks until one of them is written, then prints every file written in that batch and exits.",
+    )
+    ap.add_argument(
+        "--quiet",
+        type=float,
+        default=8.0,
+        help="Waiting mode: seconds without a further save before the batch is reported (default 8). "
+        "Covers a page that saves answers and notes one after the other.",
+    )
+    ap.add_argument(
+        "--timeout",
+        type=float,
+        default=0.0,
+        help="Waiting mode: give up after this many seconds if nothing was saved at all "
+        "(default 0 = wait indefinitely).",
+    )
     ap.add_argument(
         "--host",
         default="127.0.0.1",
@@ -114,10 +213,27 @@ def main() -> None:
     root = Path(args.root).resolve()
     if not root.is_dir():
         sys.exit(f"feedback-server: --root is not a directory: {root}")
-    Handler.root = root
 
-    srv = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"taskflow feedback helper → http://{args.host}:{args.port}  (root={root})", flush=True)
+    if args.wait is not None:
+        if args.port is not None:
+            sys.exit("feedback-server: --port belongs to serving mode and cannot be combined with --wait")
+        names = [n.strip() for n in args.wait.split(",") if n.strip()]
+        if not names:
+            sys.exit("feedback-server: --wait needs at least one filename, e.g. --wait 042-spec.notes.json")
+        bad = [n for n in names if not SAFE_NAME.match(n)]
+        if bad:
+            sys.exit(f"feedback-server: --wait names must match [A-Za-z0-9._-]+.json, got: {', '.join(bad)}")
+        if args.quiet < 0 or args.timeout < 0:
+            sys.exit(f"feedback-server: --quiet and --timeout must be >= 0, got {args.quiet} and {args.timeout}")
+        try:
+            sys.exit(wait_for_saves(root, names, args.quiet, args.timeout))
+        except KeyboardInterrupt:
+            sys.exit(130)
+
+    Handler.root = root
+    port = 8799 if args.port is None else args.port
+    srv = ThreadingHTTPServer((args.host, port), Handler)
+    print(f"taskflow feedback helper → http://{args.host}:{port}  (root={root})", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

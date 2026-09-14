@@ -29,7 +29,7 @@ async function tfSave(file,data){
     try{
       var r=await fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:body});
       var j=await r.json();
-      if(j&&j.ok){flash('Saved next to the page: '+file);return;}
+      if(j&&j.ok){flash('Saved next to the page: '+file);return {saved:true,file:file};}
       throw new Error((j&&j.error)||'save failed');
     }catch(e){flash('Helper unavailable — downloading the file instead',true);}
   }
@@ -37,6 +37,7 @@ async function tfSave(file,data){
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file;
   document.body.appendChild(a);a.click();a.remove();
   flash('Downloaded: '+file);
+  return {saved:false,file:file};
 }
 
 /* ---- shared annotation engine -----------------------------------------------------------
@@ -84,7 +85,11 @@ function tfAnnotate(opts){
 
   var q=function(s){return panel.querySelector(s);};
   var listEl=q('.tf-list'), cntEl=q('.cnt'), modeBtn=q('.tf-mode'),
-      hintMode=q('.tf-modehint'), genEl=q('.tf-general');
+      hintMode=q('.tf-modehint'), genEl=q('.tf-general'), hintEl=q('.tf-hint');
+  // The toast is gone in three seconds, so the line under the button carries the state that lasts:
+  // where the notes went, at what time, and whether anything has changed since.
+  var savedOnce=false;
+  function markDirty(){if(savedOnce)hintEl.textContent='● unsaved changes → '+opts.file;}
   var onRestore=opts.onRestore||function(){return true;};
 
   function renderList(){
@@ -96,7 +101,7 @@ function tfAnnotate(opts){
       var row=document.createElement('div');row.className='noterow';row.setAttribute('data-nid',n.id);
       var num=document.createElement('div');num.className='num';num.textContent=i+1;
       var ta=document.createElement('textarea');ta.placeholder='what to change here…';ta.value=n.comment;
-      ta.addEventListener('input',function(e){n.comment=e.target.value;});
+      ta.addEventListener('input',function(e){n.comment=e.target.value;markDirty();});
       var del=document.createElement('button');del.className='del';del.textContent='✕';del.title='delete';
       del.addEventListener('click',function(){remove(n.id);});
       row.appendChild(num);
@@ -106,7 +111,7 @@ function tfAnnotate(opts){
         // A restored note whose fragment is gone (the page text changed) keeps its comment and says so,
         // rather than disappearing or pointing at the wrong place.
         if(n.orphan){var w=document.createElement('div');w.className='orphan';
-          w.textContent='fragment not found on the page';box.appendChild(w);}
+          w.textContent=opts.orphanText||'fragment not found on the page';box.appendChild(w);}
         box.appendChild(ta);row.appendChild(box);}
       else{row.appendChild(ta);}
       row.appendChild(del);listEl.appendChild(row);
@@ -114,18 +119,22 @@ function tfAnnotate(opts){
     cntEl.textContent=vis.length;
   }
   function refresh(){renderList();drawMarkers(notes.filter(isVisible));}
-  function add(extra){var n=Object.assign({id:++seq,comment:''},extra);notes.push(n);refresh();return n;}
+  function redrawMarkers(){drawMarkers(notes.filter(isVisible));}
+  function add(extra){var n=Object.assign({id:++seq,comment:''},extra);notes.push(n);refresh();markDirty();return n;}
   function remove(id){var i=-1;notes.forEach(function(x,k){if(x.id===id)i=k;});
-    if(i>=0){var n=notes[i];notes.splice(i,1);onRemove(n);}refresh();}
+    if(i>=0){var n=notes[i];notes.splice(i,1);onRemove(n);}refresh();markDirty();}
   function focusNote(id){var r=listEl.querySelector('[data-nid="'+id+'"] textarea');if(r)r.focus();}
 
-  modeBtn.addEventListener('click',function(){
-    mode=!mode;modeBtn.classList.toggle('on',mode);
+  function setMode(on){
+    if(mode===on)return;
+    mode=on;modeBtn.classList.toggle('on',mode);
     modeBtn.textContent=mode?'Done':'Add a note';
     hintMode.textContent=mode?(opts.armHint||'mode: notes on'):(opts.idleHint||'mode: normal viewing');
     document.documentElement.classList.toggle('tf-arming',mode);
     onArm(mode);
-  });
+  }
+  modeBtn.addEventListener('click',function(){setMode(!mode);});
+  genEl.addEventListener('input',markDirty);
   if(q('.tf-collapse'))q('.tf-collapse').addEventListener('click',function(){
     var c=panel.classList.toggle('collapsed');
     this.textContent=c?'▸':'▾';this.title=c?'Expand':'Collapse';
@@ -133,7 +142,14 @@ function tfAnnotate(opts){
   q('.tf-save').addEventListener('click',function(){
     var out=notes.map(function(n){var o={};for(var k in n){if(k!=='range'&&k!=='badgeEl')o[k]=n[k];}
       if(o.comment!=null)o.comment=(''+o.comment).trim();return o;});
-    tfSave(opts.file,{task:opts.task,kind:opts.kind,ts:new Date().toISOString(),general:genEl.value.trim(),notes:out});
+    setMode(false);                                   // saving ends the round of annotating
+    tfSave(opts.file,{task:opts.task,kind:opts.kind,ts:new Date().toISOString(),general:genEl.value.trim(),notes:out})
+      .then(function(r){
+        var t=new Date(),hh=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
+        savedOnce=true;
+        hintEl.textContent=(r&&r.saved?'✓ saved at '+hh+' → '+opts.file+' (next to this page)'
+                                      :'↓ downloaded '+opts.file+' at '+hh);
+      });
   });
   (function(){var h=q('.apanel-h'),dx=0,dy=0,drag=false;
     if(!h)return;                                     // mounted in a host column: nothing to drag
@@ -178,7 +194,8 @@ function tfAnnotate(opts){
 
   renderList();
   restore();
-  return {add:add,remove:remove,refresh:refresh,focusNote:focusNote,isArmed:function(){return mode;}};
+  return {add:add,remove:remove,refresh:refresh,redrawMarkers:redrawMarkers,
+          focusNote:focusNote,isArmed:function(){return mode;}};
 }
 
 /* ---- Find a saved quote again in the live page and hand back a Range over it.
@@ -269,6 +286,91 @@ function tfAnnotateDoc(opts){
   return anno;
 }
 
+/* ---- Mockup: what the cursor is pointing at ------------------------------------------------
+   A person points at one thing — a menu item, a button, a table cell — not at the decorative
+   span inside it, so from the deepest node under the cursor we take the nearest ancestor that
+   reads as a single control. A candidate covering most of the stage is refused: there the
+   cursor is over empty space, and the note keeps its coordinates alone. Mark a region with
+   `data-mk-el="Name"` to name it yourself and to make it a target on its own. ---- */
+// Two tiers, nearest match wins within a tier. A control is asked about first, so an icon inside
+// a button highlights the button; only where no control encloses the cursor does a content unit
+// (cell, row, heading, paragraph, picture) answer; failing both, the node under the cursor itself.
+var TF_EL_UNITS=[
+  '[data-mk-el]','a','button','summary','label','input','select','textarea',
+  '[role="button"]','[role="tab"]','[role="menuitem"]','[role="listitem"]','li'
+].join(',');
+var TF_EL_UNITS2=['td','th','tr','[role="row"]','h1','h2','h3','h4','h5','h6','p','img','svg','.card'].join(',');
+var TF_EL_MAX_AREA=0.7;
+var TF_EL_CHROME='.mk-overlay,.mk-pinlayer,.mk-hilite,.tfa,.apanel,.toast';
+
+function tfElAt(stage,x,y){
+  if(!stage||!document.elementsFromPoint)return null;
+  var stack=document.elementsFromPoint(x,y),el=null;
+  for(var i=0;i<stack.length;i++){
+    var n=stack[i];
+    if(n.closest&&n.closest(TF_EL_CHROME))continue;      // the review machinery is not part of the mockup
+    if(n===stage||!stage.contains(n))continue;
+    el=n;break;
+  }
+  if(!el)return null;
+  var unit=el.closest(TF_EL_UNITS)||el.closest(TF_EL_UNITS2);
+  if(unit&&unit!==stage&&stage.contains(unit))el=unit;
+  var r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();
+  if(!r.width||!r.height)return null;
+  if(s.width&&s.height&&(r.width*r.height)/(s.width*s.height)>TF_EL_MAX_AREA)return null;
+  return el;
+}
+
+/* What the note calls the element: the author's own name first, then anything the product
+   already shows to a reader, then the tag as a last resort. */
+function tfElLabel(el){
+  var v=el.getAttribute('data-mk-el')||el.getAttribute('aria-label')||el.getAttribute('alt')
+       ||el.getAttribute('title')||((el.innerText||el.textContent||'')).replace(/\s+/g,' ').trim()
+       ||el.getAttribute('placeholder')||el.value||'';
+  v=(''+v).trim();
+  if(v.length>80)v=v.slice(0,79)+'…';
+  if(v)return v;
+  var cls=typeof el.className==='string'?el.className.trim().split(/\s+/)[0]:'';
+  return el.tagName.toLowerCase()+(cls?'.'+cls:'');
+}
+
+/* A path that finds the same element again on the next visit. Stops at the first id unique in
+   the document; otherwise a child-position chain up to the stage. */
+function tfElPath(stage,el){
+  var parts=[],n=el;
+  while(n&&n!==stage&&n.nodeType===1){
+    if(n.id&&window.CSS&&CSS.escape&&document.querySelectorAll('#'+CSS.escape(n.id)).length===1){
+      parts.unshift('#'+CSS.escape(n.id));break;
+    }
+    var i=1,sib=n;
+    while((sib=sib.previousElementSibling))i++;
+    parts.unshift(n.tagName.toLowerCase()+':nth-child('+i+')');
+    n=n.parentNode;
+  }
+  return parts.join('>');
+}
+
+function tfElFind(stage,path){
+  if(!stage||!path)return null;
+  try{return stage.querySelector(path);}catch(e){return null;}
+}
+
+var TF_HILITE_CSS=
+  // The engine owns how its own layers look and stack: the catching layer sits above the mockup's
+  // sticky content (a pinned panel is otherwise unreachable) and below the review column.
+   '.mk-stage .mk-overlay{z-index:40;}'
+ +'.mk-stage .mk-overlay.arming{background:transparent;}'
+ +'.mk-stage .mk-pinlayer{z-index:41;}'
+ +'.mk-hilite{position:absolute;z-index:42;pointer-events:none;display:none;border-radius:5px;'
+ +'border:1.5px solid color-mix(in srgb, var(--primary,#6366f1) 55%, transparent);}'
+ +'.mk-hilite.on{display:block;}'
+ +'.mk-hilite .lbl{position:absolute;left:-1px;top:-20px;max-width:340px;overflow:hidden;'
+ +'white-space:nowrap;text-overflow:ellipsis;padding:0 5px;border-radius:3px;'
+ +'background:var(--background,#fff);color:var(--primary,#6366f1);'
+ +'border:1px solid color-mix(in srgb, var(--primary,#6366f1) 40%, transparent);'
+ +'font:600 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;}'
+ +'.mk-hilite[data-tf-edge="top"] .lbl{top:auto;bottom:-20px;}';
+
 /* ---- Mockup: pins over the mockup, scoped to whichever screen is currently shown ----
    The mockup announces its active screen: as a `mk:scenario` event when it is this same document
    (the ui-mockup page carries its review column and the notes block inside it), or over
@@ -285,24 +387,93 @@ function tfAnnotateMockup(opts){
     try{frame.contentWindow.postMessage({tfTheme:t==='light'?'light':'dark'},'*');}catch(e){}}
   if(frame){frame.addEventListener('load',sendTheme);
     new MutationObserver(sendTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});}
+  // The box drawn around whatever the cursor is over while the mode is on. Element and styles are
+  // created here, so a mockup page written before this needs no markup of its own.
+  var hil=null;
+  // The sheet goes in as the block is wired, not on first hover: it is what lifts the catching layer
+  // over the mockup's own content, and without it the first hover there never arrives.
+  if(stage&&!document.getElementById('tf-hilite-css')){
+    var tfst=document.createElement('style');tfst.id='tf-hilite-css';tfst.textContent=TF_HILITE_CSS;
+    document.head.appendChild(tfst);
+  }
+  function hilite(){
+    if(hil||!stage)return hil;
+    hil=document.createElement('div');hil.className='mk-hilite';
+    hil.innerHTML='<span class="lbl"></span>';
+    stage.appendChild(hil);
+    return hil;
+  }
+  function showHilite(el){
+    var h=hilite();if(!h)return;
+    var r=el.getBoundingClientRect(),s=stage.getBoundingClientRect();
+    h.style.left=(r.left-s.left)+'px';h.style.top=(r.top-s.top)+'px';
+    h.style.width=r.width+'px';h.style.height=r.height+'px';
+    h.setAttribute('data-tf-edge',r.top-s.top<22?'top':'');
+    h.querySelector('.lbl').textContent=tfElLabel(el);
+    h.classList.add('on');
+  }
+  function hideHilite(){if(hil)hil.classList.remove('on');}
+
   var anno=tfAnnotate({
     file:opts.file,task:opts.task,kind:opts.kind,mount:opts.mount,
     idleHint:'mode: interact with the mockup',
-    armHint:'mode: click the mockup to drop pins',
+    armHint:'mode: hover an element and click',
     emptyText:'Turn on "Add a note" and click the mockup.',
+    orphanText:'element not found on the mockup — the note holds its place',
     isVisible:function(n){return !n.scenario||n.scenario===cur;},
-    onArm:function(on){if(overlay)overlay.classList.toggle('arming',on);if(stage)stage.classList.toggle('arming',on);},
-    drawMarkers:function(vis){if(!pinlayer)return;pinlayer.innerHTML='';
-      vis.forEach(function(n,i){var d=document.createElement('div');d.className='pin';d.textContent=i+1;
-        d.style.left=n.xPct+'%';d.style.top=n.yPct+'%';pinlayer.appendChild(d);});}
+    onArm:function(on){if(overlay)overlay.classList.toggle('arming',on);if(stage)stage.classList.toggle('arming',on);
+      if(!on)hideHilite();},
+    onRestore:function(n){return !(n.el&&n.el.path)||!!tfElFind(stage,n.el.path);},
+    drawMarkers:function(vis){if(!pinlayer||!stage)return;pinlayer.innerHTML='';
+      var s=stage.getBoundingClientRect();
+      vis.forEach(function(n,i){
+        var d=document.createElement('div');d.className='pin';d.textContent=i+1;
+        var x=n.xPct,y=n.yPct;
+        // The click point is where the user actually pointed, so it wins while it still falls on the
+        // element. Once the layout has moved it elsewhere, the pin follows the element instead.
+        var el=n.el&&n.el.path?tfElFind(stage,n.el.path):null;
+        if(el&&s.width&&s.height){
+          var r=el.getBoundingClientRect();
+          var px=s.left+x/100*s.width, py=s.top+y/100*s.height;
+          var inside=px>=r.left&&px<=r.right&&py>=r.top&&py<=r.bottom;
+          if(r.width&&r.height&&!inside){
+            x=(r.left-s.left+Math.min(18,r.width/2))/s.width*100;
+            y=(r.top-s.top+Math.min(18,r.height/2))/s.height*100;
+          }
+        }
+        d.style.left=x+'%';d.style.top=y+'%';
+        if(n.quote)d.title=n.quote;
+        pinlayer.appendChild(d);});}
   });
+
+  // Hovering is only possible where the mockup shares this document; an embedded frame keeps
+  // coordinates alone.
+  if(overlay&&!frame){
+    overlay.addEventListener('mousemove',function(ev){
+      if(!anno.isArmed())return;
+      var el=tfElAt(stage,ev.clientX,ev.clientY);
+      if(el)showHilite(el);else hideHilite();
+    });
+    overlay.addEventListener('mouseleave',hideHilite);
+  }
   if(overlay)overlay.addEventListener('click',function(ev){
     if(!anno.isArmed())return;
     var r=stage.getBoundingClientRect();
     var x=(ev.clientX-r.left)/r.width*100, y=(ev.clientY-r.top)/r.height*100;
     if(x<0||x>100||y<0||y>100)return;
-    anno.add({xPct:+x.toFixed(2),yPct:+y.toFixed(2),scenario:cur,scenarioLabel:curLabel});
+    var n={xPct:+x.toFixed(2),yPct:+y.toFixed(2),scenario:cur,scenarioLabel:curLabel};
+    var el=frame?null:tfElAt(stage,ev.clientX,ev.clientY);
+    if(el){n.quote=tfElLabel(el);n.el={path:tfElPath(stage,el),tag:el.tagName.toLowerCase()};}
+    anno.add(n);
   });
+  // Scrolling inside the mockup moves the elements under the pins: element-bound ones are redrawn
+  // where their element now is. The list is left alone — re-rendering it would drop the cursor out
+  // of a comment being typed.
+  if(stage)stage.addEventListener('scroll',function(){
+    hideHilite();
+    if(window.requestAnimationFrame)requestAnimationFrame(anno.redrawMarkers);
+    else anno.redrawMarkers();
+  },true);
   document.addEventListener('mk:scenario',function(e){
     cur=e.detail&&e.detail.id;curLabel=(e.detail&&e.detail.label)||'';anno.refresh();
   });

@@ -152,10 +152,10 @@
 
   /* the mockup itself fills everything the column leaves */
   .mk-stage { position: relative; flex: 1; min-width: 0; height: 100vh; overflow: hidden; }
-  .mk-overlay { position: absolute; inset: 0; z-index: 5; }
+  .mk-overlay { position: absolute; inset: 0; }
   .mk-overlay:not(.arming) { pointer-events: none; }
-  .mk-overlay.arming { pointer-events: auto; cursor: crosshair; background: color-mix(in srgb, var(--primary) 8%, transparent); }
-  .mk-pinlayer { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+  .mk-overlay.arming { pointer-events: auto; cursor: crosshair; }
+  .mk-pinlayer { position: absolute; inset: 0; pointer-events: none; }
   .pin {
     position: absolute; transform: translate(-50%,-50%); width: 24px; height: 24px; border-radius: 50%;
     background: var(--warning, #f0a92e); color: #241a02; font: 600 12px/24px 'Geist Mono', ui-monospace, monospace;

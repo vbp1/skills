@@ -136,7 +136,11 @@ machinery so you don't reinvent it:
 - **A notes slot for the caller.** `#mkNotes` is an empty, hidden block at the
   bottom of the column, for a host that collects feedback (this is where
   `taskflow` mounts its notes block). Standalone it stays empty and invisible, and
-  the mockup remains a single self-contained file.
+  the mockup remains a single self-contained file. In note mode that engine outlines
+  the element under the cursor and binds the note to it, picking the nearest thing
+  that reads as one control. Give a region `data-mk-el="Name"` where the markup
+  alone would not read that way — a card, a toolbar, a chart — and the outline snaps
+  to it and the note carries that name.
 
 Conventions that keep it honest and useful:
 
