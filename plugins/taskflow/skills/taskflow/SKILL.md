@@ -343,9 +343,10 @@ close step 4's branch sub-step before writing code.
 Walk `### Stages and tasks` in order, one stage at a time. Work in RED→GREEN: write
 the failing test first, confirm it fails for the right reason, then the minimum code
 to pass. Tick each `- [ ]` in the task file as its task lands; on a stage's
-`Done when` line coming true, record the closed stage in `## Journal`. A stage the
-work proves wrong is rewritten in the plan before it is built, with the reason in
-`## Journal`. Follow the project's testing rules. Run the project's fast checks
+`Done when` line coming true, record the closed stage in `## Journal`. After each
+batch of commits, add one line to `## Journal`: the date, the short hashes and what
+they carry. A stage the work proves wrong is rewritten in the plan before it is
+built, with the reason in `## Journal`. Follow the project's testing rules. Run the project's fast checks
 (type-check plus the unit run scoped to the modules the stage touched) at each
 stage; run the slower ones (lint, dependency and dead-code checks) once, after the
 last stage closes, and only those whose triggers apply.
