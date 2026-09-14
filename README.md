@@ -45,6 +45,7 @@ exist as two separate variants because the two versions diverged.
 | `kill-the-idea` | Claude | Argue against an idea from the position that it should not be built, anchor every claim to the code, end with a verdict. |
 | `langfuse-debug` | Claude | Investigate agent runs recorded in Langfuse: failed sessions, token usage, tool-call patterns. |
 | `remote-ssh-workspace` | Codex | Make a remote host behave like a local worktree: SSH multiplexing, sshfs mounts, detached long jobs. |
+| `review-panel` | Claude | Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, every must-fix finding checked against the code, persisted rounds, re-review until clean. |
 | `rust-code-review` | Codex | Review Rust for hazards that survive cargo build, cargo test and clippy: async, unsafe, lifetimes, locks. |
 | `simple-tech-writing` | Claude | Rewrite technical text so a tired reader cannot misread it: ASD-STE100 rules plus a Russian rule set. |
 | `taskflow` | Claude | Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review, PR, summary. |
