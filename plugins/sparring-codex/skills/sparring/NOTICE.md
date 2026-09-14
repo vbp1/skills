@@ -13,4 +13,7 @@ This build differs from upstream:
 - every run ends with one machine-readable terminal line, on success and on failure alike;
 - the session id is recorded the moment the opponent announces it;
 - machine state and the readable record of the debate live in separate files;
+- the turn is refused while another turn is running against the same session;
+- `status` says whether a turn is still alive, so a killed run cannot be polled forever;
+- contract tests run the whole harness against a fake opponent CLI;
 - the tmux screen-scraping mode is not included.

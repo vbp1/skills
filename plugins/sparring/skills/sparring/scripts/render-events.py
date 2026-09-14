@@ -9,25 +9,34 @@ carry the facts sparctl needs back:
                     so an interrupted turn still leaves a resumable session
     --answer-file   the final answer text (claude streams only; codex writes its
                     own answer file)
-    --fail-file     one line describing the first terminal failure event
+    --done-file     written when the stream reports the turn finished cleanly
+    --fail-file     the first terminal failure event
 
 Usage:
-    codex ... --json ... | tee raw.jsonl | render-events.py --stream codex --session-file s.id
-    claude ... --output-format stream-json --verbose | tee raw.jsonl \\
-        | render-events.py --stream claude --session-file s.id --answer-file a.txt
+    codex ... --json ... | render-events.py --stream codex --session-file s.id \\
+        --done-file s.done --fail-file s.fail
+    claude ... --output-format stream-json --verbose \\
+        | render-events.py --stream claude --session-file s.id --answer-file a.txt \\
+          --done-file s.done --fail-file s.fail
     render-events.py --help
 
-Unrecognised or malformed lines are printed in a truncated raw form rather than
-dropped. This filter never fails: any error becomes a printed line and the exit
-code is always 0, so it cannot be mistaken for a provider failure in a pipeline
-running under `set -o pipefail`.
+Display is best effort: an unreadable or unknown line is printed truncated rather
+than dropped, and never fails the run. The side files are not display — they carry
+the turn's result, so a side file that cannot be written is a failure of this
+filter, reported with exit code 6.
+
+EXIT CODES
+    0  stream consumed
+    6  a side file could not be written; the caller must not treat the turn as done
 """
 import argparse
 import json
+import os
 import sys
 import time
 
 MAX = 200
+SIDE_FILE_ERROR = 6
 
 
 def clip(text, limit=MAX):
@@ -49,27 +58,34 @@ def unwrap(command):
     return command
 
 
+def emit(mark, text):
+    print(f"{time.strftime('%H:%M:%S')} {mark} {text}", flush=True)
+
+
 class Sink:
-    """Writes the side files once each, so a repeated event cannot overwrite them."""
+    """Writes each side file once, atomically. A write that fails fails the run."""
 
     def __init__(self, args):
         self.args = args
         self.written = set()
+        self.broken = False
 
     def put(self, which, text):
         path = getattr(self.args, which)
         if not path or which in self.written:
             return
-        self.written.add(which)
+        tmp = f"{path}.partial"
         try:
-            with open(path, "w", encoding="utf-8") as handle:
+            with open(tmp, "w", encoding="utf-8") as handle:
                 handle.write(text)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp, path)
         except OSError as exc:
+            self.broken = True
             emit("!", f"cannot write {which}: {exc}")
-
-
-def emit(mark, text):
-    print(f"{time.strftime('%H:%M:%S')} {mark} {text}", flush=True)
+            return
+        self.written.add(which)
 
 
 def render_codex(event, sink):
@@ -79,6 +95,9 @@ def render_codex(event, sink):
         sink.put("session_file", thread_id)
         emit("==", f"session {thread_id or '?'}")
         return
+    if kind == "turn.completed":
+        sink.put("done_file", "completed")
+        return
     if kind == "turn.failed":
         sink.put("fail_file", clip(json.dumps(event.get("error", event), ensure_ascii=False)))
         emit("!", "turn failed: " + clip(json.dumps(event.get("error", ""), ensure_ascii=False)))
@@ -87,7 +106,7 @@ def render_codex(event, sink):
         sink.put("fail_file", clip(json.dumps(event, ensure_ascii=False)))
         emit("!", clip(json.dumps(event, ensure_ascii=False)))
         return
-    if kind in ("turn.started", "turn.completed"):
+    if kind == "turn.started":
         return
 
     item = event.get("item") or {}
@@ -127,9 +146,7 @@ def render_claude(event, sink):
         sink.put("session_file", session_id)
         emit("==", f"session {session_id or '?'} model {event.get('model', '?')}")
         return
-    if kind == "system":
-        return
-    if kind == "rate_limit_event":
+    if kind in ("system", "rate_limit_event"):
         return
     if kind == "assistant":
         for block in (event.get("message") or {}).get("content") or []:
@@ -155,6 +172,7 @@ def render_claude(event, sink):
             emit("!", "result: " + clip(str(event.get("result") or event.get("subtype"))))
             return
         sink.put("answer_file", str(event.get("result") or ""))
+        sink.put("done_file", "completed")
         emit("==", "answer received")
         return
     emit(".", clip(f"{kind}"))
@@ -168,6 +186,7 @@ def main():
                         help="which opponent's event shape is on stdin")
     parser.add_argument("--session-file", help="write the session id here as soon as it appears")
     parser.add_argument("--answer-file", help="write the final answer text here (claude streams)")
+    parser.add_argument("--done-file", help="write here when the turn finished cleanly")
     parser.add_argument("--fail-file", help="write the first terminal failure event here")
     args = parser.parse_args()
 
@@ -181,7 +200,7 @@ def main():
             render(json.loads(line), sink)
         except Exception:
             emit(".", clip(line))
-    return 0
+    return SIDE_FILE_ERROR if sink.broken else 0
 
 
 if __name__ == "__main__":

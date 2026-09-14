@@ -83,9 +83,22 @@ web searches, interim messages — and ends with exactly one terminal line:
 - a line starting with `SPAR_` → the turn failed; report that line to the user
   verbatim and stop.
 
-Neither line present → the opponent is still working; poll again. A turn that dies
-from a signal still writes a `SPAR_` line, so a log with no terminal line always means
-work in progress.
+Match the terminal line at the start of a line: the opponent quotes these words in
+its own text, and those lines carry a timestamp in front.
+
+Neither line present → ask the harness whether the turn is still alive:
+
+```bash
+<skill-dir>/scripts/sparctl status --state /tmp/<slug>.session
+```
+
+- `running` → poll again.
+- `abandoned` → the turn was killed outright and left no terminal line. Report that
+  and rerun the same turn; the session survives.
+- `idle` → no turn is running; rerun.
+
+One turn at a time per session: a second turn against a session already in use is
+refused. The transcript records failed turns as well as answered ones.
 
 Pass the prompt through `--prompt-file`. Use `--prompt "<text>"` only for a one-line
 follow-up. Raise `SPAR_TIMEOUT` (seconds, default 3600) only when a turn is expected
