@@ -161,8 +161,10 @@ Work in this order:
    decided before a final answer.
 5. Then answer the concrete request.
 
-Put the whole answer in this response. Do not create files, plans or notes, and do not
-edit anything. Quote or summarise evidence here instead of writing it elsewhere.
+Put the whole answer in this response: do not answer by writing a file, a plan or a
+note, and do not edit anything in the repository. Quote or summarise evidence here
+instead of writing it elsewhere. Running checks is welcome — build whatever scratch
+files you need under a temporary directory of your own, and say what you ran.
 
 If required data is missing, say exactly what is missing and which decision it blocks.
 Do not invent it and do not continue on a hidden assumption.

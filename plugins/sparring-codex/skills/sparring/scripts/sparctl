@@ -79,6 +79,8 @@ OUTPUT
   interim messages, thinking. The run then ends with one terminal line:
       wrote answer: <out> (<lines> lines, <bytes> bytes); session: <state>
       SPAR_TIMEOUT: ...   |   SPAR_FAILED: exit <code>   |   SPAR_<reason>: ...
+  Exactly one line of a run starts with SPAR_, and it is the last one; diagnostics
+  such as the provider's own stderr are printed without that prefix.
   Poll for a terminal line when the call runs detached, and ask `status` when no
   terminal line has appeared.
 
@@ -111,12 +113,17 @@ HELPTEXT
 SPAR_OUTCOME=""        # set once a terminal line has been printed
 answer=""; err=""; fail_file=""; done_file=""; lock=""; transcript=""; prompt=""
 
+# Runs from the exit handler, before the terminal line is printed: the lock has to be
+# gone by the time a caller reads that line and starts the next turn. Nothing in here
+# may fail the handler, or the run would end with no terminal line at all.
 cleanup_files() {
   local f
   for f in "$answer" "$err" "$fail_file" "$done_file"; do
-    [ -n "$f" ] && rm -f "$f"
+    [ -n "$f" ] && { rm -f "$f" || true; }
   done
-  [ -n "$lock" ] && [ -d "$lock" ] && rm -rf "$lock"
+  if [ -n "$lock" ] && [ -d "$lock" ]; then
+    rm -rf "$lock" || true
+  fi
   return 0
 }
 
@@ -194,13 +201,13 @@ acquire_lock() {
 
 report_provider_failure() {
   local status="$1" phase="$2" err_file="$3"
-  printf 'SPAR_PROVIDER_FAILED: %s exited with status %s during %s.\n' "$OPPONENT_CMD" "$status" "$phase" >&2
+  printf 'provider failed: %s exited with status %s during %s.\n' "$OPPONENT_CMD" "$status" "$phase" >&2
   if [ -s "$err_file" ]; then
-    printf 'SPAR_PROVIDER_STDERR_BEGIN\n' >&2
+    printf -- '--- provider stderr ---\n' >&2
     cat "$err_file" >&2
-    printf 'SPAR_PROVIDER_STDERR_END\n' >&2
+    printf -- '--- end provider stderr ---\n' >&2
   else
-    printf 'SPAR_PROVIDER_STDERR_EMPTY\n' >&2
+    printf -- '--- provider wrote nothing to stderr ---\n' >&2
   fi
 }
 
@@ -352,5 +359,9 @@ fi
 
 lines="$(awk 'END { print NR }' "$out")"
 bytes="$(wc -c < "$out" | tr -d '[:space:]')"
+if [ -n "$lock" ] && [ -d "$lock" ]; then
+  rm -rf "$lock" || true
+  lock=""
+fi
 printf 'wrote answer: %s (%s lines, %s bytes); session: %s\n' "$out" "$lines" "$bytes" "$state"
 SPAR_OUTCOME="ok"

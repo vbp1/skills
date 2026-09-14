@@ -144,6 +144,10 @@ grep -qv "SPAR_FAILED: exit 0" "$WORK/stderr" \
 grep -q "SPAR_PROVIDER_FAILED" "$WORK/b.session.transcript" \
   || { echo "FAIL: the failed turn is not in the transcript" >&2; FAIL=$((FAIL + 1)); }
 [ -f "$WORK/b.turn" ] && { echo "FAIL: --out was written for a failed turn" >&2; FAIL=$((FAIL + 1)); }
+markers="$(grep -c '^SPAR_' "$WORK/stderr")"
+[ "$markers" = 1 ] || { echo "FAIL: $markers lines start with SPAR_, expected exactly 1" >&2; FAIL=$((FAIL + 1)); }
+tail -n 1 "$WORK/stderr" | grep -q '^SPAR_' \
+  || { echo "FAIL: the SPAR_ line is not the last line of the run" >&2; FAIL=$((FAIL + 1)); }
 
 # 4. The time cap.
 code="$(SPAR_TIMEOUT=1 SPAR_KILL_AFTER=1 run hang "$WORK/c.session" "$WORK/c.turn")"

@@ -248,7 +248,7 @@
       "name": "sparring",
       "source": "./plugins/sparring",
       "description": "Debate a plan, an idea or a risky change with Codex CLI as the opponent over several turns, then report a synthesis instead of a transcript. Claude Code variant.",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "category": "planning",
       "keywords": [
         "sparring",
@@ -263,7 +263,7 @@
       "name": "sparring-codex",
       "source": "./plugins/sparring-codex",
       "description": "Debate a plan, an idea or a risky change with Claude Code as the opponent over several turns, then report a synthesis instead of a transcript. Codex CLI variant.",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "category": "planning",
       "keywords": [
         "sparring",
