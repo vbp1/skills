@@ -7,9 +7,14 @@ without moving its number and the change reaches nobody: `claude plugin update` 
 warns — the release simply does not happen. This is what catches that.
 
 For each plugin it takes the version in its manifest, looks for the release tag
-`{name}--v{version}`, and asks whether anything under `plugins/{name}/` has moved since —
-committed or not. If something has, the version is stale and must be bumped before the
-change can ship.
+`{name}--v{version}`, and asks whether anything under `plugins/{name}/` has moved since. If
+something has, the version is stale and must be bumped before the change can ship.
+
+What "moved" means depends on the question being asked. Run by hand or by the generator, it
+is the checkout as it stands: HEAD plus anything still uncommitted, because that is what the
+next write will publish. Run from the pre-push hook (`--from-push`), it is the commits git is
+about to send, read from the lines git writes to the hook's stdin; work in progress sitting
+beside them in the working tree belongs to no push and blocks none.
 
 A plugin whose tag does not exist yet is not stale: the number was already raised past the
 last release, which is exactly the correct state between a bump and its tag.
@@ -53,14 +58,22 @@ def manifest_versions(root: pathlib.Path) -> dict[str, str]:
     return out
 
 
-def stale_plugins(root: pathlib.Path, versions: dict[str, str]) -> list[dict]:
+def stale_plugins(
+    root: pathlib.Path, versions: dict[str, str], commit: str | None = None
+) -> list[dict]:
     """Plugins whose files moved since their current version was tagged.
 
     `versions` is what the release WILL carry — the generator passes its own table rather
     than the manifests on disk, because during a bump those still hold the previous number
     and would report a freshly bumped plugin as stale.
+
+    `commit` names what to measure against. Left out, it is the checkout as it stands:
+    HEAD plus whatever is still uncommitted — the right question before writing files.
+    Given a commit, only that commit's tree counts and the working tree is ignored — the
+    right question before a push, which carries commits and not the desk they were made on.
     """
     stale: list[dict] = []
+    target = commit or "HEAD"
     for name, version in sorted(versions.items()):
         if not version:
             continue  # no explicit version: updates follow the commit SHA, nothing to bump
@@ -68,14 +81,39 @@ def stale_plugins(root: pathlib.Path, versions: dict[str, str]) -> list[dict]:
         if not tag_exists(root, tag):
             continue  # already bumped past the last release, or never tagged
         rel = f"plugins/{name}"
-        committed = [f for f in git(root, "diff", "--name-only", f"{tag}..HEAD", "--", rel).splitlines() if f]
-        uncommitted = [
-            line[3:] for line in git(root, "status", "--porcelain", "--", rel).splitlines() if line.strip()
-        ]
-        changed = sorted(set(committed) | set(uncommitted))
+        changed = {
+            f for f in git(root, "diff", "--name-only", f"{tag}..{target}", "--", rel).splitlines() if f
+        }
+        if commit is None:
+            changed |= {
+                line[3:]
+                for line in git(root, "status", "--porcelain", "--", rel).splitlines()
+                if line.strip()
+            }
         if changed:
-            stale.append({"plugin": name, "version": version, "tag": tag, "changed": changed})
+            stale.append(
+                {"plugin": name, "version": version, "tag": tag, "changed": sorted(changed)}
+            )
     return stale
+
+
+def pushed_heads(stream) -> list[tuple[str, str]]:
+    """The branches a pre-push hook is being asked to send: (ref, commit).
+
+    git feeds `<local ref> <local sha> <remote ref> <remote sha>` per ref. A deletion
+    carries an all-zero local sha and sends no files. Tags are skipped: a tag push moves
+    no plugin file, and `claude plugin tag --push` is the step that follows a release.
+    """
+    out: list[tuple[str, str]] = []
+    for line in stream:
+        parts = line.split()
+        if len(parts) != 4:
+            continue
+        local_ref, local_sha = parts[0], parts[1]
+        if not local_ref.startswith("refs/heads/") or set(local_sha) == {"0"}:
+            continue
+        out.append((local_ref, local_sha))
+    return out
 
 
 def format_report(stale: list[dict]) -> str:
@@ -104,7 +142,9 @@ def main() -> None:
             "  reports an error — `claude plugin update` says 'already at the latest version'.\n\n"
             "WHAT COUNTS AS CHANGED\n"
             "  Anything under plugins/<name>/ that differs from the release tag\n"
-            "  {name}--v{version}, whether committed since the tag or still uncommitted.\n\n"
+            "  {name}--v{version}: committed since the tag, or still uncommitted.\n"
+            "  With --from-push, the commits being pushed only — the working tree is not\n"
+            "  read, so unfinished work on another plugin does not block the push.\n\n"
             "WHAT IS NOT STALE\n"
             "  A plugin whose tag does not exist yet — the number was already raised past the\n"
             "  last release. That is the correct state between a bump and its tag.\n"
@@ -113,7 +153,8 @@ def main() -> None:
             "  edit a plugin → bump it in VERSIONS → scripts/gen-manifests.py → commit →\n"
             "  claude plugin tag ./plugins/<name> [--push]\n\n"
             "EXIT CODES\n"
-            "  0  every plugin's version matches what is tagged\n"
+            "  0  every plugin's version matches what is tagged; with --from-push, also\n"
+            "     when no branch is being pushed (a tag push, or a deletion)\n"
             "  1  not a git repository, or git failed\n"
             "  3  at least one plugin changed without a version bump\n"
         ),
@@ -126,6 +167,12 @@ def main() -> None:
         help="repository root (default: parent of scripts/)",
     )
     parser.add_argument("--json", action="store_true", help="machine-readable output")
+    parser.add_argument(
+        "--from-push",
+        action="store_true",
+        help="read the pre-push lines git writes to stdin and check the commits being "
+        "pushed instead of the checkout; uncommitted work is not considered",
+    )
     args = parser.parse_args()
 
     if not (args.root / "plugins").is_dir():
@@ -133,7 +180,22 @@ def main() -> None:
         raise SystemExit(1)
 
     try:
-        stale = stale_plugins(args.root, manifest_versions(args.root))
+        if args.from_push:
+            heads = pushed_heads(sys.stdin)
+            if not heads:
+                if not args.json:
+                    print("nothing to check: no branch is being pushed")
+                else:
+                    print(json.dumps({"stale": []}, indent=2))
+                raise SystemExit(0)
+            by_plugin: dict[str, dict] = {}
+            for _, commit in heads:
+                for entry in stale_plugins(args.root, manifest_versions(args.root), commit):
+                    kept = by_plugin.setdefault(entry["plugin"], entry)
+                    kept["changed"] = sorted(set(kept["changed"]) | set(entry["changed"]))
+            stale = [by_plugin[name] for name in sorted(by_plugin)]
+        else:
+            stale = stale_plugins(args.root, manifest_versions(args.root))
     except RuntimeError as exc:
         print(f"check_versions: {exc}", file=sys.stderr)
         raise SystemExit(1)

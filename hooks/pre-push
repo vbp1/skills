@@ -21,7 +21,10 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! python3 "$root/scripts/check_versions.py" --root "$root"; then
+# git feeds this hook one `<local ref> <local sha> <remote ref> <remote sha>` line per ref
+# on stdin; --from-push reads them and measures the commits being sent, so work in progress
+# on another plugin does not block this push.
+if ! python3 "$root/scripts/check_versions.py" --root "$root" --from-push; then
   echo >&2
   echo "pre-push: refusing to push. Bump the plugin above in the VERSIONS table of" >&2
   echo "          scripts/gen-manifests.py, rerun the generator, and commit." >&2
