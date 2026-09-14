@@ -82,7 +82,7 @@ VERSIONS = {
     "simple-tech-writing": "1.0.1",
     "sparring": "1.2.1",
     "sparring-codex": "1.2.1",
-    "taskflow": "1.1.1",
+    "taskflow": "1.2.0",
     "technical-premortem": "1.0.2",
     "ui-mockup": "1.1.2",
     "user-clear-communication": "1.0.1",
