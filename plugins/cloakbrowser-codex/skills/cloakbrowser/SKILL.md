@@ -227,6 +227,10 @@ view_image /tmp/error.png
 
 ## Common pitfalls
 
+- `inspect_page.py` injects a small pre-page collector for `console.*`, uncaught
+  errors, and unhandled rejections because CloakBrowser's CDP stealth suppresses
+  the corresponding Playwright events. Use `capture.py` when page instrumentation
+  itself would change the behavior under investigation.
 - CloakBrowser runs on the host, so it can only reach what the host can
   reach. Services bound to `127.0.0.1` inside a Docker container, or to a
   container's internal port that isn't published, are invisible — use

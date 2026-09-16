@@ -61,6 +61,45 @@ LONGTASK_INIT = """
 })();
 """
 
+# CloakBrowser suppresses the CDP Runtime events that Playwright normally uses
+# for page.on('console') and page.on('pageerror'). Capture the same signals in
+# the page before application scripts run, then read the buffer at the end.
+BROWSER_SIGNALS_INIT = r"""
+(() => {
+  const signals = [];
+  Object.defineProperty(window, '__cloakbrowserSignals', {value: signals});
+
+  const render = (value) => {
+    if (typeof value === 'string') return value;
+    if (value instanceof Error) return value.stack || value.message;
+    try {
+      const json = JSON.stringify(value);
+      return json === undefined ? String(value) : json;
+    } catch (_) {
+      return String(value);
+    }
+  };
+
+  for (const level of ['log', 'debug', 'info', 'warn', 'error']) {
+    const original = console[level];
+    console[level] = (...args) => {
+      signals.push({kind: 'console', level, text: args.map(render).join(' ')});
+      return Reflect.apply(original, console, args);
+    };
+  }
+
+  addEventListener('error', (event) => {
+    const text = event.error?.stack || event.message;
+    if (text) signals.push({kind: 'pageerror', text});
+  }, true);
+  addEventListener('unhandledrejection', (event) => {
+    signals.push({kind: 'pageerror', text: render(event.reason)});
+  });
+})();
+"""
+
+BROWSER_SIGNALS_READ = "() => window.__cloakbrowserSignals || []"
+
 
 # Scrolls a container and reports what actually happened. A selector can match an
 # element that is not the scroller (a wrapper around the scrolling div), and then
@@ -185,6 +224,24 @@ def summarize_longtasks(entries: list) -> str:
             f'TBT={tbt}ms top5={durs[:5]}')
 
 
+async def write_browser_signals(page) -> bool:
+    """Print buffered console/page errors from the page and all live frames."""
+    had_pageerror = False
+    for frame in page.frames:
+        try:
+            signals = await frame.evaluate(BROWSER_SIGNALS_READ)
+        except Exception:
+            continue
+        for signal in signals:
+            if signal.get('kind') == 'console':
+                sys.stdout.write(
+                    f'CONSOLE[{signal.get("level", "log")}] {signal.get("text", "")}\n')
+            elif signal.get('kind') == 'pageerror':
+                had_pageerror = True
+                sys.stdout.write(f'PAGEERROR {signal.get("text", "")}\n')
+    return had_pageerror
+
+
 def parse_viewport(value: str) -> tuple[int, int]:
     parts = value.lower().split('x', 1)
     if len(parts) != VIEWPORT_PARTS:
@@ -225,6 +282,7 @@ async def inspect(args: argparse.Namespace) -> int:
         context = await browser.new_context(viewport={'width': width, 'height': height})
         if args.cookie:
             await context.add_cookies(args.cookie)
+        await context.add_init_script(BROWSER_SIGNALS_INIT)
         # Init scripts run before any page script on every new page/frame, so
         # they must be registered before the page is created (and thus before
         # goto) to capture the earliest activity.
@@ -238,15 +296,6 @@ async def inspect(args: argparse.Namespace) -> int:
             await context.add_init_script(path=str(init_path))
         page = await context.new_page()
 
-        def on_console(msg):
-            sys.stdout.write(f'CONSOLE[{msg.type}] {msg.text}\n')
-
-        def on_pageerror(err):
-            nonlocal exit_code
-            exit_code = 1
-            # err is a JSHandle; stringify for readability
-            sys.stdout.write(f'PAGEERROR {err}\n')
-
         def on_requestfailed(req):
             sys.stdout.write(f'REQFAIL {req.method} {req.url} :: {req.failure}\n')
 
@@ -254,8 +303,6 @@ async def inspect(args: argparse.Namespace) -> int:
             if resp.status >= 400:
                 sys.stdout.write(f'HTTP {resp.status} {resp.url}\n')
 
-        page.on('console', on_console)
-        page.on('pageerror', on_pageerror)
         page.on('requestfailed', on_requestfailed)
         page.on('response', on_response)
 
@@ -336,6 +383,9 @@ async def inspect(args: argparse.Namespace) -> int:
                 sys.stdout.write(f'PERF dom_nodes={data.get("nodes")}\n')
             except Exception as exc:
                 sys.stdout.write(f'PERFERROR {exc}\n')
+
+        if await write_browser_signals(page):
+            exit_code = 1
 
         if out_path is not None:
             if args.screenshot_element:
