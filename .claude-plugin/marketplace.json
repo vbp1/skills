@@ -68,13 +68,14 @@
     {
       "name": "cloakbrowser-codex",
       "source": "./plugins/cloakbrowser-codex",
-      "description": "Inspect web pages in a local stealth Chromium: screenshots and visual UI checks. Codex CLI variant.",
-      "version": "1.0.1",
+      "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Codex CLI variant.",
+      "version": "1.1.0",
       "category": "development",
       "keywords": [
         "browser",
         "screenshots",
-        "devtools"
+        "devtools",
+        "debugging"
       ],
       "license": "Apache-2.0"
     },

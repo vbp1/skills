@@ -36,7 +36,7 @@ has to talk to the other agent.
 | `break-it` | Codex | Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects. |
 | `claude-review` | Codex | Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved. |
 | `cloakbrowser` | Claude | Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. |
-| `cloakbrowser-codex` | Codex | Same tool, Codex variant: screenshots and visual UI checks. |
+| `cloakbrowser-codex` | Codex | Same tool, Codex variant: screenshots, client-side JS errors, failed requests, long-task timings. |
 | `codex-genimage` | Claude | Generate images through the Codex CLI built-in image tool, billed via existing Codex auth. |
 | `create-pr` | Claude | Branch, commit, push, open the pull request, set labels and project fields in one pass. |
 | `create-pr-codex` | Codex | Same workflow, Codex variant. |

@@ -74,8 +74,8 @@
         "source": "local",
         "path": "./plugins/cloakbrowser-codex"
       },
-      "description": "Inspect web pages in a local stealth Chromium: screenshots and visual UI checks. Codex CLI variant.",
-      "version": "1.0.1",
+      "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Codex CLI variant.",
+      "version": "1.1.0",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

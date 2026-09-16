@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "cloakbrowser-codex",
   "displayName": "CloakBrowser (Codex CLI)",
-  "version": "1.0.1",
-  "description": "Inspect web pages in a local stealth Chromium: screenshots and visual UI checks. Codex CLI variant.",
+  "version": "1.1.0",
+  "description": "Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. Codex CLI variant.",
   "author": {
     "name": "Vadim Ponomarev",
     "url": "https://github.com/vbp1"
@@ -14,6 +14,7 @@
   "keywords": [
     "browser",
     "screenshots",
-    "devtools"
+    "devtools",
+    "debugging"
   ]
 }
