@@ -86,7 +86,7 @@ VERSIONS = {
     "technical-premortem": "1.0.2",
     "ui-mockup": "1.1.2",
     "user-clear-communication": "1.0.1",
-    "youtube-transcript": "1.0.1",
+    "youtube-transcript": "1.0.2",
 }
 
 # name, displayName, description, claude category, codex category, keywords, agent

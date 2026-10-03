@@ -333,7 +333,7 @@
       "name": "youtube-transcript",
       "source": "./plugins/youtube-transcript",
       "description": "Pull the transcript of a YouTube video, with or without timestamps.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "media",
       "keywords": [
         "youtube",
