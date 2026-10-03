@@ -36,7 +36,7 @@ uv run scripts/get_transcript.py "VIDEO_URL_OR_ID" --timestamps
 ## Output
 
 - Keep the transcript's words exactly as returned — no edits, summaries or corrections; the user relies on it as the verbatim record. Reflowing a transcript without timestamps into paragraphs (next point) is the only change allowed.
-- If the transcript is without timestamps, you SHOULD clean it up so that it is arranged by complete paragraphs and the lines don't cut in the middle of sentences.
+- If the transcript is without timestamps, reflow it into complete paragraphs so that no line breaks in the middle of a sentence.
 - If you were asked to save the transcript to a specific file, save it to the requested file.
 - If no output file was specified, use the YouTube video ID with a `-transcript.txt` suffix.
 - Always copy the output file to `~/youtube-transcripts/` (create the directory if it doesn't exist).
