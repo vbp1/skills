@@ -68,7 +68,7 @@ VERSIONS = {
     "cc-review": "2.0.0",
     "cloakbrowser": "1.1.2",
     "cloakbrowser-codex": "1.1.2",
-    "codex-genimage": "1.0.3",
+    "codex-genimage": "1.0.4",
     "create-pr": "1.0.2",
     "create-pr-codex": "1.0.1",
     "decision-playground": "1.0.1",

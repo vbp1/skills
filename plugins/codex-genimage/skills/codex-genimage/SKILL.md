@@ -7,14 +7,6 @@ description: Generate images via Codex CLI (`codex exec` + built-in `image_gen` 
 
 Generate images by delegating to a separate `codex exec` invocation. Codex has a stable built-in `image_gen` tool, so no extra API key or HTTP call is needed — auth is the user's existing Codex session.
 
-## When to use vs other image skills
-
-- **codex-genimage** (this) — user explicitly mentions codex, or codex is the cheapest/already-authed option.
-- **geminigen-image** — user mentions GeminiGen / nano-banana / Gemini 3 Pro Image.
-- **nanobanana-genimage** — user mentions NanoBanana directly.
-
-If the user just says "generate an image" without naming a provider, ask which one before guessing.
-
 ## Inputs you must have before calling codex
 
 1. **prompt** — concrete description of the desired image. If the user's prompt is vague (e.g. "draw a cat") and the image is for a deliverable (slide, doc, customer-facing), ask one clarifying question via AskUserQuestion. For throwaway/exploratory images, proceed with sensible defaults and note the assumptions.
