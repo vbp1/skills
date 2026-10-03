@@ -80,7 +80,7 @@ VERSIONS = {
     "review-panel": "1.0.8",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
-    "sparring": "1.2.1",
+    "sparring": "1.2.2",
     "sparring-codex": "1.2.1",
     "taskflow": "1.2.1",
     "technical-premortem": "1.0.2",

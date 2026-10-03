@@ -66,11 +66,19 @@ setsid nohup <skill-dir>/scripts/sparctl ask \
   --out /tmp/<slug>.turn1.txt > /tmp/<slug>.log 2>&1 &
 ```
 
-Then poll the log every 60–90 seconds with a short Bash call:
+Then wait for the turn to end with one Bash call, `run_in_background` set to `true`. It exits
+once the log has a terminal line or the turn is no longer running, and you are notified:
 
 ```bash
-tail -n 5 /tmp/<slug>.log
+sleep 5
+until grep -qE '^(wrote answer:|SPAR_)' /tmp/<slug>.log \
+  || ! <skill-dir>/scripts/sparctl status --state /tmp/<slug>.session | grep -q '^running'; do
+  sleep 10
+done
+sleep 2; tail -n 5 /tmp/<slug>.log
 ```
+
+To see what the opponent is doing meanwhile, `tail -n 5 /tmp/<slug>.log`.
 
 The log carries the opponent's actions as they happen — shell commands, tool calls,
 web searches, interim messages — and ends with exactly one terminal line:
@@ -88,7 +96,7 @@ Neither line present → ask the harness whether the turn is still alive:
 <skill-dir>/scripts/sparctl status --state /tmp/<slug>.session
 ```
 
-- `running` → poll again.
+- `running` → start the wait again.
 - `abandoned` → the turn was killed outright and left no terminal line. Report that
   and rerun the same turn; the session survives.
 - `idle` → no turn is running; rerun.
