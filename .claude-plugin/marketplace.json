@@ -96,7 +96,7 @@
       "name": "create-pr",
       "source": "./plugins/create-pr",
       "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Claude Code variant.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "category": "development",
       "keywords": [
         "git",

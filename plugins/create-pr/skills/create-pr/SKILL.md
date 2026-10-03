@@ -56,7 +56,9 @@ Capture the PR URL and PR number from output.
 
 Also resolve the default branch once (used by Step 6 size calculation):
 ```bash
-default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo main)
+default_branch=$(git symbolic-ref --short refs/remotes/origin/HEAD) \
+  || { echo "origin/HEAD is not set; run: git remote set-head origin --auto" >&2; exit 1; }
+default_branch=${default_branch#origin/}
 ```
 
 ### Step 5: Auto-apply labels
@@ -134,7 +136,7 @@ Apply silently. Only ask if none of the four candidates exist in the project's S
 
 Compute changed lines relative to the default branch:
 ```bash
-git fetch origin "$default_branch" --quiet 2>/dev/null || true
+git fetch origin "$default_branch" --quiet
 shortstat=$(git diff --shortstat "origin/$default_branch...HEAD")
 # Example output: " 3 files changed, 247 insertions(+), 12 deletions(-)"
 loc=$(echo "$shortstat" | awk '{

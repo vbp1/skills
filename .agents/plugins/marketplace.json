@@ -105,7 +105,7 @@
         "path": "./plugins/create-pr"
       },
       "description": "Branch, commit, push, open the pull request, then set labels and project fields in one pass. Claude Code variant.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
