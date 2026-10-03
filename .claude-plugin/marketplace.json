@@ -306,7 +306,7 @@
       "name": "ui-mockup",
       "source": "./plugins/ui-mockup",
       "description": "Build a single-file, clickable mockup themed with the project's own design tokens, reconciled against the running product before review.",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "category": "design",
       "keywords": [
         "ui",

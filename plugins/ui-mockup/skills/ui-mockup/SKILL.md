@@ -194,14 +194,9 @@ found.
 ### 6. Verify in the browser, in both themes — iterate
 
 Type-checks don't exist here; *looking* is the test. Drive the file with whatever
-browser tool you have: shoot the key frames (advance the stepper and switch theme
-and scenario before each shot) and confirm there are **no page or console errors**.
-Check light and dark, and check the column collapsed. Fix layout collisions (a
-product dialog escaping the mockup area over the column belongs in `.mk-stage` with
-`position: absolute`) and re-shoot. One gotcha worth knowing:
-elements with a CSS `transition` are mid-animation right after a click, so a shot
-taken immediately captures the *previous* frame — settle ~350 ms before shooting,
-and trust the DOM state over the pixel if something looks inverted.
+browser tool you have and iterate until every item of
+[references/project-ui.md › Verifying the mockup itself](references/project-ui.md#verifying-the-mockup-itself)
+holds.
 
 ### 7. Open it for the user
 
