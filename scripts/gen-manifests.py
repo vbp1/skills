@@ -63,7 +63,7 @@ MARKETPLACE_VERSION = "1.3.0"  # the catalogue itself; bump when the plugin rost
 # `claude plugin tag` cuts a {name}--v{version} tag per plugin and checks that plugin.json
 # and the marketplace entry agree, which both come from here.
 VERSIONS = {
-    "audio-restore": "1.0.1",
+    "audio-restore": "1.0.2",
     "break-it": "1.0.1",
     "cc-review": "2.0.0",
     "cloakbrowser": "1.1.1",

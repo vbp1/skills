@@ -92,13 +92,13 @@ highshelf=f=FREQ:g=GAIN_DB
 ```
 
 - `f` — center frequency in Hz
-- `w` — bandwidth (Q factor): 1.0 = normal, 2.0+ = wider/gentler, 0.5 = narrow/surgical
+- `w` — Q factor with `t=q`: a higher value gives a narrower band. 0.5–1 = broad and gentle, 2–4 = focused, 5+ = narrow/surgical
 - `g` — gain in dB (positive = boost, negative = cut)
 
 **De-essing:** Use narrow notch filters at sibilance frequencies:
 ```
-equalizer=f=5500:t=q:w=0.7:g=-5   # 5.5 kHz notch
-equalizer=f=7000:t=q:w=0.7:g=-5   # 7 kHz notch
+equalizer=f=5500:t=q:w=6:g=-5     # 5.5 kHz notch
+equalizer=f=7000:t=q:w=6:g=-5     # 7 kHz notch
 ```
 
 ## Step 4: Mix and Normalize
@@ -124,7 +124,7 @@ Audio restoration is iterative. Always:
 2. **Let the user listen** after each adjustment
 3. **Adjust based on feedback** — common issues:
    - "Lisping/sibilance" → add de-essing notch filters, reduce 4-6 kHz boost
-   - "Ringing/harsh" → widen Q (increase w parameter), reduce 8-12 kHz boost
+   - "Ringing/harsh" → widen the band (decrease w), reduce 8-12 kHz boost
    - "Still muffled" → increase boost amounts
    - "Too bright/thin" → reduce overall boost, check volume balance between stems
 4. **Process full file** only after user approves the test clip

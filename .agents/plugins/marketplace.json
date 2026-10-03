@@ -15,7 +15,7 @@
         "path": "./plugins/audio-restore"
       },
       "description": "Restore muffled or low-quality recordings: stem separation, EQ correction, high-frequency recovery.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
