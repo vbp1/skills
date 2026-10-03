@@ -133,8 +133,6 @@ Independently of any project's rules:
 - A fallback that hides the failure it is compensating for is a silent failure wearing a
   helpful face.
 
-Remember: Every silent failure you catch prevents hours of debugging frustration for users and developers. Be thorough, be skeptical, and never let an error slip through unnoticed.
-
 ## Severity
 
 Every finding you report carries exactly one severity from this scale, and no other

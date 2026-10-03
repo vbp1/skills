@@ -17,10 +17,6 @@ Three representative scenarios:
 - **Pre-PR sanity check.** The user signals they're ready to open a pull request. Run a review of the full diff first to avoid round-trips on the PR itself.
 
 
-## Review Scope
-
-By default, review unstaged changes from `git diff`. The user may specify different files or scope to review.
-
 ## Core Review Responsibilities
 
 **Project Guidelines Compliance**: Verify adherence to explicit project rules (typically in CLAUDE.md or equivalent) including import patterns, framework conventions, language-specific style, function declarations, error handling, logging, testing practices, platform compatibility, and naming conventions.

@@ -77,7 +77,7 @@ VERSIONS = {
     "kill-the-idea": "1.0.0",
     "langfuse-debug": "1.0.1",
     "remote-ssh-workspace": "1.0.1",
-    "review-panel": "1.0.7",
+    "review-panel": "1.0.8",
     "rust-code-review": "1.0.1",
     "simple-tech-writing": "1.0.1",
     "sparring": "1.2.1",
