@@ -294,7 +294,8 @@ approval → `step: 3`.
   into ordered stages, each ending in a working, verified piece. Per stage: a bold
   heading `**S1. <name>.**`, one sentence on what it lays down, a checkbox list
   `- [ ]` of its tasks, and a closing `Done when: …` line naming an observable
-  result. Prose and references only, no code. The step-4 gate does not close
+  result. Model: [references/stages-example.md](references/stages-example.md).
+  Prose and references only, no code. The step-4 gate does not close
   without this subsection.
 - **Build the reviewer plan file — `todos/NNN-slug/plan.md` — before the first
   review runs.** It is self-contained and it is the only artifact any reviewer
@@ -551,8 +552,8 @@ With GitHub:
   Match the nearest existing option name.
 - **Link PR:** at step 9, reference the issue in the PR body (`Closes #N`).
 
-If the tracker call fails, do not stall the task — log it and continue; the local
-frontmatter remains the source of truth.
+If the tracker call fails, log it in `## Journal` and ask the user before going on;
+the local frontmatter remains the source of truth.
 
 ---
 
