@@ -184,22 +184,14 @@ python3 <skill-dir>/scripts/inspect_page.py "$URL" \
 
 ## Auth-gated pages
 
-CloakBrowser keeps a persistent profile under `~/.cloakbrowser/`. If the
-user has already signed in through CloakBrowser earlier in the session, the
-session cookie persists and you can hit protected URLs without re-auth — try
-it first; if you get redirected to `/signin`, fall back to one of:
+Every run starts a fresh browser with no saved profile, so pass the session
+cookie explicitly (Playwright's `add_cookies` API):
 
-1. **Pass cookies explicitly** (uses Playwright's `add_cookies` API):
-
-   ```bash
-   python3 <skill-dir>/scripts/inspect_page.py \
-       http://localhost:8080/private/page \
-       --cookie "name=authjs.session-token value=<token> domain=localhost path=/"
-   ```
-
-2. **Ask the user to sign in via CloakBrowser once** (just open the dev login
-   page with `inspect_page.py`, no automation needed — the profile catches
-   it). Subsequent calls reuse the cookie.
+```bash
+python3 <skill-dir>/scripts/inspect_page.py \
+    http://localhost:8080/private/page \
+    --cookie "name=authjs.session-token value=<token> domain=localhost path=/"
+```
 
 Do **not** drive a credentialed sign-in flow programmatically without
 explicit user permission — it would imply storing or handling credentials
