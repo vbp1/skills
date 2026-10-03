@@ -39,13 +39,13 @@
       "license": "Apache-2.0"
     },
     {
-      "name": "claude-review",
+      "name": "cc-review",
       "source": {
         "source": "local",
-        "path": "./plugins/claude-review"
+        "path": "./plugins/cc-review"
       },
       "description": "Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved.",
-      "version": "1.0.1",
+      "version": "2.0.0",
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"

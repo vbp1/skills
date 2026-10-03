@@ -1,5 +1,5 @@
 ---
-name: claude-review
+name: cc-review
 description: |
   Cross-agent review workflow where Codex implements and Claude Code reviews.
   Use when the user asks for Claude review of Codex work, says "claude review",

@@ -65,7 +65,7 @@ MARKETPLACE_VERSION = "1.3.0"  # the catalogue itself; bump when the plugin rost
 VERSIONS = {
     "audio-restore": "1.0.1",
     "break-it": "1.0.1",
-    "claude-review": "1.0.1",
+    "cc-review": "2.0.0",
     "cloakbrowser": "1.1.1",
     "cloakbrowser-codex": "1.1.1",
     "codex-genimage": "1.0.3",
@@ -97,7 +97,7 @@ PLUGINS = [
     ("break-it", "Break It",
      "Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects.",
      "testing", "Coding", ["testing", "adversarial", "regression"], "codex"),
-    ("claude-review", "Claude Review",
+    ("cc-review", "Claude Review",
      "Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved.",
      "development", "Coding", ["code-review", "cross-agent", "workflow"], "codex"),
     ("cloakbrowser", "CloakBrowser (Claude Code)",

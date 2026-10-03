@@ -34,7 +34,7 @@ has to talk to the other agent.
 | --- | --- | --- |
 | `audio-restore` | Claude | Restore muffled or low-quality recordings: stem separation, EQ correction, high-frequency recovery. |
 | `break-it` | Codex | Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects. |
-| `claude-review` | Codex | Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved. |
+| `cc-review` | Codex | Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved. |
 | `cloakbrowser` | Claude | Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. |
 | `cloakbrowser-codex` | Codex | Same tool, Codex variant: screenshots, client-side JS errors, failed requests, long-task timings. |
 | `codex-genimage` | Claude | Generate images through the Codex CLI built-in image tool, billed via existing Codex auth. |
