@@ -154,8 +154,8 @@ files: `find todos/.active.d -type f -mtime +30 -delete`.
 
 ## The 10-step pipeline
 
-For every gate: present, then PAUSE for explicit approval (`AskUserQuestion` or a
-clear "approved?"). Set `awaiting` before pausing; clear it on approval and advance
+For every gate: present, then PAUSE for explicit approval through
+`AskUserQuestion` (or the page's feedback channel where the step uses one). Set `awaiting` before pausing; clear it on approval and advance
 `step`/`step_label`. Log the decision in `## Journal`.
 
 **Step 1 — Capture.** User gives the task. Create the task file with frontmatter
@@ -324,8 +324,7 @@ approval → `step: 3`.
   **`technical-premortem`** with the absolute path of `todos/NNN-slug/plan.md` as
   the plan — never the task file — plus the repo root and the decisions taken in
   the dialogue but absent from that file. Keep its report beside the plan file as
-  `todos/NNN-slug/premortem-plan.md`; when it lands elsewhere, move it there and
-  rewrite every reference. Fold the risks and the pre-flight checklist into
+  `todos/NNN-slug/premortem-plan.md`. Fold the risks and the pre-flight checklist into
   `## Solution and plan`; carry the checklist into step 5 as entry conditions. A
   blocking risk without a mitigation holds the gate — revise the plan and re-run, or
   get the user's explicit decision to proceed. Record the verdict and the
@@ -447,7 +446,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/hooks/precommit-gate-util.py" mark --repo <repo-r
 
 **Minor fixes made after APPROVED keep that approval** — no new cross-agent round,
 and no panel round either; re-record the credit for the files they touched. A
-behaviour-changing fix goes back for a new **APPROVED**. With no cross-agent
+behaviour-changing fix goes back through steps 6 and 7. With no cross-agent
 reviewer installed, say so in `## Journal` and go on.
 
 `step: 8`, move the board card to "in review".
