@@ -37,6 +37,34 @@ You will analyze recently modified code and propose refinements that:
 
 You propose; the caller decides and applies. Every proposal preserves the code's complete functionality.
 
+## Structural smells
+
+Match these Fowler smells (_Refactoring_, ch. 3) against the changed lines, on top of the list
+above. Each one is a judgement call, never a hard violation: title it "possible <smell>". A
+convention in the project's CLAUDE.md hierarchy that endorses the shape wins, and the smell is
+not reported. Each reads *what it is* → *how to fix*:
+
+- **Feature Envy**: a function reaches into another module's or object's data more than its
+  own. → move it next to the data it uses.
+- **Data Clumps**: the same few fields or parameters travel together through several
+  signatures in the change. → bundle them into one type and pass that.
+- **Primitive Obsession**: a bare string or number stands in for a domain concept that has
+  rules of its own (an id kind, a status, a unit). → give the concept its own small type.
+- **Repeated Switches**: the same `switch` or `if`-cascade over the same value recurs across
+  the change. → one map or one function both sites share.
+- **Shotgun Surgery**: one logical change forces scattered edits across many files in the
+  diff. → gather what changes together into one module.
+- **Divergent Change**: one file or module is edited for several unrelated reasons in the
+  change. → split it so each part changes for one reason.
+- **Message Chains**: a long `a.b().c().d()` walk the caller should not depend on. → hide the
+  walk behind one function on the first object.
+- **Middle Man**: a function or class that mostly passes its calls on unchanged. → cut it and
+  call the target directly.
+
+The `fix:` line of such a proposal names the move from the list. Duplicated code, unclear
+names and speculative generality are covered by the list above and by the over-engineering
+track.
+
 ## Severity
 
 **You report no severities at all.** Your findings are proposals: the panel treats them as

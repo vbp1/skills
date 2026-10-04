@@ -207,7 +207,7 @@
       "name": "review-panel",
       "source": "./plugins/review-panel",
       "description": "Parallel read-only review tracks over a diff: mechanical triage, one agent per lens, every must-fix finding checked against the code, persisted rounds, re-review until clean.",
-      "version": "1.0.11",
+      "version": "1.1.0",
       "category": "development",
       "keywords": [
         "code-review",
@@ -279,7 +279,7 @@
       "name": "taskflow",
       "source": "./plugins/taskflow",
       "description": "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
-      "version": "1.2.4",
+      "version": "1.3.0",
       "category": "workflow",
       "keywords": [
         "workflow",

@@ -1,7 +1,7 @@
 ---
 name: review-panel
 description: "Run a parallel panel of read-only review tracks over a scope of changes: mechanical triage, one agent per lens, every must-fix finding checked against the code before it is reported, a persisted round file, and re-review rounds until nothing must-fix or important survives. Use before committing, when the user asks for a thorough or multi-perspective review of a branch or diff, or when a review needs to be repeatable rather than a single opinion."
-argument-hint: "[scope: worktree (default) | staged | <git revision>]"
+argument-hint: "[scope: worktree (default) | staged | <git revision>] [spec=<path to the task card>]"
 ---
 
 # /review-panel — the review panel
@@ -14,7 +14,10 @@ state, and never commits. A caller that also needs those runs them itself, aroun
 
 ## Scope
 
-**Scope requested: $ARGUMENTS**
+**Arguments: $ARGUMENTS**
+
+A token of the form `spec=<path>` names the spec for the `spec` track (step 1c); every other
+token is the scope.
 
 - **Empty — the default, and the rule for a pre-commit review: `worktree`.** Every uncommitted
   change, staged or not, including untracked files. Before a commit the panel reviews *all* the
@@ -62,6 +65,32 @@ guess at what it would have said.
 
 If the judge fails or times out, use the triage proposal unchanged and say so out loud.
 
+### 1c. Find the spec (no agent)
+
+The `spec` track checks the change against the task it was written for, so it runs only when
+that task is written down. Take the first source that yields one:
+
+1. The `spec=<path>` argument. A path that does not exist or is empty fails here, before a
+   round is claimed: report the path and that nothing was reviewed.
+2. A task card whose frontmatter carries `branch: <current branch>` — the layout the
+   `taskflow` plugin writes:
+   `rg -l --glob '!todos/archived/**' "^branch: $(git branch --show-current)$" todos/`.
+3. This session's focus file `todos/.active.d/<session_id>`, naming a card under `todos/`.
+4. Issue references in the commit messages of the scope (`#123`, `Closes #45`) — for
+   `worktree` and `staged`, the commits on the branch since it left the default branch. Fetch
+   each with `gh issue view <n> --comments` after the round is open, and save the text verbatim
+   to `$DIR/spec-source.md`; that file is the spec the track reads. The track's shell cannot
+   run `gh`.
+
+Triage and the judge do not see this track: whether it runs depends only on this step. A spec
+found here adds `spec` to the final set after the judge's `add[]`/`remove[]`, and the "full
+panel" option includes it; the user may still drop it in step 2.
+
+Two or more candidates at the same step: put them to the user in the step 2 question and run
+the track on the one chosen — never pick one yourself. No source at all: the `spec` track does
+not run, and the report says "no spec available" — never let the track infer requirements from
+the code.
+
 ## 2. Confirm, open the round, run the tracks
 
 If `over-engineering` is in the set, first check that its lens is actually available:
@@ -78,7 +107,7 @@ from a third-party marketplace, and a plugin that pulls in another author's plug
 exactly what Claude Code's cross-marketplace block exists to prevent.
 
 Show the final set via `AskUserQuestion` — tracks to run, what was dropped and why, the judge's
-`riskNote` — with options "run the proposed subset" / "run the full panel" / "skip the panel".
+`riskNote`, and the spec the `spec` track will read or "no spec available" — with options "run the proposed subset" / "run the full panel" / "skip the panel".
 Then claim a round:
 
 ```
@@ -105,7 +134,8 @@ still running describes a review that did not finish.
 | `comments` | `review-panel:review-comments` | comment accuracy vs code; stale or misleading docs the change introduced or left |
 | `adversary` | `review-panel:review-adversary` | breaking it: inputs or states that make the changed code throw, return a wrong result, corrupt state, or violate an invariant |
 | `over-engineering` | `review-panel:review-over-engineering` | reinvented stdlib or existing helpers, unneeded dependencies, speculative abstractions, dead flexibility |
-| `simplify` | `review-panel:review-simplify` | advisory simplifications that preserve behaviour |
+| `simplify` | `review-panel:review-simplify` | advisory simplifications that preserve behaviour, including the Fowler smell list in its prompt |
+| `spec` | `review-panel:review-spec` | the task the change was written for: requirements missing or partial, implemented wrongly, behaviour nobody asked for; every finding quotes the spec line. Runs only when step 1c found a spec |
 
 **Use these agent types, not the `pr-review-toolkit:` ones** that six of them are derived from.
 The upstream originals declare no `tools:` at all and therefore inherit everything, write tools
@@ -117,7 +147,7 @@ probe:
 - `Bash` stays (a reviewer needs `git log`, `git blame`), and this plugin's
   `hooks/review-agent-guard.py` restricts it **by `agent_type`**: reads pass, anything that
   writes, moves, deletes or changes git state is **denied** before it runs. Denied, not prompted —
-  a background panel of eight tracks must not stop to interrogate the developer.
+  a background panel of nine tracks must not stop to interrogate the developer.
 
 Do **not** try to scope the shell in frontmatter instead: `Bash(git diff:*)` in an agent's `tools:`
 is silently ignored and yields unrestricted `Bash`. Extend the guard's allowlist rather than
@@ -126,7 +156,8 @@ loosening the agents.
 Every track prompt gives the absolute path of `round-$N.diff` as the authoritative change under
 review, and states: review **only** the changed lines/files; report concrete findings with file,
 line/range in the source file as it stands after the change (never a line number of the diff
-file), severity (`critical`/`important`/`minor`) and a precise detail — no generic advice.
+file), severity (`critical`/`important`/`minor`) and a precise detail — no generic advice. The
+`spec` track's prompt also gives the absolute path of the spec from step 1c.
 
 ## 3. Assert the tree is untouched, check the findings, write the report
 
@@ -160,6 +191,7 @@ link it from the report rather than inlining it.
 ```markdown
 # Review — round <N> — <verdict: ready | needs-fixes | blocked>
 Branch: <branch>   Tracks: correctness, tests, …
+Spec: <path the spec track read | no spec available>
 
 ## Tracks
 | track | agent id |            # the identifier each spawn returned — how round N+1 reaches it
@@ -224,7 +256,9 @@ evidence, the finding stands — fix it or take the disagreement to the user; do
 second time on the same grounds.
 
 Then state the verdict explicitly, **naming which tracks ran** — a clean verdict from 2 tracks is
-not the same claim as one from the full panel. If `over-engineering` opened its report with
+not the same claim as one from the full panel. Name the spec the `spec` track checked against, or
+say "no spec available"; a `spec` report that opens with `SPEC NOT READABLE` reviewed nothing —
+report the track as not run. If `over-engineering` opened its report with
 `LENS NOT LOADED`, its preloaded lens is missing and it reviewed nothing: say so rather than
 counting it clean, and fix the `skills:` entry in
 `${CLAUDE_PLUGIN_ROOT}/agents/review-over-engineering.md`.
@@ -232,9 +266,9 @@ counting it clean, and fix the `skills:` entry in
 ## The optional lens
 
 The `over-engineering` track applies the `ponytail-review` lens, preloaded from the ponytail
-plugin. That plugin is an optional companion rather than a declared dependency — the other seven
+plugin. That plugin is an optional companion rather than a declared dependency — the other eight
 tracks do not need it, and a dependency that cannot be resolved would disable this plugin
-entirely. Install it to get the eighth track:
+entirely. Install it to get the `over-engineering` track:
 
 ```
 claude plugin marketplace add DietrichGebert/ponytail

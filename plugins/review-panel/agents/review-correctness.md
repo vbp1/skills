@@ -25,7 +25,9 @@ Start by listing what you're reviewing. For each issue provide:
 
 - Clear description
 - File path and line number
-- Specific CLAUDE.md rule or bug explanation
+- Specific CLAUDE.md rule or bug explanation. A convention finding quotes the rule with its
+  location — `rule: <file>:<line> — "<the rule>"`; one you cannot anchor to a written rule this
+  way is `minor` at most
 - Concrete fix suggestion
 
 Group issues by the severity scale below.

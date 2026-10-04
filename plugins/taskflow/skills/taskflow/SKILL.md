@@ -394,8 +394,9 @@ Tell the reviewer to skip what the project decides mechanically: a point that a
 formatter, linter, type-checker or CI gate already enforces is not a review
 finding. What needs reading the code is.
 
-Then run **`review-panel`** with no argument — that reviews
-every uncommitted change in the tree, staged or not, which is the rule before a
+Then run **`review-panel spec=todos/<task file>`** with no scope argument — the
+`spec` track checks the diff against the task file's stories and plan, and the
+default scope reviews every uncommitted change in the tree, staged or not, which is the rule before a
 commit. It triages the track subset with you, runs the read-only tracks in
 parallel, verifies the criticals, writes the round file, and drives re-review
 rounds until nothing must-fix or important survives. Keep the silent-failure track

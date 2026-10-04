@@ -23,7 +23,7 @@ WHY THIS EXISTS, and why the obvious alternatives do not work — all measured o
     without `Write` reports "Write tool not in available functions"). But a
     reviewer with no shell loses `git log`/`git blame`, which is real evidence.
   * danger-guard DOES reach subagent Bash (a track's `rm --help` raised a
-    prompt), but it returns "ask", and a background panel of eight tracks must
+    prompt), but it returns "ask", and a background panel of nine tracks must
     not stop to interrogate the developer. It also only knows destructive verbs,
     so `echo x > src/probe.ts` sails past it.
 

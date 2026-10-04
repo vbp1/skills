@@ -1,5 +1,5 @@
 {
-  "_note": "Six panel tracks are derived from Anthropic's pr-review-toolkit agents. Each entry records the upstream file this fork was taken from and the git blob hash it had at that moment. check-forks.py compares those hashes against the installed plugin, so an upstream improvement surfaces as a deliberate re-fork decision instead of silent staleness. Two tracks — adversary and over-engineering — have no upstream and are absent here.",
+  "_note": "Six panel tracks are derived from Anthropic's pr-review-toolkit agents. Each entry records the upstream file this fork was taken from and the git blob hash it had at that moment. check-forks.py compares those hashes against the installed plugin, so an upstream improvement surfaces as a deliberate re-fork decision instead of silent staleness. Three tracks — adversary, over-engineering and spec — have no upstream and are absent here.",
   "upstream": {
     "plugin": "pr-review-toolkit",
     "marketplace": "claude-plugins-official",

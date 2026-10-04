@@ -24,10 +24,12 @@ scripts/fork-sources.json records the upstream file and its content hash at the 
 was taken; scripts/check-forks.py compares those against an installed pr-review-toolkit so that
 upstream changes surface as a decision rather than as silent staleness.
 
-The agents/review-adversary.md and agents/review-over-engineering.md tracks are original to this
-plugin. The over-engineering track preloads the ponytail-review skill from the ponytail plugin
+The agents/review-adversary.md, agents/review-over-engineering.md and agents/review-spec.md tracks
+are original to this plugin. The idea of a separate spec track, and the list of Fowler smells in
+agents/review-simplify.md, follow the code-review skill in mattpocock/skills
+(https://github.com/mattpocock/skills, MIT); no text was copied from it. The over-engineering track preloads the ponytail-review skill from the ponytail plugin
 (https://github.com/DietrichGebert/ponytail) rather than copying it. That plugin is an optional
-companion, not a declared dependency: seven tracks do not need it, and a declared dependency that
+companion, not a declared dependency: eight tracks do not need it, and a declared dependency that
 cannot be resolved disables the whole plugin. Without it, the over-engineering track reports
 LENS NOT LOADED and returns no findings instead of improvising a lens.
 
