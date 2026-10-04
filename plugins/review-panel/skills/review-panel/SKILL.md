@@ -108,10 +108,9 @@ still running describes a review that did not finish.
 | `simplify` | `review-panel:review-simplify` | advisory simplifications that preserve behaviour |
 
 **Use these agent types, not the `pr-review-toolkit:` ones** that six of them are derived from.
-The upstream originals declare no `tools:` at all and therefore inherit everything — that is how a
-review track came to run `git stash` on a live worktree and another to drop a scratch test file
-into `src/`, which broke the unit suite. These forks keep the upstream prompts but are read-only
-two ways, both verified by probe:
+The upstream originals declare no `tools:` at all and therefore inherit everything, write tools
+included. These forks keep the upstream prompts but are read-only two ways, both verified by
+probe:
 
 - `tools:` omits `Write` and `Edit`, and tool removal is enforced — a track reports "Write tool
   not in available functions".
@@ -126,7 +125,8 @@ loosening the agents.
 
 Every track prompt gives the absolute path of `round-$N.diff` as the authoritative change under
 review, and states: review **only** the changed lines/files; report concrete findings with file,
-line/range, severity (`critical`/`important`/`minor`) and a precise detail — no generic advice.
+line/range in the source file as it stands after the change (never a line number of the diff
+file), severity (`critical`/`important`/`minor`) and a precise detail — no generic advice.
 
 ## 3. Assert the tree is untouched, check the findings, write the report
 
@@ -145,9 +145,9 @@ costs nothing and is the only thing that would catch it if that ever stops holdi
 must-fix, and every one of them is settled in the main loop before it reaches the report: read
 the lines the track names, follow the mechanism, and where a claim is mechanically decidable,
 decide it by evidence — run the query, apply the migration chain, reproduce the loss. You hold
-the diff already; a fresh session would spend ~25k tokens just to boot and re-read a file you
-have open, and the answer it most often returns is "the facts hold, but this is not worth fixing
-before commit" or "not introduced by this diff" — a priority call, which is yours to make.
+the diff already; a fresh session would have to boot and re-read a file you have open, and the
+answer it most often returns is "the facts hold, but this is not worth fixing before commit" or
+"not introduced by this diff" — a priority call, which is yours to make.
 
 Each item in the report carries the outcome of that check: confirmed (with what settled it),
 corrected (the mechanism differs from the claim — state how), or dropped (with the reason).
