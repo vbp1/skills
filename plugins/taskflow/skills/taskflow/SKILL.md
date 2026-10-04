@@ -1,21 +1,15 @@
 ---
 name: taskflow
 description: >-
-  Conductor that drives ONE small task per session end-to-end through a fixed
-  10-step pipeline with human approval gates (other sessions drive their own
-  tasks in parallel): reformulate → clarify in batches → user stories (+ UI
-  mockup) → spec page → tech plan (grilled + risk pre-mortem + cross-reviewed) →
-  plan page → TDD implementation + acceptance e2e green → review panel (with
-  the language checklists the diff calls for) →
-  cross-agent code review → live scenario pass + e2e re-run → commit + PR →
-  summary page. State for each task lives in the frontmatter of
-  `todos/NNN-slug.md` and is mirrored into an issue tracker when the project uses
-  one. Use this when the user types /taskflow, or says "new task", "run this task
-  through the process", "continue task", "task status", or otherwise asks to take
-  a feature or fix from idea to PR with structured clarification, mockups, plan
-  review and a final report. NOT for trivial one-off edits that need no ceremony,
-  and NOT a generic code-review or planning helper (those are the individual
-  skills this one orchestrates).
+  Conductor that drives one small task per session from idea to PR through a
+  fixed pipeline with human approval gates: clarify, user stories and mockup,
+  reviewed plan, TDD, review panel, cross-agent review, live pass, PR, summary
+  page. Task state lives in the frontmatter of `todos/NNN-slug.md` and in an
+  issue tracker when the project uses one. Use when the user types /taskflow,
+  says "new task", "run this task through the process", "continue task", "task
+  status", or wants a feature or fix taken from idea to PR with clarification,
+  mockups, plan review and a final report. Not for trivial one-off edits, and
+  not a standalone review or planning helper.
 ---
 
 # /taskflow — conductor for small tasks
@@ -67,7 +61,7 @@ Read these once, at step 1, and treat what you find as the project's law:
 
 ## Invocation
 
-- `/taskflow <free-form description>` — start a NEW task at step 1 and put it in
+- `/taskflow <free-form description>` — start a new task at step 1 and put it in
   this session's focus.
 - `/taskflow` (no args) or `/taskflow continue` — resume this session's focused
   task from its current `step`/`awaiting`. With no focus file for this session,
@@ -80,7 +74,7 @@ Read these once, at step 1, and treat what you find as the project's law:
 - `/taskflow abandon` — mark the focused task `abandoned`, drop this session's
   focus file.
 
-On resume, READ the task file first (frontmatter + body), restate "we are at step
+On resume, read the task file first (frontmatter + body), restate "we are at step
 K, waiting on X", then continue. Never assume context survived.
 
 ---
@@ -179,7 +173,8 @@ approval → `step: 3`.
 **Step 3 — Clarify → stories → spec page.**
 
 - Ask clarifying questions in **batches of ≤4** (`AskUserQuestion`), repeating
-  until residual uncertainty is low. Record answers in `## Journal`.
+  until no open question remains whose answer would change the stories or the
+  plan. Record answers in `## Journal`.
 - Synthesize **user stories** (As a … / I want … / so that …) with acceptance
   criteria → `## User stories`. **Every acceptance criterion (including each done
   criterion) carries its own "how to check" line** — a user scenario in the form
@@ -198,9 +193,8 @@ approval → `step: 3`.
   reconcile the mockup against it. Record in `## Mockups` two lists:
   **"Differences"** — "in the product" / "in the mockup" / "fixed" — and
   **"Deliberately different"**, one line per deliberate departure, each shown to
-  the user at the gate for confirmation. **These two lists are the only ones — do
-  not add a third.** Every gap between the mockup and the live product belongs to
-  one of them: a surface drawn simpler than the product, an element left out, the
+  the user at the gate for confirmation. Every gap between the mockup and the live
+  product belongs to one of them: a surface drawn simpler than the product, an element left out, the
   app frame drawn partially — all of it goes to "Deliberately different" and is
   shown at the gate, whatever its relation to the task. When the address does not answer, does
   not let you in, or lacks a surface you need: STOP and take it to the user — do
@@ -375,9 +369,9 @@ with one declared sentence. Run the new specs green. In `## Journal` record the
 mapping: criterion → spec (or → manual). Review gates open only after this pass is
 green. `step: 6`.
 
-**Minor fix — the definition steps 6, 7 and 9 use.** A fix is minor when both hold:
-the finding that raised it carries minor / nice-to-have severity, and the change
-alters no program behaviour — comments, documentation, naming, formatting,
+**Minor fix — the definition steps 6, 7 and 9 use.** A fix is minor when it alters
+no program behaviour, whatever the severity of the finding that raised it —
+comments, documentation, naming, formatting, a test name, added test coverage,
 dead-code removal. A fix that touches a condition, a branch, control flow, an API
 shape, a runtime-relevant type, a dependency or a user-visible string is not minor.
 When the classification is unclear, put that fix to the user via `AskUserQuestion` —
@@ -597,7 +591,7 @@ carries its quoted fragment and nearest section label. This is separate from the
 spec's open-questions form; both can be used.
 
 **The mockup is its own realistic page, not embedded in the spec.** For a UI task
-at step 3 it is ONE file, **`NNN-mockup.html`**, built with the **`ui-mockup`**
+at step 3 it is one file, **`NNN-mockup.html`**, built with the **`ui-mockup`**
 skill and recorded in `page_mockup`; the spec page links to it (opens in a new
 window). Model on `example-mockup.html`.
 
@@ -628,7 +622,7 @@ window). Model on `example-mockup.html`.
    block carry their styles inside the file.
 
 **Feedback loop — how the user's answers and notes reach you.** A page opened as a
-plain `file://` cannot write to disk, so to COLLECT feedback run the helper as two
+plain `file://` cannot write to disk, so to collect feedback run the helper as two
 background tasks — one serving, one waiting:
 
 - Serve, on this task's own port — `8800 + NNN % 100`, so two tasks running side by
@@ -710,7 +704,7 @@ keep one copy, or every commit asks twice.
   example `codex-review` from <https://github.com/artwist-polyakov/polyakov-claude-skills>. Optional:
   when it is not installed, say so and go on.
 - `create-pr` — open the pull request (step 9).
-- `visual-explainer` — OPTIONAL: a richer diagram to embed in the plan page.
+- `visual-explainer` — optional: a richer diagram to embed in the plan page.
 - `<skill-dir>/assets/codex-state-bind.sh` — binds this task's cross-agent review
   state to the branch it runs on; `--help` for the details.
 - `<skill-dir>/assets/feedback-server.py` — localhost helper that serves the pages
