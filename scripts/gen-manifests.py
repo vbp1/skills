@@ -84,7 +84,7 @@ VERSIONS = {
     "sparring-codex": "1.2.1",
     "taskflow": "1.2.3",
     "technical-premortem": "1.0.2",
-    "ui-mockup": "1.1.3",
+    "ui-mockup": "1.1.4",
     "user-clear-communication": "1.0.1",
     "youtube-transcript": "1.0.3",
 }

@@ -46,7 +46,8 @@ disappear when X?"), surface them in plain language via `AskUserQuestion` — th
 decisions *are* the mockup. One flow per scenario; offer a second scenario
 only when it teaches something the first can't.
 
-**Ask where the running product is reachable, before step 3.** Put the question to
+**Ask where the running product is reachable, before step 3**, unless the caller
+already recorded it (a taskflow task's `live_ui`). Put the question to
 the user with `AskUserQuestion`; record the answer and reuse it for the rest of the
 task without asking again. When that address does not answer, does not let you in,
 or the surfaces you need are missing from it, STOP and ask the user — never fall
@@ -182,9 +183,8 @@ found.
   saying what is new and why it looks unlike anything on screen today. Present that
   list to the user when you hand over the mockup, so each deliberate difference is
   confirmed rather than assumed.
-- **These two lists are the only ones — do not add a third.** An element left out, a
-  surface drawn simpler than the product, the frame drawn partially: each goes into
-  the deliberate list and is presented to the user, whatever its relation to the
+- An element left out, a surface drawn simpler than the product, the frame drawn
+  partially: each goes into the deliberate list and is presented to the user, whatever its relation to the
   task at hand.
 - **Re-capture the mockup frames after fixing** and compare again, until the table
   holds only deliberate rows.
