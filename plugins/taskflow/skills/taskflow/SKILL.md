@@ -353,9 +353,8 @@ close step 4's branch sub-step before writing code.
 Walk `### Stages and tasks` in order, one stage at a time. Work in RED→GREEN: write
 the failing test first, confirm it fails for the right reason, then the minimum code
 to pass. Tick each `- [ ]` in the task file as its task lands; on a stage's
-`Done when` line coming true, record the closed stage in `## Journal`. After each
-batch of commits, add one line to `## Journal`: the date, the short hashes and what
-they carry. A stage the work proves wrong is rewritten in the plan before it is
+`Done when` line coming true, record the closed stage in `## Journal`. Nothing is
+committed at this step: commits happen at step 9, after review. A stage the work proves wrong is rewritten in the plan before it is
 built, with the reason in `## Journal`. Follow the project's testing rules. Run the project's fast checks
 (type-check plus the unit run scoped to the modules the stage touched) at each
 stage; run the slower ones (lint, dependency and dead-code checks) once, after the
@@ -491,6 +490,7 @@ through another shipping command.
    minor is re-marked with a note naming that change, without a new round. Never
    opt out to get past the barrier.
 4. Commit per file with a conventional-commit message, in English.
+   Then add one line to `## Journal`: the date, the short hashes and what they carry.
 5. Run the pre-push check — the tests this branch affects, not the whole suite.
    Fix failures and re-commit before pushing.
 6. Open the PR with the **`create-pr`** skill when it is installed, otherwise

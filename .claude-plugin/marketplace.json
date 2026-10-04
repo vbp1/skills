@@ -279,7 +279,7 @@
       "name": "taskflow",
       "source": "./plugins/taskflow",
       "description": "Drive one small task from idea to merged PR through ten fixed steps with approval gates: statement, stories, mockup, plan, TDD, review panel, cross-agent review, live pass, PR, summary.",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "category": "workflow",
       "keywords": [
         "workflow",
