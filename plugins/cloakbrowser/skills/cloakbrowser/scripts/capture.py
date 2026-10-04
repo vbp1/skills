@@ -6,7 +6,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-import cloakbrowser
+from browser import add_engine_argument, open_browser
 
 VIEWPORT_PARTS = 2
 
@@ -30,8 +30,7 @@ async def capture(args: argparse.Namespace) -> None:
     out_path = Path(args.out).expanduser().resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    browser = await cloakbrowser.launch_async(headless=True)
-    try:
+    async with open_browser(args.engine) as browser:
         page = await browser.new_page(viewport={'width': width, 'height': height})
         await page.goto(args.url, wait_until=args.wait_until, timeout=args.timeout)
 
@@ -42,15 +41,13 @@ async def capture(args: argparse.Namespace) -> None:
             await page.wait_for_timeout(args.wait)
 
         await page.screenshot(path=str(out_path), full_page=args.full_page)
-    finally:
-        await browser.close()
 
     sys.stdout.write(f'{out_path}\n')
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description='Capture a screenshot through the local CloakBrowser Chromium.'
+        description='Capture a screenshot of a page in a local headless Chromium.'
     )
     parser.add_argument('url', help='URL to open')
     parser.add_argument('--out', default='cloakbrowser-page.png', help='Output PNG path')
@@ -70,6 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
         help='Playwright navigation readiness state',
     )
     parser.add_argument('--timeout', type=int, default=30_000, help='Navigation timeout in ms')
+    add_engine_argument(parser)
     return parser
 
 

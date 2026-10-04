@@ -35,7 +35,7 @@ has to talk to the other agent.
 | `audio-restore` | Claude | Restore muffled or low-quality recordings: stem separation, EQ correction, high-frequency recovery. |
 | `break-it` | Codex | Adversarial test pass: write tests that try to falsify a change, keep only the ones that catch real defects. |
 | `cc-review` | Codex | Cross-agent review workflow: Codex implements, Claude Code reviews, findings loop back until resolved. |
-| `cloakbrowser` | Claude | Inspect web pages in a local stealth Chromium: screenshots, client-side JS errors, failed requests, long-task timings. |
+| `cloakbrowser` | Claude | Inspect web pages in a local headless Chromium, stealth on request: screenshots, client-side JS errors, failed requests, long-task timings. |
 | `cloakbrowser-codex` | Codex | Same tool, Codex variant: screenshots, client-side JS errors, failed requests, long-task timings. |
 | `codex-genimage` | Claude | Generate images through the Codex CLI built-in image tool, billed via existing Codex auth. |
 | `create-pr` | Claude | Branch, commit, push, open the pull request, set labels and project fields in one pass. |
@@ -58,9 +58,9 @@ has to talk to the other agent.
 | `youtube-transcript` | Claude | Pull the transcript of a YouTube video, with or without timestamps. |
 
 Some skills need external tooling that is not bundled here: `cloakbrowser` expects
-the CloakBrowser CLI on the machine, `langfuse-debug` expects Langfuse credentials,
-`codex-genimage` expects an authenticated Codex CLI. Each `SKILL.md` states its
-prerequisites.
+Playwright for Python with its Chromium, plus the CloakBrowser CLI for the stealth
+engine; `langfuse-debug` expects Langfuse credentials; `codex-genimage` expects an
+authenticated Codex CLI. Each `SKILL.md` states its prerequisites.
 
 `taskflow` runs on its own, and grows steps when its companions are installed:
 `ui-mockup` for the mockup, `review-panel` for the review round,

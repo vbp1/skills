@@ -1,7 +1,8 @@
 ---
 name: cloakbrowser
 description: >-
-  Use a local stealth headless Chromium (CloakBrowser) to inspect web pages:
+  Use a local headless Chromium (stock Playwright by default, CloakBrowser
+  stealth on request) to inspect web pages:
   screenshots, client-side JS errors with stack traces, console messages,
   failed network requests, JS injection, long-task/TBT measurement for
   UI-freeze and perf checks. Use proactively for client-side exceptions,
@@ -14,9 +15,9 @@ allowed-tools: Bash(python3:*), Bash(~/.local/bin/cloakbrowser:*), Read
 
 # CloakBrowser
 
-Local stealth headless Chromium driven via the `cloakbrowser` Python package
-(thin wrapper over Playwright). Use it instead of asking the user to paste
-DevTools output — the cost is one `python3` invocation and a screenshot.
+Local headless Chromium driven through Playwright. Use it instead of asking the
+user to paste DevTools output — the cost is one `python3` invocation and a
+screenshot.
 
 ## When to reach for it (proactive)
 
@@ -26,19 +27,31 @@ DevTools output — the cost is one `python3` invocation and a screenshot.
 - "What does the page look like" / visual review of a UI change → use
   `capture.py` for a screenshot before/after.
 - Hydration mismatches, RSC errors, or any "works in Node, breaks in browser"
-  bug — server logs won't show JS-side stack traces; CloakBrowser will.
+  bug — server logs won't show JS-side stack traces; the browser will.
 - Smoke testing a freshly-rebuilt local app after a change (e.g. after
   `docker compose up`).
+
+## Engine
+
+Both scripts take `--engine`:
+
+- `chromium` (default) — stock Playwright Chromium. Use it for every page you
+  own: local apps, stands, staging.
+- `cloak` — CloakBrowser stealth Chromium. Use it only when a site blocks
+  automated browsers (bot checks, CAPTCHA walls). The free binary allows one
+  browser at a time; do not run two `cloak` sessions in parallel.
 
 ## Local tooling check
 
 ```bash
-~/.local/bin/cloakbrowser info
-# → reports Chromium version + cache path; "Installed: True" means ready.
+python3 -m playwright --version
+python3 -m playwright install chromium   # default engine; re-run after upgrading playwright
+~/.local/bin/cloakbrowser info           # cloak engine; "Installed: True" means ready
 ```
 
-If `Installed: False`, run `~/.local/bin/cloakbrowser install`
-to download the stealth Chromium bundle (one-time, ~150MB).
+If the default engine fails with `Executable doesn't exist`, run
+`python3 -m playwright install chromium`. If `cloakbrowser info` reports
+`Installed: False`, run `~/.local/bin/cloakbrowser install`.
 
 ## Two helper scripts
 
@@ -211,7 +224,7 @@ Read /tmp/error.png
 ## What this skill does NOT do
 
 - Full end-to-end test automation (use a dedicated framework like
-  `playwright test` for that — CloakBrowser is for *inspection*).
+  `playwright test` for that — this skill is for *inspection*).
 - Full performance profiling (CPU flamegraphs, Lighthouse audits) or
   accessibility scans — use Lighthouse/axe directly. (Main-thread long-task /
   TBT measurement *is* supported, via `--measure-longtasks` — see above.)
@@ -221,10 +234,10 @@ Read /tmp/error.png
 ## Common pitfalls
 
 - `inspect_page.py` injects a small pre-page collector for `console.*`, uncaught
-  errors, and unhandled rejections because CloakBrowser's CDP stealth suppresses
-  the corresponding Playwright events. Use `capture.py` when page instrumentation
+  errors, and unhandled rejections under both engines, because the `cloak`
+  engine's CDP stealth suppresses the corresponding Playwright events. Use `capture.py` when page instrumentation
   itself would change the behavior under investigation.
-- CloakBrowser runs on the host, so it can only reach what the host can
+- The browser runs on the host, so it can only reach what the host can
   reach. Services bound to `127.0.0.1` inside a Docker container, or to a
   container's internal port that isn't published, are invisible — use
   `docker exec` (or a temporary port-publish) to inspect those.

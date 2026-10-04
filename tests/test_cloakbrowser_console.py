@@ -15,6 +15,7 @@ SCRIPTS = (
     ROOT / "plugins/cloakbrowser/skills/cloakbrowser/scripts/inspect_page.py",
     ROOT / "plugins/cloakbrowser-codex/skills/cloakbrowser/scripts/inspect_page.py",
 )
+ENGINES = ("chromium", "cloak")
 
 
 class InspectPageSignalsTest(unittest.TestCase):
@@ -26,26 +27,29 @@ setTimeout(() => { throw new Error("smoke-pageerror"); }, 0);
         url = f"data:text/html,{quote(html)}"
 
         for script in SCRIPTS:
-            with self.subTest(script=script):
-                result = subprocess.run(
-                    [
-                        sys.executable,
-                        str(script),
-                        url,
-                        "--wait-until",
-                        "load",
-                        "--wait",
-                        "100",
-                    ],
-                    capture_output=True,
-                    check=False,
-                    text=True,
-                    timeout=10,
-                )
+            for engine in ENGINES:
+                with self.subTest(script=script, engine=engine):
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            str(script),
+                            url,
+                            "--engine",
+                            engine,
+                            "--wait-until",
+                            "load",
+                            "--wait",
+                            "100",
+                        ],
+                        capture_output=True,
+                        check=False,
+                        text=True,
+                        timeout=10,
+                    )
 
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn("CONSOLE[error] smoke-console", result.stdout)
-                self.assertIn("PAGEERROR Error: smoke-pageerror", result.stdout)
+                    self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                    self.assertIn("CONSOLE[error] smoke-console", result.stdout)
+                    self.assertIn("PAGEERROR Error: smoke-pageerror", result.stdout)
 
 
 if __name__ == "__main__":

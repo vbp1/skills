@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open a URL in cloakbrowser and capture all browser-side signals an agent
+"""Open a URL in a local headless Chromium and capture all browser-side signals an agent
 would otherwise have to ask the user for from DevTools: console messages,
 page errors with stack traces, failed network requests, and a screenshot of
 the rendered page (useful when the app shows an error overlay).
@@ -39,7 +39,7 @@ import json
 import sys
 from pathlib import Path
 
-import cloakbrowser
+from browser import add_engine_argument, open_browser
 
 VIEWPORT_PARTS = 2
 LONGTASK_THRESHOLD_MS = 50
@@ -276,9 +276,8 @@ async def inspect(args: argparse.Namespace) -> int:
     if out_path is not None:
         out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    browser = await cloakbrowser.launch_async(headless=True)
     exit_code = 0
-    try:
+    async with open_browser(args.engine) as browser:
         context = await browser.new_context(viewport={'width': width, 'height': height})
         if args.cookie:
             await context.add_cookies(args.cookie)
@@ -400,9 +399,6 @@ async def inspect(args: argparse.Namespace) -> int:
                 await page.screenshot(path=str(out_path), full_page=args.full_page)
             sys.stdout.write(f'SCREENSHOT {out_path}\n')
 
-    finally:
-        await browser.close()
-
     return exit_code
 
 
@@ -491,6 +487,7 @@ def main() -> int:
         help='After navigation, wait for SELECTOR to appear (page.wait_for_selector) '
         'before typing/measuring.',
     )
+    add_engine_argument(p)
     args = p.parse_args()
     return asyncio.run(inspect(args))
 
