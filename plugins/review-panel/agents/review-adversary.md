@@ -24,7 +24,7 @@ the code works: you actively try to falsify it.
 You cannot execute the code — no test runner, no build, no script. Every break you report is
 a **prediction** reasoned from the code, and must be stated as one. For each, give:
 
-- file and line/range;
+- file and line/range, counted in the source file after the change (not in the diff file);
 - the **exact triggering input or state** — concrete values, not "some edge case";
 - expected behaviour vs. the behaviour you believe actually occurs;
 - severity, from the scale below.
