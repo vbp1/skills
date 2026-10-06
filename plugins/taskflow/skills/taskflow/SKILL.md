@@ -323,6 +323,11 @@ approval → `step: 3`.
   blocking risk without a mitigation holds the gate — revise the plan and re-run, or
   get the user's explicit decision to proceed. Record the verdict and the
   run-or-skip decision in `## Journal`.
+- When the cross-agent reviewer has a usage limit and a way to read what is left
+  of it without spending any (for Codex: `codex app-server`, request
+  `account/rateLimits/read`, or a wrapper such as a `codex-quota` utility), read it
+  before the first plan round. Exhausted — stop and tell the user which limit and
+  when it resets; the read itself failing — report its error and stop.
 - Cross-check the plan with a **cross-agent review skill** (plan phase) when one is
   installed, passing it `todos/NNN-slug/plan.md` and nothing else: the answers to
   the previous round are already in the file's `## Already closed`. With no such
@@ -377,7 +382,12 @@ When the classification is unclear, put that fix to the user via `AskUserQuestio
 minor (close the phase) or behaviour-changing (another round); never open a round on
 your own to settle the doubt.
 
-**Step 6 — Review panel.** First name the checklists, then run the panel.
+**Step 6 — Review panel.** First, when step 7's cross-agent reviewer has a usage
+limit that can be read without spending it (see step 4), read it: the panel is the
+expensive part, and a reviewer out of quota leaves the work unable to pass step 7.
+Exhausted — stop before the panel and tell the user which limit and when it
+resets; the read failing — report its error and stop. Then name the checklists and
+run the panel.
 
 ```
 python3 "<skill-dir>/assets/rules-for-diff.py" --repo <repo-root>
