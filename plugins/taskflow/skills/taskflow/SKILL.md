@@ -233,7 +233,11 @@ approval → `step: 3`.
   - Same working copy → `git switch -c feat/NNN-slug`.
   - Separate working copy → `git worktree add .worktrees/NNN-slug -b feat/NNN-slug`,
     then link the task directory into it so both copies see one `todos/`
-    (`ln -s <main-repo-root>/todos .worktrees/NNN-slug/todos`), then enter it.
+    (`ln -s <main-repo-root>/todos .worktrees/NNN-slug/todos`), then enter it
+    with a Bash call that holds only `cd <absolute path of .worktrees/NNN-slug>`,
+    and run `pwd` before the first edit. Do not use the `EnterWorktree` tool: it
+    turns on Claude Code's built-in git fence, which refuses ordinary commands
+    with variables, loops or computed values and file writes to `todos/`.
 
   Write `branch: feat/NNN-slug` into the frontmatter and the chosen working copy
   into `## Journal`. Steps 4–9 run on this branch, plan review rounds included.
