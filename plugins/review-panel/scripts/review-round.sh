@@ -34,6 +34,12 @@ COMMANDS
                                   a single sha, a tag.
                      An unusable spec fails before the round is claimed. The scope is
                      recorded, so `delta` and `check` compare like with like.
+  save <N> <track> <output file>
+                     Copy a track's final message verbatim to round-<N>-<track>.md and
+                     print that path. <output file> is the one the track's completion
+                     notification names (the track's transcript, one JSON record per
+                     line). <track> is lowercase letters and dashes. Refuses an existing
+                     report and a transcript with no final text; nothing is written then.
   path <N>           Print the path of round-<N>.md (whether or not it exists).
   diff <N>           Print the path of round-<N>.diff (whether or not it exists).
   delta <N>          List the files the fixes touched since round <N>, one per line as
@@ -222,6 +228,44 @@ case "$cmd" in
     # than wrong, so it hides work instead of corrupting it — worth its own baseline.
     git stash list >"$dir/round-$n.stash"
     echo "$n $dir"
+    ;;
+  save)
+    # Tracks write no files; their report is the last message of their run. Copied
+    # here by program, so the round holds what the track wrote, not a retelling.
+    n="$(require_round "${2:-}")"
+    track="${3:-}"
+    src="${4:-}"
+    [[ "$track" =~ ^[a-z][a-z-]*$ ]] || die "save needs a track key of lowercase letters and dashes, got '${track}'. Nothing was written."
+    [[ -f "$src" ]] || die "save needs the track's output file, '${src}' is not a file. Nothing was written."
+    target="$(round_dir)/round-$n-$track.md"
+    [[ ! -e "$target" ]] || die "$target already exists. Nothing was written."
+    text="$(python3 -I - "$src" <<'PY'
+import json, sys
+
+last_id, parts = None, {}
+with open(sys.argv[1], encoding="utf-8") as fh:
+    for number, line in enumerate(fh, 1):
+        try:
+            record = json.loads(line)
+        except ValueError as exc:
+            sys.exit(f"line {number} of {sys.argv[1]} is not JSON: {exc}")
+        if record.get("type") != "assistant":
+            continue
+        message = record.get("message") or {}
+        texts = [c.get("text", "") for c in message.get("content") or []
+                 if isinstance(c, dict) and c.get("type") == "text" and c.get("text", "").strip()]
+        if texts:
+            key = message.get("id") or number
+            if key != last_id:
+                last_id, parts[key] = key, []
+            parts[key].extend(texts)
+if last_id is None:
+    sys.exit(f"{sys.argv[1]} holds no assistant text: the track returned no report")
+print("\n\n".join(parts[last_id]))
+PY
+)" || die "cannot read the report out of $src (above). Nothing was written."
+    printf '%s\n' "$text" >"$target"
+    echo "$target"
     ;;
   path)
     n="$(require_round "${2:-}")"

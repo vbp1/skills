@@ -159,9 +159,16 @@ line/range in the source file as it stands after the change (never a line number
 file), severity (`critical`/`important`/`minor`) and a precise detail — no generic advice. The
 `spec` track's prompt also gives the absolute path of the spec from step 1c.
 
-## 3. Assert the tree is untouched, check the findings, write the report
+## 3. Save the reports, assert the tree is untouched, check the findings, write the report
 
-The moment the tracks return:
+**Save each track's report when its completion notification arrives.** Tracks write no files;
+the notification names the track's output file. Run
+`"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" save $N <track> <output file>` (`<track>` is the
+key from the table above): it copies the track's final message verbatim to
+`$DIR/round-$N-<track>.md` and prints that path. Record the path per track in the round file's
+`## Tracks` table, and refer to findings by that path from then on.
+
+The moment the last track returns:
 
 ```
 "${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" check $N
@@ -194,8 +201,8 @@ Branch: <branch>   Tracks: correctness, tests, …
 Spec: <path the spec track read | no spec available>
 
 ## Tracks
-| track | agent id |            # the identifier each spawn returned — how round N+1 reaches it
-| correctness | <id> |
+| track | agent id | report |    # the identifier each spawn returned — how round N+1 reaches it
+| correctness | <id> | round-<N>-correctness.md |
 
 ## Open items
 Count: <N>                       # must-fix + important only; what the next round must answer
@@ -244,7 +251,7 @@ something only `type-design` would have noticed, and that track is not in this r
 small, so this costs one agent.
 
 If an id no longer resolves, spawn that track fresh and hand it its own `Open items` lines from the
-round file, verbatim, plus the delta. That is the degraded path — say so in the report, since a
+round file plus its saved report `round-<N-1>-<track>.md`, verbatim, plus the delta. That is the degraded path — say so in the report, since a
 fresh track re-derives reasoning the resumed one remembers.
 
 Cross-check the items you send against the previous round's `Count`: every must-fix and important
