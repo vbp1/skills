@@ -49,8 +49,12 @@ print('')
     project_number="${1:?project number required}"
     pr_url="${2:?PR URL required}"
     owner=$(get_owner)
-    gh project item-add "$project_number" --owner "$owner" --url "$pr_url" >/dev/null 2>&1
-    exec "$0" find-item "$project_number" "$pr_url"
+    item_id=$(gh project item-add "$project_number" --owner "$owner" --url "$pr_url" --format json -q .id)
+    if [[ -z "$item_id" ]]; then
+      echo "gh project item-add returned no item id for $pr_url in project $project_number (owner $owner)" >&2
+      exit 1
+    fi
+    echo "$item_id"
     ;;
 
   set-field)
