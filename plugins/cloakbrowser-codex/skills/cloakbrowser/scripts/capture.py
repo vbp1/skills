@@ -6,7 +6,7 @@ import asyncio
 import sys
 from pathlib import Path
 
-from browser import add_engine_argument, open_browser
+from browser import add_context_arguments, add_engine_argument, open_browser
 
 VIEWPORT_PARTS = 2
 
@@ -31,7 +31,13 @@ async def capture(args: argparse.Namespace) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     async with open_browser(args.engine) as browser:
-        page = await browser.new_page(viewport={'width': width, 'height': height})
+        context = await browser.new_context(
+            viewport={'width': width, 'height': height},
+            ignore_https_errors=args.ignore_https_errors,
+        )
+        if args.cookie:
+            await context.add_cookies(args.cookie)
+        page = await context.new_page()
         await page.goto(args.url, wait_until=args.wait_until, timeout=args.timeout)
 
         if args.click_selector:
@@ -67,6 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
         help='Playwright navigation readiness state',
     )
     parser.add_argument('--timeout', type=int, default=30_000, help='Navigation timeout in ms')
+    add_context_arguments(parser)
     add_engine_argument(parser)
     return parser
 

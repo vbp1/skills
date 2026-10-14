@@ -17,8 +17,14 @@ Example::
 With auth cookies::
 
     python3 inspect.py http://localhost:8080/private \
-        --cookie name=session value=abc123 domain=localhost path=/ \
-        --cookie name=other value=xyz domain=localhost path=/
+        --cookie "name=session value=abc123 domain=localhost path=/" \
+        --cookie "name=other value=xyz domain=localhost path=/"
+
+HTTPS stand with a self-signed certificate and a ``__Secure-`` cookie::
+
+    python3 inspect.py https://localhost:8080/private \
+        --ignore-https-errors \
+        --cookie "name=__Secure-session value=abc123 domain=localhost path=/ secure=true httpOnly=true"
 
 Measuring a client-side perf fix (main-thread long tasks) — wait for the
 input, type a prompt, click send, watch for long tasks during streaming::
@@ -39,7 +45,7 @@ import json
 import sys
 from pathlib import Path
 
-from browser import add_engine_argument, open_browser
+from browser import add_context_arguments, add_engine_argument, open_browser
 
 VIEWPORT_PARTS = 2
 LONGTASK_THRESHOLD_MS = 50
@@ -256,20 +262,6 @@ def parse_viewport(value: str) -> tuple[int, int]:
     return width, height
 
 
-def parse_cookie(value: str) -> dict:
-    """Parse a `key=value key2=value2` string into a Playwright-style cookie dict."""
-    out = {}
-    for part in value.split():
-        if '=' not in part:
-            raise argparse.ArgumentTypeError(f'cookie part must be key=value: {part!r}')
-        k, v = part.split('=', 1)
-        out[k] = v
-    for required in ('name', 'value'):
-        if required not in out:
-            raise argparse.ArgumentTypeError(f"cookie must include '{required}'")
-    return out
-
-
 async def inspect(args: argparse.Namespace) -> int:
     width, height = args.viewport
     out_path = Path(args.out).expanduser().resolve() if args.out else None
@@ -278,7 +270,10 @@ async def inspect(args: argparse.Namespace) -> int:
 
     exit_code = 0
     async with open_browser(args.engine) as browser:
-        context = await browser.new_context(viewport={'width': width, 'height': height})
+        context = await browser.new_context(
+            viewport={'width': width, 'height': height},
+            ignore_https_errors=args.ignore_https_errors,
+        )
         if args.cookie:
             await context.add_cookies(args.cookie)
         await context.add_init_script(BROWSER_SIGNALS_INIT)
@@ -446,13 +441,7 @@ def main() -> int:
         'Playwright auto-scrolls the element into view first, so this bypasses '
         'viewport size and outer scroll constraints. Overrides --full-page.',
     )
-    p.add_argument(
-        '--cookie',
-        action='append',
-        type=parse_cookie,
-        metavar='"name=… value=… domain=… path=…"',
-        help='Repeatable. Add cookies before navigation (e.g. for auth-gated pages).',
-    )
+    add_context_arguments(p)
     p.add_argument(
         '--init-script',
         metavar='FILE',

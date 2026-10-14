@@ -110,9 +110,11 @@ python3 <skill-dir>/scripts/capture.py \
     [--full-page]
 ```
 
-Both scripts share these flags: `--viewport WxH` (default 1440x900),
-`--wait MS` (post-nav delay), `--wait-until {load,domcontentloaded,networkidle,commit}`,
-`--timeout MS`, `--click-selector`, `--full-page`.
+Both scripts share these flags: `--viewport WxH` (default 1440x900 for
+`inspect_page.py`, 1440x1000 for `capture.py`), `--wait MS` (post-nav delay),
+`--wait-until {load,domcontentloaded,networkidle,commit}`, `--timeout MS`,
+`--click-selector`, `--full-page`, `--cookie` and `--ignore-https-errors`
+(see [Auth-gated pages](#auth-gated-pages)), `--engine`.
 
 ### Capturing content inside scrolled containers (`inspect_page.py` only)
 
@@ -206,6 +208,27 @@ python3 <skill-dir>/scripts/inspect_page.py \
     http://localhost:8080/private/page \
     --cookie "name=authjs.session-token value=<token> domain=localhost path=/"
 ```
+
+`--cookie` is repeatable and works in both scripts. Keys: `name`, `value`,
+`url`, `domain`, `path`, `expires` (`-1` or Unix seconds), `httpOnly` and
+`secure` (`true` or `false`), `sameSite` (`Strict`, `Lax` or `None`). Give
+either `url` or both `domain` and `path`. An unknown or repeated key, a value
+outside these, or a wrong `url`/`domain`/`path` combination is an argument
+error, and the browser is not started.
+
+HTTPS stand with a self-signed certificate: add `--ignore-https-errors`.
+A `__Secure-`-prefixed cookie needs `secure=true`, or the browser drops it:
+
+```bash
+python3 <skill-dir>/scripts/inspect_page.py \
+    https://localhost:8080/private/page \
+    --ignore-https-errors \
+    --cookie "name=__Secure-authjs.session-token value=<token> domain=localhost path=/ secure=true httpOnly=true"
+```
+
+Without `--ignore-https-errors` a self-signed stand fails navigation:
+`inspect_page.py` prints `NAVERROR … net::ERR_CERT_AUTHORITY_INVALID` and
+exits 2, `capture.py` exits with a traceback that names the same error.
 
 Do **not** drive a credentialed sign-in flow programmatically without
 explicit user permission — it would imply storing or handling credentials

@@ -55,7 +55,7 @@
       "name": "cloakbrowser",
       "source": "./plugins/cloakbrowser",
       "description": "Inspect web pages in a local headless Chromium, stealth on request: screenshots, client-side JS errors, failed requests, long-task timings. Claude Code variant.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "category": "development",
       "keywords": [
         "browser",
@@ -69,7 +69,7 @@
       "name": "cloakbrowser-codex",
       "source": "./plugins/cloakbrowser-codex",
       "description": "Inspect web pages in a local headless Chromium, stealth on request: screenshots, client-side JS errors, failed requests, long-task timings. Codex CLI variant.",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "category": "development",
       "keywords": [
         "browser",
