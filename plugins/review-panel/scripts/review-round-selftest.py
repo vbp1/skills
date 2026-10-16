@@ -294,77 +294,6 @@ def case_a_second_seal_is_refused(tmp: str) -> tuple[str, str]:
         "refused, moment kept" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r} kept={kept == first}")
 
 
-def build_wide(tmp: str) -> Path:
-    """Репозиторий и раунд на 7 новых файлов: каталог `a` (код + тест), `a/deep`,
-    `b` и один файл в корне."""
-    root = build(tmp)
-    for rel in ("a/one.ts", "a/one.test.ts", "a/deep/two.ts", "a/deep/three.ts",
-                "b/four.ts", "b/five.ts", "top.md"):
-        (root / rel).parent.mkdir(parents=True, exist_ok=True)
-        (root / rel).write_text("новый\n", encoding="utf-8")
-    rr(root, "open")
-    return root
-
-
-def part_paths(root: Path) -> dict[str, list[str]]:
-    store = Path(rr(root, "dir").stdout.strip())
-    return {p.name: [line.split("\t", 1)[1] for line in p.read_text(encoding="utf-8").splitlines()]
-            for p in sorted(store.glob("round-1.part-*.files"))}
-
-
-def case_parts_cover_every_file_once(tmp: str) -> tuple[str, str]:
-    """Каждый файл раунда попадает ровно в одну часть, ни одна часть не больше
-    --max, а тест остаётся в части своего кода."""
-    root = build_wide(tmp)
-    res = rr(root, "parts", "1", "--max", "3")
-    parts = part_paths(root)
-    every = sorted(p for paths in parts.values() for p in paths)
-    want = sorted(line.split("\t", 1)[1] for line in rr(root, "files", "1").stdout.splitlines())
-    together = any({"a/one.ts", "a/one.test.ts"} <= set(paths) for paths in parts.values())
-    ok = (res.returncode == 0 and every == want and together
-          and all(len(paths) <= 3 for paths in parts.values())
-          and len(res.stdout.strip().splitlines()) == len(parts))
-    return "covered once", "covered once" if ok else f"rc={res.returncode} parts={parts} err={res.stderr.strip()[:80]!r}"
-
-
-def case_a_directory_that_fits_is_not_cut(tmp: str) -> tuple[str, str]:
-    """Каталог, который помещается в часть целиком, не разрезается."""
-    root = build_wide(tmp)
-    rr(root, "parts", "1", "--max", "4")
-    parts = part_paths(root)
-    a_files = {"a/one.ts", "a/one.test.ts", "a/deep/two.ts", "a/deep/three.ts"}
-    ok = any(a_files <= set(paths) for paths in parts.values())
-    return "kept whole", "kept whole" if ok else f"parts={parts}"
-
-
-def case_a_small_round_is_not_split(tmp: str) -> tuple[str, str]:
-    """Раунд не больше --max не делится: ничего не записано, выход 1."""
-    root = build_wide(tmp)
-    res = rr(root, "parts", "1", "--max", "7")
-    ok = res.returncode == 1 and "no split" in res.stderr and not part_paths(root)
-    return "refused", "refused" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r}"
-
-
-def case_a_second_split_is_refused(tmp: str) -> tuple[str, str]:
-    """Повторное деление того же раунда отклоняется и не трогает первые части."""
-    root = build_wide(tmp)
-    rr(root, "parts", "1", "--max", "3")
-    before = part_paths(root)
-    res = rr(root, "parts", "1", "--max", "2")
-    ok = res.returncode == 1 and "already split" in res.stderr and part_paths(root) == before
-    return "refused", "refused" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r}"
-
-
-def case_parts_reject_bad_input(tmp: str) -> tuple[str, str]:
-    """Негодный --max и неоткрытый раунд — ошибка до записи."""
-    root = build_wide(tmp)
-    bad = [rr(root, "parts", "1", "--max", v) for v in ("0", "-3", "x", "")]
-    missing = rr(root, "parts", "2", "--max", "3")
-    ok = (all(r.returncode == 1 for r in bad) and missing.returncode == 1
-          and "no manifest" in missing.stderr and not part_paths(root))
-    return "refused", "refused" if ok else f"bad={[r.returncode for r in bad]} missing={missing.returncode}"
-
-
 def case_help_works(tmp: str) -> tuple[str, str]:
     res = subprocess.run(["bash", str(SCRIPT), "--help"], capture_output=True, text=True,
                          cwd=tempfile.gettempdir())
@@ -390,11 +319,6 @@ CASES = [
     ("seal refuses a moved tree", case_seal_refuses_a_moved_tree),
     ("check after the seal names the fixes as yours", case_check_after_the_seal_names_the_fixes_as_yours),
     ("a second seal is refused", case_a_second_seal_is_refused),
-    ("parts cover every file once", case_parts_cover_every_file_once),
-    ("a directory that fits is not cut", case_a_directory_that_fits_is_not_cut),
-    ("a small round is not split", case_a_small_round_is_not_split),
-    ("a second split is refused", case_a_second_split_is_refused),
-    ("parts reject bad input", case_parts_reject_bad_input),
     ("--help works", case_help_works),
 ]
 

@@ -50,16 +50,6 @@ COMMANDS
                      This is the checklist a review track must account for: every path here
                      ends its report either reviewed or explicitly skipped. Readable from any
                      working copy — it reads the recorded snapshot and compares nothing.
-  parts <N> --max <k>
-                     Split round <N>'s checklist into parts of at most <k> files and write
-                     each as round-<N>.part-<letter>.files, in the same shape as
-                     round-<N>.files. Files stay with their directory: a directory that
-                     fits is never cut, a larger one is split by its subdirectories and
-                     then by sorted name, so a test next to its code lands in its part.
-                     Neighbouring directories are packed together up to <k>. Prints one
-                     line per part: "<letter><TAB><file count><TAB><part file>".
-                     Refuses a round with <k> files or fewer, and a round already split;
-                     nothing is written then. Reads the snapshot only, like `files`.
   delta <N>          List the files the fixes touched since round <N>, one per line as
                      "changed|added|gone<TAB>path". Empty output means nothing moved.
                      This is where defects introduced by the fixes themselves live.
@@ -84,7 +74,6 @@ LAYOUT
       round-1.stash   the stash list at that moment, so a stash by a track is visible
       round-1.where   the working copy and branch the round was opened in
       round-1.sealed  the moment the panel returned with the tree untouched ("seal")
-      round-1.part-a.files  one part of the checklist, for a split track ("parts")
       round-1.md      the report: verdict, tracks, track agent names, open items
       round-2.diff    ...
 
@@ -97,15 +86,13 @@ EXAMPLES
   read -r N DIR < <(review-round.sh open)   # claim round N
   review-round.sh path 1                    # .../round-1.md
   review-round.sh files 1                   # the checklist a track must close
-  review-round.sh parts 1 --max 25          # per-part checklists for a split track
   review-round.sh seal 1                    # last track back, before the first fix
   review-round.sh delta 1                   # what the fixes touched
 
 EXIT CODES
   0  success (for `check`: the tree is untouched, or the round is sealed)
   1  not a git repository, unknown command, a missing/invalid round number, a round
-     belonging to another working copy, a second `seal` on the same round, or a
-     `parts` call that is refused (bad <k>, round small enough, already split)
+     belonging to another working copy, or a second `seal` on the same round
   2  `check` and `seal`: a track mutated the shared working tree or the stash list
 EOF
 }
@@ -394,65 +381,6 @@ PY
     awk -F'\t' 'NF == 0 { next }
                 $1 == "deleted" { print "deleted\t" $2; next }
                 { print "present\t" $2 }' "$manifest"
-    ;;
-  parts)
-    # A track handed the whole checklist of a large change reads part of it and reports
-    # the rest as skipped. Each part here is a checklist one agent can close.
-    n="$(require_round "${2:-}")"
-    [[ "${3:-}" == "--max" ]] || die "parts needs --max <k>, the most files one part may hold. Nothing was written."
-    max="${4:-}"
-    [[ "$max" =~ ^[0-9]+$ ]] && ((max >= 1)) || die "parts --max must be a positive integer — got '${max}'. Nothing was written."
-    dir="$(round_dir)"
-    manifest="$dir/round-$n.files"
-    [[ -f "$manifest" ]] || die "no manifest for round $n at $manifest — that round was not opened through this script."
-    for f in "$dir/round-$n.part-"*.files; do
-      [[ -e "$f" ]] || continue
-      die "round $n is already split ($f). Nothing was written."
-    done
-    total="$(grep -c . "$manifest" || true)"
-    ((total > max)) || die "round $n has $total file(s), not more than --max $max: one track reads all of it, no split. Nothing was written."
-    python3 -I - "$manifest" "$max" "$dir/round-$n" <<'PY'
-import string, sys
-
-manifest, limit, prefix = sys.argv[1], int(sys.argv[2]), sys.argv[3]
-rows = [line.rstrip("\n") for line in open(manifest, encoding="utf-8") if line.strip()]
-rows.sort(key=lambda row: row.split("\t", 1)[1])
-
-
-def units(rows, depth):
-    # A directory that fits is one unit; a larger one yields its own files (cut by
-    # sorted name) and then each subdirectory, recursively.
-    if len(rows) <= limit:
-        return [rows]
-    here, below = [], {}
-    for row in rows:
-        segments = row.split("\t", 1)[1].split("/")
-        if len(segments) - 1 > depth:
-            below.setdefault(segments[depth], []).append(row)
-        else:
-            here.append(row)
-    out = [here[i:i + limit] for i in range(0, len(here), limit)]
-    for name in sorted(below):
-        out.extend(units(below[name], depth + 1))
-    return out
-
-
-parts = []
-for unit in units(rows, 0):
-    if parts and len(parts[-1]) + len(unit) <= limit:
-        parts[-1].extend(unit)
-    else:
-        parts.append(list(unit))
-if len(parts) > len(string.ascii_lowercase):
-    sys.exit(f"{len(parts)} parts of at most {limit} files exceed the {len(string.ascii_lowercase)} letters a part is named by; raise --max. Nothing was written.")
-written = []
-for letter, part in zip(string.ascii_lowercase, parts):
-    path = f"{prefix}.part-{letter}.files"
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write("".join(row + "\n" for row in part))
-    written.append(f"{letter}\t{len(part)}\t{path}")
-print("\n".join(written))
-PY
     ;;
   delta)
     n="$(require_round "${2:-}")"

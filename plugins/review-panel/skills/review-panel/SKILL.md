@@ -167,28 +167,19 @@ file, so the prompt names the checklist path and the count, and does not restate
 `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" files $N` prints the same list with a
 `present`/`deleted` tag instead of the hash; that form is for you, in step 3.
 
-**A checklist longer than 25 files splits `correctness` and `adversary`.** Right after `open`,
-run `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" parts $N --max 25`: it writes
-`$DIR/round-$N.part-<letter>.files`, each in the shape of `round-$N.files`, and prints one line
-per part with its letter, file count and path. Spawn `correctness` and `adversary` once per
-part, each prompt naming its part file as the checklist and that file's count as `<total>`;
-the prompt also states the part's letter and that the other parts belong to other agents of
-the same track. Every other track runs once over the full `round-$N.files`. Name the number of
-parts and the resulting agent count in the step 2 question, next to the track list.
-
-Each prompt carries a **turn budget**: the length of that track's checklist plus 10 tool calls,
-and never fewer than 20. A split track counts its part file; every other track counts the full
-checklist. Tell each track it is reviewing a diff, not surveying the repository — read what the
-finding turns on and stop, and spend the budget on closing every file of the checklist.
+Each prompt carries a **turn budget**: the length of the checklist plus 10 tool calls, never
+fewer than 20; for `correctness` and `adversary`, twice the length of the checklist plus 10,
+never fewer than 30. Every track reviews the full checklist. Tell each track it is reviewing a
+diff, not surveying the repository — read what the finding turns on and stop, and spend the
+budget on closing every file of the checklist.
 
 ## 3. Save the reports, assert the tree is untouched, check the findings, write the report
 
 **Save each track's report when its completion notification arrives.** Tracks write no files;
 the notification names the track's output file. Run
 `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" save $N <track> <output file>` (`<track>` is the
-key from the table above, and `<track>-<letter>` for one part of a split track, e.g.
-`correctness-b`): it copies the track's final message verbatim to `$DIR/round-$N-<track>.md`
-and prints that path. Record the path per track in the round file's
+key from the table above): it copies the track's final message verbatim to
+`$DIR/round-$N-<track>.md` and prints that path. Record the path per track in the round file's
 `## Tracks` table, and refer to findings by that path from then on.
 
 **Change nothing in the working copy while any track is still running** — not a fix, not a
@@ -221,13 +212,11 @@ reports as confidently as one that reviewed all fourteen; the counts are the onl
 difference shows.
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" files $N | wc -l   # <total> every unsplit track was given
-wc -l < "$DIR/round-$N.part-<letter>.files"                       # <total> of one part of a split track
+"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" files $N | wc -l   # <total> every track was given
 ```
 
-Read each report's closing `reviewed: <n>/<total>` line and its `skipped:` lines, against the
-checklist that report was given. A split track is complete only when every one of its parts
-is. Three outcomes:
+Read each report's closing `reviewed: <n>/<total>` line and its `skipped:` lines. Three
+outcomes:
 
 - **`<n>` plus the skipped lines equals `<total>`, and each skip names what the file holds** —
   the track is complete; carry its numbers into the round file.
@@ -264,15 +253,14 @@ Branch: <branch>   Tracks: correctness, tests, …
 Spec: <path the spec track read | no spec available>
 
 ## Tracks
-| track | part | agent id | report |    # the identifier each spawn returned — how round N+1 reaches it
-| correctness | b | <id> | round-<N>-correctness-b.md |   # part "—" for a track that ran over the whole checklist
-| tests | — | <id> | round-<N>-tests.md |
+| track | agent id | report |    # the identifier each spawn returned — how round N+1 reaches it
+| correctness | <id> | round-<N>-correctness.md |
 
-## Coverage                      # files on the checklist: <total>; parts: <letter>=<count>, …
-| track | part | reviewed | skipped, and why |
-| correctness | b | 24/24 | — |
-| tests | — | 11/14 | src/ui/*.tsx — presentation only, no test surface |
-| comments | — | 9/14 | 5 files unaccounted for — partial track |   # a gap it never closed
+## Coverage                      # files on the checklist: <total>
+| track | reviewed | skipped, and why |
+| correctness | 14/14 | — |
+| tests | 11/14 | src/ui/*.tsx — presentation only, no test surface |
+| comments | 9/14 | 5 files unaccounted for — partial track |   # a gap it never closed
 
 ## Open items
 Count: <N>                       # must-fix + important only; what the next round must answer
@@ -302,9 +290,7 @@ heard one side; and a fix can introduce a defect of its own. So run another roun
 **Open it first**, over the same scope as round 1 —
 `read -r N DIR < <("${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" open --scope <the scope from the top>)`
 — then reach each track that owns an open item **with `SendMessage`, using the id from round N−1's
-`## Tracks` table** — for a split track, the agent of the part that raised the item. Re-review
-rounds run over the delta and are not split: when the parts of a split track own no open item,
-none of them is reached. A send resumes that agent from its transcript, so the track still holds its
+`## Tracks` table**. A send resumes that agent from its transcript, so the track still holds its
 own findings and the reasoning behind them; you are continuing a conversation, not briefing a
 stranger. Say to each:
 

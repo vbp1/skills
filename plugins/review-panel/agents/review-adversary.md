@@ -79,8 +79,6 @@ not review, then the count:
   it. "Not relevant" alone does not close a file. A deleted path closes as reviewed once you have
   read what the diff removes. Review the files first and count afterwards: the block reports
   coverage, it does not authorise skipping to reach a number.
-- The checklist may be one part of a larger change, split between several agents of your track.
-  Review the files of your checklist; read files outside it only to follow a finding.
 
 ## Working constraints
 
