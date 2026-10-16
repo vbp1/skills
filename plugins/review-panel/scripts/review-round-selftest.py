@@ -17,6 +17,7 @@ EXIT CODES
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import sys
@@ -111,6 +112,75 @@ def case_a_touched_file_shows_up_in_the_delta(tmp: str) -> tuple[str, str]:
         "named once, check fails" if ok else f"delta={delta!r} rc={check.returncode}")
 
 
+def case_a_round_of_another_copy_is_refused(tmp: str) -> tuple[str, str]:
+    """Две копии на одном имени ветки делят каталог раундов. Раунд, открытый в
+    одной, в другой не сверяется: скрипт называет обе и не сравнивает ничего."""
+    root = build(tmp)
+    first = Path(tmp) / "wt-one"
+    second = Path(tmp) / "wt-two"
+    git(root, "worktree", "add", "-q", "--detach", str(first))
+    git(root, "worktree", "add", "-q", "--detach", str(second))
+    (first / "README.md").write_text("работа первой копии\n", encoding="utf-8")
+    rr(first, "open")
+    res = rr(second, "check", "1")
+    named = str(first) in res.stderr and str(second) in res.stderr
+    ok = res.returncode == 1 and named and not res.stdout.strip()
+    return "refused, both named", (
+        "refused, both named" if ok else f"rc={res.returncode} err={res.stderr.strip()[:100]!r}")
+
+
+def case_the_copy_can_be_named_explicitly(tmp: str) -> tuple[str, str]:
+    """`-C` указывает копию, когда каталог вызывающего уехал."""
+    root = build(tmp)
+    work = Path(tmp) / "wt-one"
+    git(root, "worktree", "add", "-q", "--detach", str(work))
+    (work / "README.md").write_text("работа копии\n", encoding="utf-8")
+    rr(work, "open")
+    elsewhere = Path(tmp)
+    res = rr(elsewhere, "-C", str(work), "check", "1")
+    ok = res.returncode == 0
+    return "checked in the named copy", (
+        "checked in the named copy" if ok else f"rc={res.returncode} err={res.stderr.strip()[:100]!r}")
+
+
+def case_a_missing_copy_is_an_error(tmp: str) -> tuple[str, str]:
+    root = build(tmp)
+    res = rr(root, "-C", str(Path(tmp) / "нет-такого"), "check", "1")
+    ok = res.returncode == 1 and "no such directory" in res.stderr
+    return "refused", "refused" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r}"
+
+
+def case_the_round_records_where_it_was_opened(tmp: str) -> tuple[str, str]:
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    number, directory = opened(rr(root, "open"))
+    where = Path(directory, f"round-{number}.where").read_text(encoding="utf-8").splitlines()
+    ok = where == [str(root.resolve()), "main"]
+    return "copy and branch", "copy and branch" if ok else f"where={where}"
+
+
+def case_open_says_where_it_opened(tmp: str) -> tuple[str, str]:
+    """`open` и `check` печатают копию и ветку: расхождение видно сразу, без
+    разбирательства."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    said_open = rr(root, "open").stderr
+    said_check = rr(root, "check", "1").stderr
+    ok = str(root.resolve()) in said_open and "on main" in said_open \
+        and str(root.resolve()) in said_check
+    return "both name the copy", (
+        "both name the copy" if ok else f"open={said_open.strip()[:60]!r} check={said_check.strip()[:60]!r}")
+
+
+def case_the_next_round_takes_the_next_number(tmp: str) -> tuple[str, str]:
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    first, _ = opened(rr(root, "open"))
+    second, _ = opened(rr(root, "open"))
+    ok = (first, second) == ("1", "2")
+    return "1 then 2", "1 then 2" if ok else f"{first} then {second}"
+
+
 def case_an_unusable_scope_claims_nothing(tmp: str) -> tuple[str, str]:
     root = build(tmp)
     res = rr(root, "open", "--scope", "нет-такой-ветки")
@@ -139,6 +209,19 @@ def case_files_lists_the_checklist(tmp: str) -> tuple[str, str]:
         "every file, with its state" if ok else f"got={listed}")
 
 
+def case_files_reads_from_another_copy(tmp: str) -> tuple[str, str]:
+    """Чеклист читается из чужой рабочей копии: он ни с чем не сравнивает,
+    в отличие от `delta` и `check`."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    rr(root, "open")
+    elsewhere = Path(tmp) / "elsewhere"
+    elsewhere.mkdir()
+    res = rr(elsewhere, "-C", str(root), "files", "1")
+    ok = res.returncode == 0 and res.stdout.strip() == "present\tREADME.md"
+    return "listed", "listed" if ok else f"rc={res.returncode} out={res.stdout.strip()[:80]!r}"
+
+
 def case_files_of_an_unopened_round_is_an_error(tmp: str) -> tuple[str, str]:
     """Раунда нет — команда падает, а не отдаёт пустой чеклист, который читается
     как «проверять нечего»."""
@@ -146,6 +229,69 @@ def case_files_of_an_unopened_round_is_an_error(tmp: str) -> tuple[str, str]:
     res = rr(root, "files", "1")
     ok = res.returncode == 1 and "no manifest" in res.stderr
     return "refused", "refused" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r}"
+
+
+def case_a_clean_round_seals(tmp: str) -> tuple[str, str]:
+    """Дорожки вернулись, дерево не тронуто — `seal` записывает момент и называет
+    его. С этой отметки правки считаются работой ведущего."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    number, directory = opened(rr(root, "open"))
+    res = rr(root / "apps", "seal", number)
+    stamp = Path(directory, f"round-{number}.sealed")
+    recorded = stamp.read_text(encoding="utf-8").splitlines() if stamp.is_file() else []
+    ok = res.returncode == 0 and not res.stdout.strip() \
+        and len(recorded) == 2 and recorded[0].endswith("Z") \
+        and recorded[1] == str(root.resolve()) and "sealed at" in res.stderr
+    return "sealed and recorded", (
+        "sealed and recorded" if ok else f"rc={res.returncode} recorded={recorded} err={res.stderr.strip()[:80]!r}")
+
+
+def case_seal_refuses_a_moved_tree(tmp: str) -> tuple[str, str]:
+    """Что-то изменилось, пока шла панель, — момент не записывается: иначе отметка
+    накрыла бы чужую запись в общее дерево."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    number, directory = opened(rr(root, "open"))
+    (root / "README.md").write_text("ещё правка\n", encoding="utf-8")
+    res = rr(root / "apps", "seal", number)
+    sealed = Path(directory, f"round-{number}.sealed").is_file()
+    ok = res.returncode == 2 and res.stdout.strip() == "TREE changed\tREADME.md" \
+        and not sealed and "Nothing was sealed" in res.stderr
+    return "refused, nothing recorded", (
+        "refused, nothing recorded" if ok
+        else f"rc={res.returncode} out={res.stdout.strip()[:60]!r} sealed={sealed}")
+
+
+def case_check_after_the_seal_names_the_fixes_as_yours(tmp: str) -> tuple[str, str]:
+    """После отметки правки ведущего перестают читаться как запись дорожки:
+    `check` называет их числом и выходит с нулём."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    number, _ = opened(rr(root, "open"))
+    rr(root, "seal", number)
+    (root / "README.md").write_text("правка по находке\n", encoding="utf-8")
+    res = rr(root / "apps", "check", number)
+    ok = res.returncode == 0 and not res.stdout.strip() \
+        and "was sealed at" in res.stderr and "1 change(s)" in res.stderr
+    return "own fixes, exit 0", (
+        "own fixes, exit 0" if ok else f"rc={res.returncode} out={res.stdout.strip()[:60]!r} err={res.stderr.strip()[:110]!r}")
+
+
+def case_a_second_seal_is_refused(tmp: str) -> tuple[str, str]:
+    """Вторая отметка сдвинула бы границу за уже сделанные правки, поэтому раунд
+    с отметкой её не принимает, а записанный момент остаётся прежним."""
+    root = build(tmp)
+    (root / "README.md").write_text("правка\n", encoding="utf-8")
+    number, directory = opened(rr(root, "open"))
+    rr(root, "seal", number)
+    first = Path(directory, f"round-{number}.sealed").read_text(encoding="utf-8")
+    (root / "README.md").write_text("правка по находке\n", encoding="utf-8")
+    res = rr(root, "seal", number)
+    kept = Path(directory, f"round-{number}.sealed").read_text(encoding="utf-8")
+    ok = res.returncode == 1 and "already sealed" in res.stderr and kept == first
+    return "refused, moment kept", (
+        "refused, moment kept" if ok else f"rc={res.returncode} err={res.stderr.strip()[:80]!r} kept={kept == first}")
 
 
 def build_wide(tmp: str) -> Path:
@@ -222,7 +368,7 @@ def case_parts_reject_bad_input(tmp: str) -> tuple[str, str]:
 def case_help_works(tmp: str) -> tuple[str, str]:
     res = subprocess.run(["bash", str(SCRIPT), "--help"], capture_output=True, text=True,
                          cwd=tempfile.gettempdir())
-    ok = res.returncode == 0 and "USAGE" in res.stdout and "parts <N>" in res.stdout
+    ok = res.returncode == 0 and "USAGE" in res.stdout and "-C" in res.stdout
     return "printed", "printed" if ok else f"rc={res.returncode}"
 
 
@@ -230,9 +376,20 @@ CASES = [
     ("paths are the same from any directory", case_paths_are_the_same_from_any_directory),
     ("nothing moved right after opening", case_nothing_moved_right_after_opening),
     ("a touched file shows up in the delta", case_a_touched_file_shows_up_in_the_delta),
+    ("a round of another copy is refused", case_a_round_of_another_copy_is_refused),
+    ("the copy can be named explicitly", case_the_copy_can_be_named_explicitly),
+    ("a missing copy is an error", case_a_missing_copy_is_an_error),
+    ("the round records where it was opened", case_the_round_records_where_it_was_opened),
+    ("open and check say where they are", case_open_says_where_it_opened),
+    ("the next round takes the next number", case_the_next_round_takes_the_next_number),
     ("an unusable scope claims nothing", case_an_unusable_scope_claims_nothing),
     ("files lists the checklist", case_files_lists_the_checklist),
+    ("files reads from another copy", case_files_reads_from_another_copy),
     ("files of an unopened round is an error", case_files_of_an_unopened_round_is_an_error),
+    ("a clean round seals", case_a_clean_round_seals),
+    ("seal refuses a moved tree", case_seal_refuses_a_moved_tree),
+    ("check after the seal names the fixes as yours", case_check_after_the_seal_names_the_fixes_as_yours),
+    ("a second seal is refused", case_a_second_seal_is_refused),
     ("parts cover every file once", case_parts_cover_every_file_once),
     ("a directory that fits is not cut", case_a_directory_that_fits_is_not_cut),
     ("a small round is not split", case_a_small_round_is_not_split),

@@ -191,16 +191,30 @@ key from the table above, and `<track>-<letter>` for one part of a split track, 
 and prints that path. Record the path per track in the round file's
 `## Tracks` table, and refer to findings by that path from then on.
 
-The moment the last track returns:
+**Change nothing in the working copy while any track is still running** — not a fix, not a
+format pass, not a scratch file. The seal below compares the tree against the snapshot taken
+at `open`, so an edit made in the main loop mid-round reads as a track having mutated the tree.
+Wait for the last track, seal the round, then start fixing.
+
+Then, once every track is back and before the first fix:
 
 ```
-"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" check $N
+"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" seal $N
 ```
 
-It must exit 0 with no output. Any line means something mutated the shared tree or the stash list
-while a read-only panel was running — name it to the user as an incident and restore before
-continuing; do not fold it into the review. The tracks cannot cause this any more, but the check
-costs nothing and is the only thing that would catch it if that ever stops holding.
+It must exit 0 with no output — apart from the lines it prints to stderr naming the working
+copy and branch it sealed against, and the moment it recorded. Read them: they are what tells
+you the seal ran where the round was opened. Run from another copy, the script names both and
+compares nothing; pass `-C <the copy the round belongs to>` when your own directory has moved.
+
+Any line on stdout means something mutated the shared tree or the stash list while a read-only
+panel was running — nothing is sealed then; name it to the user as an incident and restore
+before continuing; do not fold it into the review. The seal is the check that catches a write
+if the read-only enforcement ever stops holding.
+
+The seal is the boundary between the panel and the fixes: past it, `check $N` reports the files
+the fixes touched and exits 0 instead of reading them as a track's writes. A round is sealed
+once — the moment stands where the panel ended.
 
 **Then check coverage, before the findings.** A track that reviewed four of fourteen files
 reports as confidently as one that reviewed all fourteen; the counts are the only place that
