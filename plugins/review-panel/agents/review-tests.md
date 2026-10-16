@@ -86,6 +86,24 @@ Report each gap at a level from the scale above: a bug fix landing without the r
 that would fail without it is `important`; an untested path that can lose or corrupt data or
 skip an access check is `critical`; the rest is `minor`.
 
+## Coverage
+
+Your prompt names a **checklist file** listing every path under review, one per line as
+`<content hash or the word deleted><TAB><path>`; `<total>` is its length. Close your report with
+the coverage block, and write nothing after it — one `skipped:` line per checklist file you did
+not review, then the count:
+
+    skipped: <path> — <what the file holds, and why your lens has nothing to ask of it>
+    reviewed: <n>/<total> files, <m> findings
+
+- **Close every file on the checklist.** Each path ends either reviewed or under a `skipped:`
+  line carrying a concrete reason — what the file holds, and why your lens has nothing to ask of
+  it. "Not relevant" alone does not close a file. A deleted path closes as reviewed once you have
+  read what the diff removes. Review the files first and count afterwards: the block reports
+  coverage, it does not authorise skipping to reach a number.
+- The checklist may be one part of a larger change, split between several agents of your track.
+  Review the files of your checklist; read files outside it only to follow a finding.
+
 ## Working constraints
 
 You are reviewing the **shared working tree of a live repository**, alongside other review

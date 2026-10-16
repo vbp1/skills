@@ -42,6 +42,20 @@ COMMANDS
                      report and a transcript with no final text; nothing is written then.
   path <N>           Print the path of round-<N>.md (whether or not it exists).
   diff <N>           Print the path of round-<N>.diff (whether or not it exists).
+  files <N>          List the files round <N> covers, one per line as "present|deleted<TAB>path".
+                     This is the checklist a review track must account for: every path here
+                     ends its report either reviewed or explicitly skipped. It reads the
+                     recorded snapshot and compares nothing.
+  parts <N> --max <k>
+                     Split round <N>'s checklist into parts of at most <k> files and write
+                     each as round-<N>.part-<letter>.files, in the same shape as
+                     round-<N>.files. Files stay with their directory: a directory that
+                     fits is never cut, a larger one is split by its subdirectories and
+                     then by sorted name, so a test next to its code lands in its part.
+                     Neighbouring directories are packed together up to <k>. Prints one
+                     line per part: "<letter><TAB><file count><TAB><part file>".
+                     Refuses a round with <k> files or fewer, and a round already split;
+                     nothing is written then. Reads the snapshot only, like `files`.
   delta <N>          List the files the fixes touched since round <N>, one per line as
                      "changed|added|gone<TAB>path". Empty output means nothing moved.
                      This is where defects introduced by the fixes themselves live.
@@ -55,6 +69,7 @@ LAYOUT
       round-1.diff    the diff as it stood when that round ran ("open" writes this)
       round-1.files   content hash per reviewed file, for computing the delta
       round-1.stash   the stash list at that moment, so a stash by a track is visible
+      round-1.part-a.files  one part of the checklist, for a split track ("parts")
       round-1.md      the report: verdict, tracks, track agent names, open items
       round-2.diff    ...
 
@@ -64,13 +79,16 @@ WHY THE SNAPSHOT
   the round can look at those directly instead of re-reading the whole change.
 
 EXAMPLES
-  read -r N DIR < <(./.claude/scripts/review-round.sh open)   # claim round N
-  ./.claude/scripts/review-round.sh path 1                    # .../round-1.md
-  ./.claude/scripts/review-round.sh delta 1                   # what the fixes touched
+  read -r N DIR < <(review-round.sh open)   # claim round N
+  review-round.sh path 1                    # .../round-1.md
+  review-round.sh files 1                   # the checklist a track must close
+  review-round.sh parts 1 --max 25          # per-part checklists for a split track
+  review-round.sh delta 1                   # what the fixes touched
 
 EXIT CODES
   0  success (for `check`: the tree is untouched)
-  1  not a git repository, unknown command, or a missing/invalid round number
+  1  not a git repository, unknown command, a missing/invalid round number, or a
+     `parts` call that is refused (bad <k>, round small enough, already split)
   2  `check` only: a track mutated the shared working tree or the stash list
 EOF
 }
@@ -84,6 +102,14 @@ main_repo_root() {
   local common
   common="$(git rev-parse --git-common-dir 2>/dev/null)" || die "not inside a git repository."
   (cd "$common/.." && pwd)
+}
+
+# Every listing below is taken from the root of the working copy, never from wherever
+# the caller happened to stand: `git diff --name-only` prints paths from the root while
+# `git ls-files --others` prints them from the current directory, so a run started in a
+# subdirectory would record a checklist path a track cannot open.
+worktree_root() {
+  git rev-parse --show-toplevel 2>/dev/null || die "not inside a git repository."
 }
 
 branch_slug() {
@@ -195,6 +221,14 @@ require_round() {
   echo "$n"
 }
 
+# `check` re-enters this script for `delta`, so it needs a path that still resolves
+# after the move to the root below.
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+case "${1:-}" in
+  -h | --help | help | '') ;;
+  *) cd "$(worktree_root)" ;;
+esac
+
 cmd="${1:-}"
 case "$cmd" in
   -h | --help | help | '')
@@ -275,6 +309,74 @@ PY
     n="$(require_round "${2:-}")"
     echo "$(round_dir)/round-$n.diff"
     ;;
+  files)
+    # The manifest as a checklist: no comparison against the current tree.
+    n="$(require_round "${2:-}")"
+    manifest="$(round_dir)/round-$n.files"
+    [[ -f "$manifest" ]] || die "no manifest for round $n at $manifest — that round was not opened through this script."
+    awk -F'\t' 'NF == 0 { next }
+                $1 == "deleted" { print "deleted\t" $2; next }
+                { print "present\t" $2 }' "$manifest"
+    ;;
+  parts)
+    # A track handed the whole checklist of a large change reads part of it and reports
+    # the rest as skipped. Each part here is a checklist one agent can close.
+    n="$(require_round "${2:-}")"
+    [[ "${3:-}" == "--max" ]] || die "parts needs --max <k>, the most files one part may hold. Nothing was written."
+    max="${4:-}"
+    [[ "$max" =~ ^[0-9]+$ ]] && ((max >= 1)) || die "parts --max must be a positive integer — got '${max}'. Nothing was written."
+    dir="$(round_dir)"
+    manifest="$dir/round-$n.files"
+    [[ -f "$manifest" ]] || die "no manifest for round $n at $manifest — that round was not opened through this script."
+    for f in "$dir/round-$n.part-"*.files; do
+      [[ -e "$f" ]] || continue
+      die "round $n is already split ($f). Nothing was written."
+    done
+    total="$(grep -c . "$manifest" || true)"
+    ((total > max)) || die "round $n has $total file(s), not more than --max $max: one track reads all of it, no split. Nothing was written."
+    python3 -I - "$manifest" "$max" "$dir/round-$n" <<'PY'
+import string, sys
+
+manifest, limit, prefix = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+rows = [line.rstrip("\n") for line in open(manifest, encoding="utf-8") if line.strip()]
+rows.sort(key=lambda row: row.split("\t", 1)[1])
+
+
+def units(rows, depth):
+    # A directory that fits is one unit; a larger one yields its own files (cut by
+    # sorted name) and then each subdirectory, recursively.
+    if len(rows) <= limit:
+        return [rows]
+    here, below = [], {}
+    for row in rows:
+        segments = row.split("\t", 1)[1].split("/")
+        if len(segments) - 1 > depth:
+            below.setdefault(segments[depth], []).append(row)
+        else:
+            here.append(row)
+    out = [here[i:i + limit] for i in range(0, len(here), limit)]
+    for name in sorted(below):
+        out.extend(units(below[name], depth + 1))
+    return out
+
+
+parts = []
+for unit in units(rows, 0):
+    if parts and len(parts[-1]) + len(unit) <= limit:
+        parts[-1].extend(unit)
+    else:
+        parts.append(list(unit))
+if len(parts) > len(string.ascii_lowercase):
+    sys.exit(f"{len(parts)} parts of at most {limit} files exceed the {len(string.ascii_lowercase)} letters a part is named by; raise --max. Nothing was written.")
+written = []
+for letter, part in zip(string.ascii_lowercase, parts):
+    path = f"{prefix}.part-{letter}.files"
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("".join(row + "\n" for row in part))
+    written.append(f"{letter}\t{len(part)}\t{path}")
+print("\n".join(written))
+PY
+    ;;
   delta)
     n="$(require_round "${2:-}")"
     manifest="$(round_dir)/round-$n.files"
@@ -300,7 +402,7 @@ PY
       [[ -n "$line" ]] || continue
       violations=$((violations + 1))
       echo "TREE $line"
-    done < <("$0" delta "$n")
+    done < <("$SELF" delta "$n")
     if [[ -f "$dir/round-$n.stash" ]]; then
       while IFS= read -r line; do
         [[ -n "$line" ]] || continue

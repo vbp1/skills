@@ -159,13 +159,36 @@ line/range in the source file as it stands after the change (never a line number
 file), severity (`critical`/`important`/`minor`) and a precise detail — no generic advice. The
 `spec` track's prompt also gives the absolute path of the spec from step 1c.
 
+It also gives the absolute path of `$DIR/round-$N.files` as the track's **checklist**, with its
+shape: one line per file, `<content hash or the word deleted><TAB>path`, so the paths are the
+second field (`cut -f2`). Every track closes its report with a coverage block naming `<total>`
+from that list and a `skipped:` line per file it did not review — the format sits in each agent
+file, so the prompt names the checklist path and the count, and does not restate the block.
+`"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" files $N` prints the same list with a
+`present`/`deleted` tag instead of the hash; that form is for you, in step 3.
+
+**A checklist longer than 25 files splits `correctness` and `adversary`.** Right after `open`,
+run `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" parts $N --max 25`: it writes
+`$DIR/round-$N.part-<letter>.files`, each in the shape of `round-$N.files`, and prints one line
+per part with its letter, file count and path. Spawn `correctness` and `adversary` once per
+part, each prompt naming its part file as the checklist and that file's count as `<total>`;
+the prompt also states the part's letter and that the other parts belong to other agents of
+the same track. Every other track runs once over the full `round-$N.files`. Name the number of
+parts and the resulting agent count in the step 2 question, next to the track list.
+
+Each prompt carries a **turn budget**: the length of that track's checklist plus 10 tool calls,
+and never fewer than 20. A split track counts its part file; every other track counts the full
+checklist. Tell each track it is reviewing a diff, not surveying the repository — read what the
+finding turns on and stop, and spend the budget on closing every file of the checklist.
+
 ## 3. Save the reports, assert the tree is untouched, check the findings, write the report
 
 **Save each track's report when its completion notification arrives.** Tracks write no files;
 the notification names the track's output file. Run
 `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" save $N <track> <output file>` (`<track>` is the
-key from the table above): it copies the track's final message verbatim to
-`$DIR/round-$N-<track>.md` and prints that path. Record the path per track in the round file's
+key from the table above, and `<track>-<letter>` for one part of a split track, e.g.
+`correctness-b`): it copies the track's final message verbatim to `$DIR/round-$N-<track>.md`
+and prints that path. Record the path per track in the round file's
 `## Tracks` table, and refer to findings by that path from then on.
 
 The moment the last track returns:
@@ -178,6 +201,32 @@ It must exit 0 with no output. Any line means something mutated the shared tree 
 while a read-only panel was running — name it to the user as an incident and restore before
 continuing; do not fold it into the review. The tracks cannot cause this any more, but the check
 costs nothing and is the only thing that would catch it if that ever stops holding.
+
+**Then check coverage, before the findings.** A track that reviewed four of fourteen files
+reports as confidently as one that reviewed all fourteen; the counts are the only place that
+difference shows.
+
+```
+"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" files $N | wc -l   # <total> every unsplit track was given
+wc -l < "$DIR/round-$N.part-<letter>.files"                       # <total> of one part of a split track
+```
+
+Read each report's closing `reviewed: <n>/<total>` line and its `skipped:` lines, against the
+checklist that report was given. A split track is complete only when every one of its parts
+is. Three outcomes:
+
+- **`<n>` plus the skipped lines equals `<total>`, and each skip names what the file holds** —
+  the track is complete; carry its numbers into the round file.
+- **The lines do not add up, or `<total>` disagrees with the list** — the track lost files
+  silently. Reach it with `SendMessage` (the id from its spawn), naming the paths it left
+  unaccounted for, and have it close each one. Do not fill the gap yourself.
+- **A skip reads as "not relevant to my lens" with nothing behind it** — send the path back
+  and ask what the file holds. A lens that genuinely has nothing to ask of a file can say so
+  in a clause; one that never opened the file cannot.
+
+A track that fails to close its checklist after that send is a partial track: name it in the
+round file's `## Coverage` table with what it missed, and treat its lens as not run over those
+files rather than folding the gap into a clean verdict.
 
 **You check the findings yourself, against the code.** A track's `critical` is the report's
 must-fix, and every one of them is settled in the main loop before it reaches the report: read
@@ -201,8 +250,15 @@ Branch: <branch>   Tracks: correctness, tests, …
 Spec: <path the spec track read | no spec available>
 
 ## Tracks
-| track | agent id | report |    # the identifier each spawn returned — how round N+1 reaches it
-| correctness | <id> | round-<N>-correctness.md |
+| track | part | agent id | report |    # the identifier each spawn returned — how round N+1 reaches it
+| correctness | b | <id> | round-<N>-correctness-b.md |   # part "—" for a track that ran over the whole checklist
+| tests | — | <id> | round-<N>-tests.md |
+
+## Coverage                      # files on the checklist: <total>; parts: <letter>=<count>, …
+| track | part | reviewed | skipped, and why |
+| correctness | b | 24/24 | — |
+| tests | — | 11/14 | src/ui/*.tsx — presentation only, no test surface |
+| comments | — | 9/14 | 5 files unaccounted for — partial track |   # a gap it never closed
 
 ## Open items
 Count: <N>                       # must-fix + important only; what the next round must answer
@@ -232,7 +288,9 @@ heard one side; and a fix can introduce a defect of its own. So run another roun
 **Open it first**, over the same scope as round 1 —
 `read -r N DIR < <("${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" open --scope <the scope from the top>)`
 — then reach each track that owns an open item **with `SendMessage`, using the id from round N−1's
-`## Tracks` table**. A send resumes that agent from its transcript, so the track still holds its
+`## Tracks` table** — for a split track, the agent of the part that raised the item. Re-review
+rounds run over the delta and are not split: when the parts of a split track own no open item,
+none of them is reached. A send resumes that agent from its transcript, so the track still holds its
 own findings and the reasoning behind them; you are continuing a conversation, not briefing a
 stranger. Say to each:
 
@@ -243,7 +301,10 @@ stranger. Say to each:
 - **what the fixes touched**: `"${CLAUDE_PLUGIN_ROOT}/scripts/review-round.sh" delta <N-1>` names
   every file that changed since, `changed`/`added`/`gone`. The `before` is `round-<N-1>.diff`. Tell
   the track to review those through its own lens — a fix is new code and nobody has reviewed it;
-- to **answer every item** and open no unrelated new ground unless a fix created it.
+- to **answer every item** and open no unrelated new ground unless a fix created it;
+- that its checklist for this round is the delta, not the full file list — a re-review closes
+  the files the fixes touched plus its own items, and its coverage block counts against that.
+  Round 1 is the round where a track accounts for every changed file.
 
 Also spawn **one broad-lens `Agent` over the delta alone** — no track lens, no prior items, just
 "here are the files the fixes touched, what breaks?". A fix in `correctness`'s area can break
@@ -262,8 +323,10 @@ Repeat until no must-fix or important finding survives. If a track answers your 
 evidence, the finding stands — fix it or take the disagreement to the user; do not reject it a
 second time on the same grounds.
 
-Then state the verdict explicitly, **naming which tracks ran** — a clean verdict from 2 tracks is
-not the same claim as one from the full panel. Name the spec the `spec` track checked against, or
+Then state the verdict explicitly, **naming which tracks ran and what round 1 covered** — a clean
+verdict from 2 tracks is not the same claim as one from the full panel, and neither is a verdict
+from a panel that reviewed nine files out of fourteen. Where the `## Coverage` table holds a
+partial track, say which files no lens reached. Name the spec the `spec` track checked against, or
 say "no spec available"; a `spec` report that opens with `SPEC NOT READABLE` reviewed nothing —
 report the track as not run. If `over-engineering` opened its report with
 `LENS NOT LOADED`, its preloaded lens is missing and it reviewed nothing: say so rather than

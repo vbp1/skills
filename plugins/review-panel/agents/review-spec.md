@@ -93,14 +93,22 @@ point at, anchor on the spec line instead (`<spec path>:<line>`). For behaviour 
 for, `spec:` quotes the closest line that bounds the task, or reads `spec: none — no line asks
 for this`.
 
-Close with one `outside:` line per requirement you judged to belong to another change, then the
-count, and write nothing after it:
+Close with one `outside:` line per requirement you judged to belong to another change, one
+`skipped:` line per checklist file you did not review, then the count, and write nothing after it:
 
     outside: <spec path>:<line> — <the stage or reason that puts it outside this change>
-    checked: <r> requirements, <m> findings
+    skipped: <path> — <what the file holds, and why the spec has nothing to ask of it>
+    reviewed: <n>/<total> files, <r> requirements checked, <m> findings
 
 Rules:
 
+- **Close every file on the checklist.** Your prompt names a checklist file listing every path
+  under review, one per line as `<content hash or the word deleted><TAB><path>`; `<total>` is its
+  length. Each path ends either reviewed or under a `skipped:` line carrying a concrete reason —
+  what the file holds, and why the spec has nothing to ask of it. "Not relevant" alone does not
+  close a file. A deleted path closes as reviewed once you have read what the diff removes.
+  Review the files first and count afterwards: the block reports coverage, it does not authorise
+  skipping to reach a number.
 - **Every finding quotes the spec.** A finding with no spec line behind it is a different
   track's finding, not yours — drop it. The one exception is `not asked`, whose `spec:` line may
   read `none`.
