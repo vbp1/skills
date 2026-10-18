@@ -87,7 +87,7 @@ and pages are working material, not deliverables.
 **Every document derived from the task lives in `todos/NNN-slug/`** — the task
 directory, named after the task file without `.md`. Create it at step 1, next to
 the task file. It holds the reviewer plan file (`plan.md`, step 4), the pre-mortem
-report, the samples the scenario premortem gathers, and any other artifact a step
+reports (`premortem-plan.md`, then `premortem-plan.rN.md` per re-check round), the samples the scenario premortem gathers, and any other artifact a step
 produces for this task. `todos/` itself carries only `NNN-slug.md` files and the
 task directories. HTML pages stay in `todos/pages/`.
 
@@ -322,11 +322,16 @@ approval → `step: 3`.
   **`technical-premortem`** with the absolute path of `todos/NNN-slug/plan.md` as
   the plan — never the task file — plus the repo root and the decisions taken in
   the dialogue but absent from that file. Keep its report beside the plan file as
-  `todos/NNN-slug/premortem-plan.md`. Fold the risks and the pre-flight checklist into
-  `## Solution and plan`; carry the checklist into step 5 as entry conditions. A
-  blocking risk without a mitigation holds the gate — revise the plan and re-run, or
-  get the user's explicit decision to proceed. Record the verdict and the
-  run-or-skip decision in `## Journal`.
+  `todos/NNN-slug/premortem-plan.md`. After each report, fold its risks into
+  `## Solution and plan`, close every risk it raised with a `### Closed findings`
+  line (`round N · premortem · …`), regenerate `plan.md`, and hand the revised plan
+  back to the skill's re-check loop. The loop runs until a `GO` verdict, keeps
+  `todos/NNN-slug/premortem-plan.rN.md` per round, and asks the user after the
+  third round without `GO`. Carry the pre-flight checklist of the last round into
+  step 5 as entry conditions. A blocking risk without a mitigation holds the gate
+  unless the user accepted it in that question. Record the run-or-skip decision,
+  each round's verdict, and the user's decision after the third round in
+  `## Journal`.
 - When the cross-agent reviewer has a usage limit and a way to read what is left
   of it without spending any (for Codex: `codex app-server`, request
   `account/rateLimits/read`, or a wrapper such as a `codex-quota` utility), read it
@@ -710,8 +715,9 @@ keep one copy, or every commit asks twice.
   at `live_ui` and reconciles the mockup against it.
 - `grill-me` — adversarial questioning to harden the plan.
 - `technical-premortem` — risk pre-mortem of the plan (step 4, on the user's yes).
-  Fed `todos/NNN-slug/plan.md`, never the task file. Report →
-  `todos/NNN-slug/premortem-plan.md`.
+  Fed `todos/NNN-slug/plan.md`, never the task file. Re-checks the revised plan
+  with the same agent until `GO`. Reports → `todos/NNN-slug/premortem-plan.md`,
+  then `todos/NNN-slug/premortem-plan.rN.md`.
 - `review-panel` — the parallel review panel (step 6). Read-only tracks,
   critical-only verify, round file, re-review rounds. Do not invoke its underlying
   reviewer agents directly — the panel owns them.
