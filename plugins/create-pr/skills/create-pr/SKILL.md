@@ -2,14 +2,15 @@
 name: create-pr
 description: |
   Full PR workflow: create branch, commit, push, create PR, assign labels, add to GitHub Project with Status/Priority/Size.
-  Auto-derives labels from the conventional-commit type and Size from diff LOC; asks the user only when context is ambiguous.
+  Sets every field on its own: labels from the commit type and the linked task card, Priority from the card's
+  project field or its own assessment, Size from diff LOC; asks only when no rule yields an answer.
   Triggers: "/create-pr", "create PR", "make PR", "open pull request", "ship PR",
   "отведи ветку", "создай PR", "отправь PR".
 ---
 
 # Create PR Workflow
 
-Full-cycle PR creation: branch, commit, push, PR, labels, GitHub Project fields. The skill is biased toward acting on its own — it only asks the user when it cannot derive a safe answer from the context.
+Full-cycle PR creation: branch, commit, push, PR, labels, GitHub Project fields. The skill decides labels and every project field on its own and reports where each value came from. It asks the user only in the cases each step lists explicitly.
 
 ## Script Location
 
@@ -54,18 +55,50 @@ git push -u origin <branch-name>
 Create PR with `gh pr create`. Draft a concise title (<70 chars) and body with Summary + Test plan sections.
 Capture the PR URL and PR number from output.
 
-Also resolve the default branch once (used by Step 6 size calculation):
+Also resolve the default branch once (used by Step 7 size calculation):
 ```bash
 default_branch=$(git symbolic-ref --short refs/remotes/origin/HEAD) \
   || { echo "origin/HEAD is not set; run: git remote set-head origin --auto" >&2; exit 1; }
 default_branch=${default_branch#origin/}
 ```
 
-### Step 5: Auto-apply labels
+### Step 5: Collect the task card
 
-Goal: don't ask the user when the conventional-commit type maps unambiguously to an existing repo label.
+The task card is the issue (or issues) the PR implements, plus the local card file when the repo keeps one.
 
-**5a.** Take the HEAD commit subject (the same one used for the PR title) and detect its conventional-commit type with `type[scope]:` regex. The mapping below is the single source of truth — extend only with user permission.
+**5a.** Issues the PR closes:
+```bash
+gh pr view <number> --json closingIssuesReferences -q '[.closingIssuesReferences[].number]'
+```
+
+**5b.** Local card file: when the repo root has a `todos/` directory, find the `*.md` whose frontmatter line is `branch: <branch-name>`:
+```bash
+grep -lE "^branch: <branch-name>$" todos/*.md
+```
+Read the file. Add its `github_issue` number to the issue list from 5a. Note its `depends_on`/`blocked_by` lines and whether other cards list this card's `id` in their `depends_on`.
+
+**5c. Find the project:**
+```bash
+bash <scripts>/gh-project.sh list-projects
+```
+If exactly one project, use it without asking. If multiple, ask user which one via `AskUserQuestion`.
+
+**5d.** Read every issue from 5a–5b:
+```bash
+bash <scripts>/gh-project.sh issue-cards <project-number> <issue-number>...
+```
+Each output line is JSON: `number`, `title`, `body`, `labels`, `fields` (the issue's single-select values in that project, e.g. `{"Priority": "High"}`).
+
+No issue and no card file → the card is empty; Steps 6 and 7 work from the commits, PR title and diff.
+
+### Step 6: Labels (always automatic)
+
+**6a.** Pick the PR type:
+- the PR title has a conventional-commit prefix → its type (the title covers the whole PR, so it decides when commits mix `feat:` + `fix:`);
+- no prefix → the type label on the card's issues (`type: bug` → `fix`, `type: feature` → `feat`, …);
+- neither → judge from the diff: new behaviour → `feat`, a corrected defect → `fix`, only docs → `docs`, only tests → `test`, restructuring without behaviour change → `refactor`.
+
+**6b.** Map the type to labels. The mapping below is the single source of truth — extend only with user permission.
 
 | Commit prefix | Label(s) to apply |
 | --- | --- |
@@ -77,52 +110,34 @@ Goal: don't ask the user when the conventional-commit type maps unambiguously to
 | `test:` | `type: test` |
 | `revert:` | `type: bug` |
 
-If the head commit has no conventional prefix OR the PR spans commits of multiple distinct types (e.g. `feat:` + `fix:`), treat it as ambiguous and ask.
+**6c.** Add the card issues' labels except workflow-state labels (`agent: …`, `planned`, `pause`, `not sure`, `duplicate` and the like) and type labels that contradict 6a.
 
-**5b.** Fetch the repo's actual labels:
+**6d.** Fetch the repo's labels and match each wanted label case-insensitively:
 ```bash
 bash <scripts>/gh-project.sh list-labels
 ```
+A wanted label missing from the repo → take the existing label with the same meaning (`documentation` for `type: docs`, `bug` for `type: bug`). No label with that meaning → skip it and name it in the report. Never create labels.
 
-For each mapped label from 5a, check whether it appears in the list (case-insensitive exact match). Build two sets:
-- `to_apply` — mapped labels that exist in the repo
-- `missing` — mapped labels that do NOT exist in the repo
-
-**5c.** Apply labels without asking when there is no ambiguity:
+**6e.** Apply:
 ```bash
 gh pr edit <number> --add-label "label1" --add-label "label2"
 ```
 
-**5d.** Ask the user only in these cases (single `AskUserQuestion` call, `multiSelect: true`):
-- The head commit has no conventional prefix.
-- The PR mixes multiple types (`feat:` + `fix:` + …).
-- The mapping yielded labels that don't exist in the repo (`missing` non-empty) — present the repo's label list (up to 4 most likely matches) and let the user pick.
+### Step 7: GitHub Project fields
 
-When asking, list the repo's available labels in the message so the user can pick via "Other" if the 4 suggestions don't fit.
-
-**5e.** Briefly print which labels were applied (`✓ type: bug, dependencies`) and which path was used (auto vs. asked). Do NOT show this as a separate question — it's part of the final report in Step 7.
-
-### Step 6: GitHub Project fields
-
-**6a. Find the project:**
-```bash
-bash <scripts>/gh-project.sh list-projects
-```
-If exactly one project, use it without asking. If multiple, ask user which one via `AskUserQuestion`.
-
-**6b. Add PR to project and get item ID:**
+**7a. Add PR to project and get item ID** (project from 5c):
 ```bash
 bash <scripts>/gh-project.sh add-item <project-number> <pr-url>
 ```
 
-**6c. Get project fields:**
+**7b. Get project fields:**
 ```bash
 bash <scripts>/gh-project.sh get-fields <project-number>
 ```
 
 Parse the JSON to find `Status`, `Priority`, `Size` fields and their options.
 
-**6d. Decide Status (auto when possible):**
+**7c. Decide Status (auto when possible):**
 
 Pick the first matching option (case-insensitive, exact name) in this order:
 1. `In review`
@@ -132,7 +147,7 @@ Pick the first matching option (case-insensitive, exact name) in this order:
 
 Apply silently. Only ask if none of the four candidates exist in the project's Status options.
 
-**6e. Decide Size (auto from LOC):**
+**7d. Decide Size (auto from LOC):**
 
 Compute changed lines relative to the default branch:
 ```bash
@@ -161,35 +176,44 @@ Bucket by LOC:
 
 Find the project's Size option whose name matches the bucket (case-insensitive, exact match or starts-with — e.g. project may use `XS`, `S - Small`, etc.). Apply silently. Only ask if no project option matches the computed bucket.
 
-**6f. Ask Priority (always):**
+**7e. Decide Priority (card first, then own assessment):**
 
-Priority is a business call; never auto-fill. Present up to 4 options (`Critical`, `High`, `Medium`, `Low` typically fits) via `AskUserQuestion`. If the project's Priority field has more than 4 options, present the 4 most common.
+1. A card issue has `Priority` in `fields` → use it. Several issues with different values → the highest.
+2. Otherwise assess from the card text, its issue labels and the diff; the first matching row wins:
 
-**6g. Set fields:**
+| Priority | When |
+| --- | --- |
+| Critical | outage, data loss or corruption, security hole, broken default branch, hotfix |
+| High | defect a user sees, regression, a fix for a broken release; or other cards `depends_on` this one / it unblocks `blocked_by` cards |
+| Low | only docs, tests, refactoring, cleanup, style, or a dependency bump without a security fix |
+| Medium | everything else: a regular feature or improvement |
+
+3. Map the level to the project's Priority option by name (case-insensitive, exact or starts-with: `High`, `P1 - High`).
+4. Ask via `AskUserQuestion` only when the project's Priority options do not correspond to the four levels (e.g. a custom scale) and no card issue carries a value. Put the recommended option first.
+
+**7f. Set fields:**
 For each field (Status, Size, Priority), extract the project ID, item ID, field ID, and option ID, then:
 ```bash
 bash <scripts>/gh-project.sh set-field <project-id> <item-id> <field-id> <option-id>
 ```
 
-### Step 7: Report
+### Step 8: Report
 
 Output a single short summary:
 
 - PR URL
-- Labels (applied + how: `auto` or `asked`)
+- Labels: each applied label with its source (`commit type`, `card #<n>`, `nearest repo label for <wanted>`); skipped labels with the reason
 - Project fields:
   - Status: `<value>` (auto / asked)
   - Size: `<bucket>` from `<LOC>` LOC (auto / asked)
-  - Priority: `<value>` (asked)
+  - Priority: `<value>` with its source — `card #<n>` or `assessed: <one-line reason>` (or `asked` with the reason)
 
 Example:
 ```
 ✓ PR opened: https://github.com/.../pull/123
-✓ Labels (auto): type: feature
+✓ Labels: type: feature (commit type), dependencies (card #879)
 ✓ Project "myorg/myrepo":
   · Status: In review (auto)
   · Size: M (auto, 247 LOC)
-  · Priority: Medium (asked)
+  · Priority: High (assessed: other cards depend on #879)
 ```
-
-If anything fell back to "asked" because of ambiguity, mention the reason in one line so the user sees why the skill didn't auto-resolve it.

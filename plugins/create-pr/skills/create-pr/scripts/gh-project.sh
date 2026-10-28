@@ -6,6 +6,8 @@
 #   gh-project.sh find-item <project-number> <pr-url> — find item ID for a PR in project
 #   gh-project.sh add-item <project-number> <pr-url> — add PR to project, print item ID
 #   gh-project.sh set-field <project-id> <item-id> <field-id> <option-id> — set single-select field
+#   gh-project.sh list-labels                — list repo label names, one per line
+#   gh-project.sh issue-cards <project-number> <issue-number>... — issue text, labels and project fields (JSON lines)
 
 set -euo pipefail
 
@@ -73,9 +75,50 @@ print('')
     gh label list --limit 100 --json name -q '.[].name' | sort
     ;;
 
+  issue-cards)
+    project_number="${1:?project number required}"
+    shift
+    if [[ $# -eq 0 ]]; then
+      echo "issue-cards: at least one issue number required" >&2
+      exit 1
+    fi
+    repo=$(gh repo view --json owner,name -q '.owner.login + "/" + .name')
+    for n in "$@"; do
+      if [[ ! "$n" =~ ^[0-9]+$ ]]; then
+        echo "issue-cards: '$n' is not an issue number" >&2
+        exit 1
+      fi
+    done
+    # One JSON object per issue: number, title, body, labels, and its single-select field values
+    # (Priority, Status, ...) in the given project; fields is {} when the issue is not in it.
+    for n in "$@"; do
+      gh api graphql -F owner="${repo%%/*}" -F name="${repo#*/}" -F number="$n" -f query='
+        query($owner: String!, $name: String!, $number: Int!) {
+          repository(owner: $owner, name: $name) {
+            issue(number: $number) {
+              number title body
+              labels(first: 50) { nodes { name } }
+              projectItems(first: 20) { nodes {
+                project { number }
+                fieldValues(first: 50) { nodes {
+                  ... on ProjectV2ItemFieldSingleSelectValue {
+                    name field { ... on ProjectV2SingleSelectField { name } }
+                  }
+                } }
+              } }
+            }
+          }
+        }' --jq ".data.repository.issue | {number, title, body,
+          labels: [.labels.nodes[].name],
+          fields: ([.projectItems.nodes[] | select(.project.number == $project_number)
+                    | .fieldValues.nodes[] | select(.name) | {(.field.name): .name}] | add // {})}" \
+        | python3 -c 'import json, sys; print(json.dumps(json.load(sys.stdin), ensure_ascii=False))'
+    done
+    ;;
+
   *)
     echo "Unknown command: $cmd" >&2
-    echo "Usage: gh-project.sh {list-projects|get-fields|find-item|add-item|set-field|list-labels}" >&2
+    echo "Usage: gh-project.sh {list-projects|get-fields|find-item|add-item|set-field|list-labels|issue-cards}" >&2
     exit 1
     ;;
 esac
